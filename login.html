@@ -2,197 +2,877 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color" content="#070b14">
 
   <title>TELESUPAR — Login</title>
 
-  <link rel="stylesheet" href="Css/style.css">
+  <style>
+    /* ================================
+       RESET
+    ================================= */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #ffffff;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 18px;
+
+      background:
+        radial-gradient(
+          circle at 10% 0%,
+          rgba(30, 115, 255, 0.22),
+          transparent 34%
+        ),
+        radial-gradient(
+          circle at 90% 100%,
+          rgba(0, 210, 170, 0.16),
+          transparent 35%
+        ),
+        #070b14;
+
+      overflow-x: hidden;
+    }
+
+
+    /* ================================
+       BACKGROUND GLOW
+    ================================= */
+
+    .glow {
+      position: fixed;
+
+      width: 260px;
+      height: 260px;
+
+      border-radius: 50%;
+
+      background: #1683ff;
+
+      filter: blur(120px);
+
+      opacity: 0.14;
+
+      top: -100px;
+      left: -100px;
+
+      pointer-events: none;
+    }
+
+    .glow-two {
+      background: #00d4a8;
+
+      top: auto;
+      left: auto;
+
+      right: -110px;
+      bottom: -110px;
+    }
+
+
+    /* ================================
+       MAIN
+    ================================= */
+
+    .page {
+      width: 100%;
+      max-width: 430px;
+
+      position: relative;
+      z-index: 2;
+    }
+
+
+    /* ================================
+       CARD
+    ================================= */
+
+    .card {
+      width: 100%;
+
+      padding: 34px 24px 27px;
+
+      background: rgba(13, 19, 31, 0.92);
+
+      border: 1px solid rgba(255,255,255,0.08);
+
+      border-radius: 27px;
+
+      box-shadow:
+        0 25px 70px rgba(0,0,0,0.48),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+
+    /* ================================
+       LOGO
+    ================================= */
+
+    .logo {
+      width: 72px;
+      height: 72px;
+
+      margin: 0 auto 20px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 22px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #1685ff,
+          #0069e8
+        );
+
+      color: #ffffff;
+
+      font-size: 25px;
+      font-weight: 900;
+
+      letter-spacing: 1px;
+
+      box-shadow:
+        0 15px 35px rgba(22,133,255,0.30);
+    }
+
+
+    /* ================================
+       HEADING
+    ================================= */
+
+    .title {
+      text-align: center;
+
+      font-size: 30px;
+
+      font-weight: 800;
+
+      letter-spacing: -0.8px;
+    }
+
+    .subtitle {
+      text-align: center;
+
+      color: #8d99ad;
+
+      font-size: 14px;
+
+      line-height: 1.5;
+
+      margin-top: 8px;
+
+      margin-bottom: 28px;
+    }
+
+
+    /* ================================
+       INPUT
+    ================================= */
+
+    .input-group {
+      margin-bottom: 17px;
+    }
+
+    .input-group label {
+      display: block;
+
+      margin-bottom: 8px;
+
+      color: #cbd4e4;
+
+      font-size: 13px;
+
+      font-weight: 700;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      height: 54px;
+
+      padding: 0 16px;
+
+      border-radius: 14px;
+
+      border: 1px solid #273248;
+
+      outline: none;
+
+      background: #090f1a;
+
+      color: #ffffff;
+
+      font-size: 15px;
+
+      transition: 0.2s ease;
+    }
+
+    .input-wrapper input::placeholder {
+      color: #59667b;
+    }
+
+    .input-wrapper input:focus {
+      border-color: #2586ff;
+
+      box-shadow:
+        0 0 0 3px rgba(37,134,255,0.12);
+    }
+
+
+    /* ================================
+       PASSWORD
+    ================================= */
+
+    .password-input {
+      padding-right: 72px !important;
+    }
+
+    .show-password {
+      position: absolute;
+
+      right: 9px;
+      top: 50%;
+
+      transform: translateY(-50%);
+
+      padding: 8px;
+
+      border: none;
+
+      background: transparent;
+
+      color: #6f91bd;
+
+      font-size: 11px;
+
+      font-weight: 800;
+
+      cursor: pointer;
+    }
+
+    .show-password:hover {
+      color: #ffffff;
+    }
+
+
+    /* ================================
+       MESSAGE
+    ================================= */
+
+    .message {
+      display: none;
+
+      margin: 4px 0 14px;
+
+      padding: 12px 14px;
+
+      border-radius: 12px;
+
+      font-size: 13px;
+
+      line-height: 1.4;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      color: #ffb9c0;
+
+      background: rgba(255,65,85,0.10);
+
+      border: 1px solid rgba(255,65,85,0.18);
+    }
+
+    .message.success {
+      color: #a2f1d9;
+
+      background: rgba(0,210,168,0.09);
+
+      border: 1px solid rgba(0,210,168,0.18);
+    }
+
+
+    /* ================================
+       LOGIN BUTTON
+    ================================= */
+
+    .login-btn {
+      width: 100%;
+      height: 54px;
+
+      border: none;
+
+      border-radius: 15px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #1685ff,
+          #006be7
+        );
+
+      color: #ffffff;
+
+      font-size: 15px;
+
+      font-weight: 800;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 13px 30px rgba(22,133,255,0.23);
+
+      transition: 0.2s ease;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .login-btn:active {
+      transform: scale(0.98);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.65;
+
+      cursor: not-allowed;
+
+      transform: none;
+    }
+
+
+    /* ================================
+       CREATE ACCOUNT
+    ================================= */
+
+    .register-section {
+      margin-top: 25px;
+
+      padding-top: 23px;
+
+      border-top: 1px solid rgba(255,255,255,0.07);
+
+      text-align: center;
+    }
+
+    .register-section p {
+      margin-bottom: 12px;
+
+      color: #7f8ca1;
+
+      font-size: 13px;
+    }
+
+    .create-account-btn {
+      width: 100%;
+      height: 52px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 14px;
+
+      border: 1px solid #29354c;
+
+      background: #101725;
+
+      color: #ffffff;
+
+      text-decoration: none;
+
+      font-size: 14px;
+
+      font-weight: 800;
+
+      transition: 0.2s ease;
+    }
+
+    .create-account-btn:hover {
+      background: #172236;
+
+      border-color: #358fff;
+    }
+
+    .create-account-btn:active {
+      transform: scale(0.98);
+    }
+
+
+    /* ================================
+       SECURITY
+    ================================= */
+
+    .security {
+      display: flex;
+
+      align-items: center;
+      justify-content: center;
+
+      gap: 7px;
+
+      margin-top: 19px;
+
+      color: #566278;
+
+      font-size: 11px;
+    }
+
+    .security-dot {
+      width: 7px;
+      height: 7px;
+
+      border-radius: 50%;
+
+      background: #00d1a5;
+
+      box-shadow:
+        0 0 10px rgba(0,209,165,0.7);
+    }
+
+
+    /* ================================
+       MOBILE
+    ================================= */
+
+    @media (max-width: 420px) {
+
+      body {
+        padding: 13px;
+      }
+
+      .card {
+        padding: 28px 19px 24px;
+
+        border-radius: 23px;
+      }
+
+      .logo {
+        width: 64px;
+        height: 64px;
+
+        border-radius: 19px;
+
+        font-size: 23px;
+      }
+
+      .title {
+        font-size: 27px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+      }
+    }
+  </style>
 </head>
+
 
 <body>
 
-  <div class="auth-page">
+  <!-- Background -->
+  <div class="glow"></div>
+  <div class="glow glow-two"></div>
 
-    <div class="auth-card">
 
-      <div class="auth-logo">
+  <main class="page">
+
+    <section class="card">
+
+
+      <!-- Logo -->
+      <div class="logo">
         TS
       </div>
 
-      <h1>Welcome Back</h1>
 
-      <p class="auth-subtitle">
+      <!-- Heading -->
+      <h1 class="title">
+        Welcome Back
+      </h1>
+
+      <p class="subtitle">
         Login to continue to TELESUPAR
       </p>
 
+
+      <!-- Login Form -->
       <form id="loginForm">
 
-        <div class="input-group">
-          <label for="email">Email</label>
 
-          <input
-            type="email"
-            id="email"
-            placeholder="you@example.com"
-            autocomplete="email"
-            required
-          >
+        <!-- Email -->
+        <div class="input-group">
+
+          <label for="email">
+            Email
+          </label>
+
+          <div class="input-wrapper">
+
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter your email"
+              autocomplete="email"
+              required
+            >
+
+          </div>
+
         </div>
 
-        <div class="input-group">
-          <label for="password">Password</label>
 
-          <input
-            type="password"
-            id="password"
-            placeholder="Enter your password"
-            autocomplete="current-password"
-            required
-          >
+        <!-- Password -->
+        <div class="input-group">
+
+          <label for="password">
+            Password
+          </label>
+
+          <div class="input-wrapper">
+
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="password-input"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            >
+
+            <button
+              type="button"
+              class="show-password"
+              id="showPassword"
+            >
+              SHOW
+            </button>
+
+          </div>
+
         </div>
 
-        <div id="message" class="auth-message"></div>
 
+        <!-- Message -->
+        <div
+          id="message"
+          class="message"
+        ></div>
+
+
+        <!-- Login -->
         <button
           type="submit"
           id="loginBtn"
-          class="auth-btn"
+          class="login-btn"
         >
           Login
         </button>
 
       </form>
 
-      <div class="auth-switch">
-        Don't have an account?
-        <a href="register.html">Create Account</a>
+
+      <!-- Create Account -->
+      <div class="register-section">
+
+        <p>
+          Don't have an account?
+        </p>
+
+        <a
+          href="register.html"
+          class="create-account-btn"
+        >
+          Create Account
+        </a>
+
       </div>
 
-    </div>
 
-  </div>
+      <!-- Security -->
+      <div class="security">
+
+        <span class="security-dot"></span>
+
+        Secure TELESUPAR login
+
+      </div>
+
+
+    </section>
+
+  </main>
 
 
   <script>
 
-    const API_URL = "https://telesupar.onrender.com";
+    /* =================================
+       API
+    ================================= */
 
-    const loginForm = document.getElementById("loginForm");
-    const loginBtn = document.getElementById("loginBtn");
-    const message = document.getElementById("message");
+    const API_URL =
+      "https://telesupar.onrender.com";
 
 
-    function showMessage(text, type) {
+    /* =================================
+       ELEMENTS
+    ================================= */
+
+    const loginForm =
+      document.getElementById("loginForm");
+
+    const loginBtn =
+      document.getElementById("loginBtn");
+
+    const message =
+      document.getElementById("message");
+
+    const passwordInput =
+      document.getElementById("password");
+
+    const showPassword =
+      document.getElementById("showPassword");
+
+
+    /* =================================
+       SHOW / HIDE PASSWORD
+    ================================= */
+
+    showPassword.addEventListener(
+      "click",
+      function () {
+
+        if (
+          passwordInput.type === "password"
+        ) {
+
+          passwordInput.type = "text";
+
+          showPassword.textContent =
+            "HIDE";
+
+        } else {
+
+          passwordInput.type = "password";
+
+          showPassword.textContent =
+            "SHOW";
+
+        }
+
+      }
+    );
+
+
+    /* =================================
+       MESSAGE FUNCTION
+    ================================= */
+
+    function showMessage(
+      text,
+      type
+    ) {
 
       message.textContent = text;
 
-      message.className = "auth-message " + type;
+      message.className =
+        "message show " + type;
 
     }
 
 
-    loginForm.addEventListener("submit", async function(event) {
+    /* =================================
+       LOGIN
+    ================================= */
 
-      event.preventDefault();
+    loginForm.addEventListener(
+      "submit",
+      async function (event) {
 
-      const email =
-        document.getElementById("email").value.trim();
-
-      const password =
-        document.getElementById("password").value;
-
-
-      loginBtn.disabled = true;
-      loginBtn.textContent = "Logging in...";
-
-      showMessage("", "");
+        event.preventDefault();
 
 
-      try {
+        const email =
+          document
+            .getElementById("email")
+            .value
+            .trim()
+            .toLowerCase();
 
-        const response = await fetch(
-          API_URL + "/api/login",
-          {
-            method: "POST",
 
-            headers: {
-              "Content-Type": "application/json"
-            },
+        const password =
+          passwordInput.value;
 
-            body: JSON.stringify({
-              email: email,
-              password: password
-            })
+
+        if (!email || !password) {
+
+          showMessage(
+            "Please enter email and password.",
+            "error"
+          );
+
+          return;
+        }
+
+
+        /* Loading */
+
+        loginBtn.disabled = true;
+
+        loginBtn.textContent =
+          "Logging in...";
+
+        message.className =
+          "message";
+
+
+        try {
+
+          const response =
+            await fetch(
+              API_URL + "/api/login",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json"
+                },
+
+                body: JSON.stringify({
+
+                  email: email,
+
+                  password: password
+
+                })
+              }
+            );
+
+
+          const data =
+            await response.json();
+
+
+          /* Server error */
+
+          if (!response.ok) {
+
+            throw new Error(
+              data.error ||
+              data.message ||
+              "Invalid email or password."
+            );
+
           }
-        );
 
 
-        const data = await response.json();
+          /* =================================
+             SAVE LOGIN TOKEN
+          ================================= */
+
+          if (data.token) {
+
+            localStorage.setItem(
+              "telesupar_token",
+              data.token
+            );
+
+          }
 
 
-        if (!response.ok) {
+          /* =================================
+             SAVE USER
+          ================================= */
 
-          throw new Error(
-            data.error ||
-            data.message ||
-            "Login failed."
+          if (data.user) {
+
+            localStorage.setItem(
+              "telesupar_user",
+              JSON.stringify(data.user)
+            );
+
+          }
+
+
+          /* Success */
+
+          showMessage(
+            "Login successful. Opening TELESUPAR...",
+            "success"
           );
 
-        }
 
+          /* Go Home */
 
-        // Save JWT token
-        if (data.token) {
+          setTimeout(
+            function () {
 
-          localStorage.setItem(
-            "telesupar_token",
-            data.token
+              window.location.href =
+                "home.html";
+
+            },
+            700
           );
 
-        }
 
+        } catch (error) {
 
-        // Save user information
-        if (data.user) {
-
-          localStorage.setItem(
-            "telesupar_user",
-            JSON.stringify(data.user)
+          console.error(
+            "Login error:",
+            error
           );
 
+
+          showMessage(
+            error.message ||
+            "Unable to connect to server.",
+            "error"
+          );
+
+
+          loginBtn.disabled = false;
+
+          loginBtn.textContent =
+            "Login";
+
         }
-
-
-        showMessage(
-          "Login successful! Opening TELESUPAR...",
-          "success"
-        );
-
-
-        setTimeout(function() {
-
-          window.location.href = "home.html";
-
-        }, 700);
-
-
-      } catch (error) {
-
-        console.error("Login error:", error);
-
-        showMessage(
-          error.message ||
-          "Unable to connect to server.",
-          "error"
-        );
-
-        loginBtn.disabled = false;
-
-        loginBtn.textContent = "Login";
 
       }
-
-    });
+    );
 
   </script>
 
