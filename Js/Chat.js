@@ -3,7 +3,7 @@
 // ========================================
 
 // Connect to Socket.IO server
-const socket = io();
+const socket = io("https://telesupar.onrender.com");
 
 
 // ========================================
