@@ -1,1 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070b13">
+  <title>Chats - TELESUPAR</title>
 
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <div class="app">
+
+    <!-- HEADER -->
+    <header class="topbar">
+
+      <div class="brand">
+        <div class="mini-logo">TS</div>
+
+        <div>
+          <h2>TELESUPAR</h2>
+          <span>Messages</span>
+        </div>
+      </div>
+
+      <button class="icon-btn" onclick="openSearch()">
+        🔍
+      </button>
+
+    </header>
+
+
+    <!-- SEARCH -->
+    <div class="search-box" id="searchBox">
+
+      <input
+        type="search"
+        id="searchInput"
+        placeholder="Search chats..."
+        oninput="searchChats()"
+      >
+
+    </div>
+
+
+    <!-- CONTENT -->
+    <main class="chat-list" id="chatList">
+
+      <!-- CHAT 1 -->
+      <article class="chat-item" onclick="openChat('Brijesh')">
+
+        <div class="avatar">
+          B
+          <span class="online-dot"></span>
+        </div>
+
+        <div class="chat-info">
+
+          <div class="chat-top">
+            <h3>Brijesh</h3>
+            <time>10:42 AM</time>
+          </div>
+
+          <div class="chat-bottom">
+            <p>Welcome to TELESUPAR 👋</p>
+            <span class="unread">2</span>
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <!-- CHAT 2 -->
+      <article class="chat-item" onclick="openChat('Rahul')">
+
+        <div class="avatar avatar-2">
+          R
+        </div>
+
+        <div class="chat-info">
+
+          <div class="chat-top">
+            <h3>Rahul</h3>
+            <time>Yesterday</time>
+          </div>
+
+          <div class="chat-bottom">
+            <p>Let's build something 🚀</p>
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <!-- EMPTY SEARCH -->
+      <div class="empty-search" id="emptySearch">
+        <div>🔎</div>
+        <p>No chats found</p>
+      </div>
+
+    </main>
+
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+
+      <button class="nav-item active">
+        <span>💬</span>
+        <small>Chats</small>
+      </button>
+
+      <button class="nav-item" onclick="showContacts()">
+        <span>👥</span>
+        <small>Contacts</small>
+      </button>
+
+      <button class="nav-item" onclick="showProfile()">
+        <span>👤</span>
+        <small>Profile</small>
+      </button>
+
+      <button class="nav-item" onclick="showSettings()">
+        <span>⚙️</span>
+        <small>Settings</small>
+      </button>
+
+    </nav>
+
+
+    <!-- NEW CHAT -->
+    <button class="new-chat" onclick="newChat()">
+      +
+    </button>
+
+  </div>
+
+
+  <script src="js/home.js"></script>
+
+</body>
+</html>
