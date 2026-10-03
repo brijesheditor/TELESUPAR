@@ -2,11 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#070b13"
+  >
 
   <title>TELESUPAR — Create Account</title>
 
-  <link rel="stylesheet" href="css/style.css">
+  <!-- Main CSS -->
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  >
 </head>
 
 <body>
@@ -15,6 +28,7 @@
 
     <div class="auth-card">
 
+      <!-- Logo -->
       <div class="auth-logo">
         TS
       </div>
@@ -25,12 +39,16 @@
         Join TELESUPAR and start chatting
       </p>
 
+
       <!-- REGISTER FORM -->
       <form id="registerForm">
 
         <!-- Username -->
         <div class="input-group">
-          <label for="username">Username</label>
+
+          <label for="username">
+            Username
+          </label>
 
           <input
             type="text"
@@ -42,11 +60,16 @@
             autocomplete="username"
             required
           >
+
         </div>
+
 
         <!-- Display Name -->
         <div class="input-group">
-          <label for="displayName">Display Name</label>
+
+          <label for="displayName">
+            Display Name
+          </label>
 
           <input
             type="text"
@@ -57,11 +80,16 @@
             autocomplete="name"
             required
           >
+
         </div>
+
 
         <!-- Email -->
         <div class="input-group">
-          <label for="email">Email</label>
+
+          <label for="email">
+            Email
+          </label>
 
           <input
             type="email"
@@ -71,11 +99,16 @@
             autocomplete="email"
             required
           >
+
         </div>
+
 
         <!-- Password -->
         <div class="input-group">
-          <label for="password">Password</label>
+
+          <label for="password">
+            Password
+          </label>
 
           <input
             type="password"
@@ -86,11 +119,16 @@
             autocomplete="new-password"
             required
           >
+
         </div>
+
 
         <!-- Confirm Password -->
         <div class="input-group">
-          <label for="confirmPassword">Confirm Password</label>
+
+          <label for="confirmPassword">
+            Confirm Password
+          </label>
 
           <input
             type="password"
@@ -101,10 +139,16 @@
             autocomplete="new-password"
             required
           >
+
         </div>
 
-        <!-- Error / Success -->
-        <div id="message" class="auth-message"></div>
+
+        <!-- Message -->
+        <div
+          id="message"
+          class="auth-message"
+        ></div>
+
 
         <!-- Button -->
         <button
@@ -117,10 +161,16 @@
 
       </form>
 
+
       <!-- Login -->
       <div class="auth-switch">
+
         Already have an account?
-        <a href="login.html">Login</a>
+
+        <a href="login.html">
+          Login
+        </a>
+
       </div>
 
     </div>
@@ -128,168 +178,230 @@
   </div>
 
 
+  <!-- ========================= -->
+  <!-- REGISTER JAVASCRIPT -->
+  <!-- ========================= -->
+
   <script>
 
-    const API_URL = "https://telesupar.onrender.com";
+    const API_URL =
+      "https://telesupar.onrender.com";
 
-    const registerForm = document.getElementById("registerForm");
-    const registerBtn = document.getElementById("registerBtn");
-    const message = document.getElementById("message");
+
+    const registerForm =
+      document.getElementById("registerForm");
+
+    const registerBtn =
+      document.getElementById("registerBtn");
+
+    const message =
+      document.getElementById("message");
 
 
     function showMessage(text, type) {
 
       message.textContent = text;
 
-      message.className = "auth-message " + type;
+      message.className =
+        "auth-message " + type;
+
     }
 
 
-    registerForm.addEventListener("submit", async function(event) {
+    registerForm.addEventListener(
+      "submit",
+      async function(event) {
 
-      event.preventDefault();
-
-
-      const username =
-        document.getElementById("username").value.trim();
-
-      const displayName =
-        document.getElementById("displayName").value.trim();
-
-      const email =
-        document.getElementById("email").value.trim();
-
-      const password =
-        document.getElementById("password").value;
-
-      const confirmPassword =
-        document.getElementById("confirmPassword").value;
+        event.preventDefault();
 
 
-      // Password check
-      if (password !== confirmPassword) {
-
-        showMessage(
-          "Passwords do not match.",
-          "error"
-        );
-
-        return;
-      }
+        const username =
+          document
+            .getElementById("username")
+            .value
+            .trim();
 
 
-      if (password.length < 6) {
-
-        showMessage(
-          "Password must be at least 6 characters.",
-          "error"
-        );
-
-        return;
-      }
+        const displayName =
+          document
+            .getElementById("displayName")
+            .value
+            .trim();
 
 
-      // Loading
-      registerBtn.disabled = true;
+        const email =
+          document
+            .getElementById("email")
+            .value
+            .trim();
 
-      registerBtn.textContent = "Creating Account...";
 
-      showMessage("", "");
+        const password =
+          document
+            .getElementById("password")
+            .value;
 
 
-      try {
+        const confirmPassword =
+          document
+            .getElementById("confirmPassword")
+            .value;
 
-        const response = await fetch(
-          API_URL + "/api/register",
-          {
-            method: "POST",
 
-            headers: {
-              "Content-Type": "application/json"
-            },
+        /* Password match check */
 
-            body: JSON.stringify({
+        if (password !== confirmPassword) {
 
-              username: username,
+          showMessage(
+            "Passwords do not match.",
+            "error"
+          );
 
-              displayName: displayName,
+          return;
+        }
 
-              email: email,
 
-              password: password
+        /* Password length */
 
-            })
+        if (password.length < 6) {
+
+          showMessage(
+            "Password must be at least 6 characters.",
+            "error"
+          );
+
+          return;
+        }
+
+
+        /* Loading */
+
+        registerBtn.disabled = true;
+
+        registerBtn.textContent =
+          "Creating Account...";
+
+        showMessage("", "");
+
+
+        try {
+
+          const response =
+            await fetch(
+              API_URL + "/api/register",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json"
+                },
+
+                body: JSON.stringify({
+
+                  username:
+                    username,
+
+                  displayName:
+                    displayName,
+
+                  email:
+                    email,
+
+                  password:
+                    password
+
+                })
+              }
+            );
+
+
+          const data =
+            await response.json();
+
+
+          /* Server error */
+
+          if (!response.ok) {
+
+            throw new Error(
+              data.error ||
+              data.message ||
+              "Registration failed."
+            );
+
           }
-        );
 
 
-        const data = await response.json();
+          /* Save JWT */
+
+          if (data.token) {
+
+            localStorage.setItem(
+              "telesupar_token",
+              data.token
+            );
+
+          }
 
 
-        if (!response.ok) {
+          /* Save user */
 
-          throw new Error(
-            data.error ||
-            data.message ||
-            "Registration failed."
+          if (data.user) {
+
+            localStorage.setItem(
+              "telesupar_user",
+              JSON.stringify(data.user)
+            );
+
+          }
+
+
+          /* Success */
+
+          showMessage(
+            "Account created successfully! Redirecting...",
+            "success"
           );
 
-        }
 
+          /* Go Home */
 
-        // Save login information
-        if (data.token) {
+          setTimeout(
+            function() {
 
-          localStorage.setItem(
-            "telesupar_token",
-            data.token
+              window.location.href =
+                "home.html";
+
+            },
+            800
           );
 
-        }
 
+        } catch (error) {
 
-        if (data.user) {
-
-          localStorage.setItem(
-            "telesupar_user",
-            JSON.stringify(data.user)
+          console.error(
+            "Registration error:",
+            error
           );
 
+
+          showMessage(
+            error.message ||
+            "Unable to connect to server.",
+            "error"
+          );
+
+
+          registerBtn.disabled = false;
+
+          registerBtn.textContent =
+            "Create Account";
+
         }
-
-
-        showMessage(
-          "Account created successfully! Redirecting...",
-          "success"
-        );
-
-
-        setTimeout(function() {
-
-          window.location.href = "home.html";
-
-        }, 800);
-
-
-      } catch (error) {
-
-        console.error("Registration error:", error);
-
-
-        showMessage(
-          error.message ||
-          "Unable to connect to server.",
-          "error"
-        );
-
-
-        registerBtn.disabled = false;
-
-        registerBtn.textContent = "Create Account";
 
       }
-
-    });
+    );
 
   </script>
 
