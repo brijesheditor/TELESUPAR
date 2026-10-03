@@ -1,1 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070b13">
+  <title>Create Account - TELESUPAR</title>
 
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <main class="welcome-page">
+
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <section class="welcome-card">
+
+      <div class="logo">
+        <span>TS</span>
+      </div>
+
+      <h1>Create Account</h1>
+
+      <p class="tagline">
+        Join TELESUPAR
+      </p>
+
+      <form onsubmit="registerUser(event)">
+
+        <input
+          type="text"
+          id="username"
+          placeholder="Username"
+          minlength="3"
+          required
+        >
+
+        <input
+          type="text"
+          id="name"
+          placeholder="Display name"
+          required
+        >
+
+        <input
+          type="email"
+          id="email"
+          placeholder="Email address"
+          required
+        >
+
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          minlength="6"
+          required
+        >
+
+        <button type="submit" class="btn primary">
+          Create Account
+        </button>
+
+      </form>
+
+      <p id="message"></p>
+
+      <p class="footer-text">
+        Already have an account?
+        <a href="login.html">Login</a>
+      </p>
+
+      <p class="footer-text">
+        <a href="index.html">← Back to TELESUPAR</a>
+      </p>
+
+    </section>
+
+  </main>
+
+  <script>
+    function registerUser(event) {
+      event.preventDefault();
+
+      const username = document.getElementById("username").value;
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const message = document.getElementById("message");
+
+      if (!username || !name || !email || !password) {
+        message.textContent = "Please fill all fields.";
+        return;
+      }
+
+      message.textContent =
+        "Registration system will be connected in the next step.";
+    }
+  </script>
+
+</body>
+</html>
