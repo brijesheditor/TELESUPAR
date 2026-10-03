@@ -1,1 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>TELESUPAR Chat</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+    <div class="chat-page">
+
+        <!-- HEADER -->
+        <header class="chat-header">
+
+            <button class="back-btn" id="backBtn">‹</button>
+
+            <div class="chat-user-avatar" id="headerAvatar">
+                B
+            </div>
+
+            <div class="chat-user-info">
+                <h2 id="chatUserName">Brijesh</h2>
+                <span id="onlineStatus">Connecting...</span>
+            </div>
+
+            <button class="chat-menu-btn" id="chatMenuBtn">
+                ⋮
+            </button>
+
+        </header>
+
+
+        <!-- MESSAGES -->
+        <main class="messages" id="messages">
+
+            <div class="message received">
+                <div class="message-bubble">
+                    Hello 👋
+                </div>
+
+                <span class="message-time">
+                    Demo
+                </span>
+            </div>
+
+        </main>
+
+
+        <!-- ATTACHMENT MENU -->
+        <div class="attachment-menu" id="attachmentMenu">
+
+            <button type="button" id="photoBtn">
+                📷
+                <span>Photo</span>
+            </button>
+
+            <button type="button" id="fileBtn">
+                📄
+                <span>File</span>
+            </button>
+
+            <button type="button" id="cameraBtn">
+                📸
+                <span>Camera</span>
+            </button>
+
+        </div>
+
+
+        <!-- MESSAGE COMPOSER -->
+        <form class="message-composer" id="messageForm">
+
+            <button
+                type="button"
+                class="composer-btn"
+                id="attachmentBtn"
+            >
+                📎
+            </button>
+
+            <input
+                type="text"
+                id="messageInput"
+                placeholder="Write a message..."
+                autocomplete="off"
+            >
+
+            <button
+                type="button"
+                class="emoji-btn"
+                id="emojiBtn"
+            >
+                😊
+            </button>
+
+            <button
+                type="submit"
+                class="send-btn"
+                id="sendBtn"
+            >
+                ➤
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- CHAT JAVASCRIPT -->
+    <script src="js/chat.js"></script>
+
+</body>
+</html>
