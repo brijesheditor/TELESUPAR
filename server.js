@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const http = require("http");
 const path = require("path");
 const bcrypt = require("bcryptjs");
@@ -7,6 +8,10 @@ const { MongoClient } = require("mongodb");
 const { Server } = require("socket.io");
 
 const app = express();
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 const server = http.createServer(app);
 
 const io = new Server(server, {
