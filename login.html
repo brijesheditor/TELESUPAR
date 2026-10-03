@@ -1,1 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070b13">
+  <title>Login - TELESUPAR</title>
 
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <main class="welcome-page">
+
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <section class="welcome-card">
+
+      <div class="logo">
+        <span>TS</span>
+      </div>
+
+      <h1>Welcome Back</h1>
+
+      <p class="tagline">
+        Login to TELESUPAR
+      </p>
+
+      <form onsubmit="loginUser(event)">
+
+        <input
+          type="email"
+          id="email"
+          placeholder="Email address"
+          required
+        >
+
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          required
+        >
+
+        <button type="submit" class="btn primary">
+          Login
+        </button>
+
+      </form>
+
+      <p id="message"></p>
+
+      <p class="footer-text">
+        Don't have an account?
+        <a href="register.html">Create Account</a>
+      </p>
+
+      <p class="footer-text">
+        <a href="index.html">← Back to TELESUPAR</a>
+      </p>
+
+    </section>
+
+  </main>
+
+  <script>
+    function loginUser(event) {
+      event.preventDefault();
+
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const message = document.getElementById("message");
+
+      if (!email || !password) {
+        message.textContent = "Please fill all fields.";
+        return;
+      }
+
+      message.textContent = "Login system will be connected in the next step.";
+    }
+  </script>
+
+</body>
+</html>
