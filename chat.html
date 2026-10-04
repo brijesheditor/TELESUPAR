@@ -1,120 +1,1663 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>TELESUPAR Chat</title>
+  <title>TELESUPAR Chat</title>
 
-    <link rel="stylesheet" href="css/style.css">
+  <script src="https://telesupar.onrender.com/socket.io/socket.io.js"></script>
 
-    <!-- Socket.IO -->
-    <script src="https://telesupar.onrender.com/socket.io/socket.io.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      background: #07111f;
+      color: #fff;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .chat-page {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(
+          circle at top right,
+          rgba(30, 136, 229, 0.12),
+          transparent 35%
+        ),
+        #07111f;
+    }
+
+    /* =========================
+       HEADER
+    ========================= */
+
+    .chat-header {
+      height: 70px;
+      flex-shrink: 0;
+
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      padding: 0 14px;
+
+      background: rgba(10, 22, 38, 0.96);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+
+      z-index: 10;
+    }
+
+    .back-btn {
+      width: 42px;
+      height: 42px;
+
+      border-radius: 50%;
+
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+
+      font-size: 31px;
+      line-height: 38px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      transition: 0.2s;
+    }
+
+    .back-btn:active {
+      transform: scale(0.9);
+    }
+
+    .chat-user-avatar {
+      width: 43px;
+      height: 43px;
+
+      flex-shrink: 0;
+
+      border-radius: 50%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background:
+        linear-gradient(135deg, #1683ff, #7c4dff);
+
+      color: #fff;
+
+      font-size: 18px;
+      font-weight: 800;
+
+      box-shadow:
+        0 7px 25px rgba(45, 117, 255, 0.28);
+    }
+
+    .chat-user-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .chat-user-info h2 {
+      font-size: 16px;
+      font-weight: 750;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-user-info span {
+      display: block;
+
+      margin-top: 3px;
+
+      font-size: 12px;
+      color: #7e91a8;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-user-info span.connected {
+      color: #48d597;
+    }
+
+    .chat-menu-btn {
+      width: 40px;
+      height: 40px;
+
+      border-radius: 50%;
+
+      background: transparent;
+      color: #c7d3e0;
+
+      font-size: 27px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* =========================
+       MESSAGES
+    ========================= */
+
+    .messages {
+      flex: 1;
+
+      overflow-y: auto;
+      overflow-x: hidden;
+
+      padding: 18px 13px 14px;
+
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      background:
+        radial-gradient(
+          circle at 15% 20%,
+          rgba(42, 103, 180, 0.06),
+          transparent 30%
+        ),
+        #07111f;
+
+      scroll-behavior: smooth;
+    }
+
+    .messages::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.12);
+      border-radius: 10px;
+    }
+
+    .empty-chat {
+      flex: 1;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      text-align: center;
+
+      color: #71849a;
+      font-size: 13px;
+
+      padding: 40px;
+    }
+
+    .message {
+      max-width: 78%;
+
+      display: flex;
+      flex-direction: column;
+
+      animation: messageIn 0.18s ease;
+    }
+
+    @keyframes messageIn {
+      from {
+        opacity: 0;
+        transform: translateY(7px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.sent {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+
+    .message.received {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+
+    .message-bubble {
+      padding: 10px 13px 8px;
+
+      border-radius: 17px;
+
+      font-size: 15px;
+      line-height: 1.42;
+
+      word-break: break-word;
+
+      box-shadow:
+        0 5px 18px rgba(0,0,0,0.12);
+    }
+
+    .message.sent .message-bubble {
+      background:
+        linear-gradient(135deg, #1677e8, #246de0);
+
+      color: #fff;
+
+      border-bottom-right-radius: 5px;
+    }
+
+    .message.received .message-bubble {
+      background: #15263a;
+
+      color: #e8f0f8;
+
+      border: 1px solid rgba(255,255,255,0.055);
+
+      border-bottom-left-radius: 5px;
+    }
+
+    .message-time {
+      margin-top: 4px;
+      padding: 0 4px;
+
+      font-size: 10px;
+      color: #687c92;
+    }
+
+    /* =========================
+       ATTACHMENT MENU
+    ========================= */
+
+    .attachment-menu {
+      display: none;
+
+      position: absolute;
+
+      left: 12px;
+      bottom: 78px;
+
+      width: 190px;
+
+      padding: 8px;
+
+      background: #122338;
+
+      border: 1px solid rgba(255,255,255,0.08);
+
+      border-radius: 17px;
+
+      box-shadow:
+        0 20px 50px rgba(0,0,0,0.35);
+
+      z-index: 20;
+    }
+
+    .attachment-menu.show {
+      display: block;
+
+      animation: popup 0.18s ease;
+    }
+
+    @keyframes popup {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .attachment-menu button {
+      width: 100%;
+
+      display: flex;
+      align-items: center;
+
+      gap: 12px;
+
+      padding: 12px;
+
+      background: transparent;
+      color: #dbe7f4;
+
+      border-radius: 11px;
+
+      text-align: left;
+    }
+
+    .attachment-menu button:active {
+      background: rgba(255,255,255,0.06);
+    }
+
+    .attachment-menu button span {
+      font-size: 13px;
+    }
+
+    /* =========================
+       COMPOSER
+    ========================= */
+
+    .message-composer {
+      position: relative;
+
+      min-height: 66px;
+
+      flex-shrink: 0;
+
+      display: flex;
+      align-items: center;
+
+      gap: 8px;
+
+      padding:
+        9px 11px
+        calc(9px + env(safe-area-inset-bottom))
+        11px;
+
+      background: rgba(10, 22, 38, 0.97);
+
+      border-top: 1px solid rgba(255,255,255,0.07);
+
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .composer-btn,
+    .emoji-btn {
+      width: 42px;
+      height: 42px;
+
+      flex-shrink: 0;
+
+      border-radius: 50%;
+
+      background: rgba(255,255,255,0.055);
+
+      color: #b8c7d8;
+
+      font-size: 19px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .message-composer input {
+      min-width: 0;
+      flex: 1;
+
+      height: 43px;
+
+      border: 1px solid rgba(255,255,255,0.07);
+
+      outline: none;
+
+      border-radius: 22px;
+
+      padding: 0 15px;
+
+      background: #101f32;
+
+      color: #fff;
+
+      font-size: 14px;
+    }
+
+    .message-composer input::placeholder {
+      color: #687d94;
+    }
+
+    .message-composer input:focus {
+      border-color: rgba(46, 137, 255, 0.45);
+
+      background: #12243a;
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+
+      flex-shrink: 0;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(135deg, #1987ff, #555cff);
+
+      color: #fff;
+
+      font-size: 19px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      box-shadow:
+        0 8px 25px rgba(40, 112, 255, 0.25);
+
+      transition: 0.2s;
+    }
+
+    .send-btn:active {
+      transform: scale(0.9);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      transform: none;
+    }
+
+    /* =========================
+       LOADING
+    ========================= */
+
+    .loading {
+      margin: auto;
+
+      width: 28px;
+      height: 28px;
+
+      border: 3px solid rgba(255,255,255,0.12);
+      border-top-color: #3190ff;
+
+      border-radius: 50%;
+
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* =========================
+       MOBILE
+    ========================= */
+
+    @media (min-width: 700px) {
+      .chat-page {
+        max-width: 650px;
+        margin: auto;
+
+        height: 100vh;
+
+        border-left: 1px solid rgba(255,255,255,0.06);
+        border-right: 1px solid rgba(255,255,255,0.06);
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-    <div class="chat-page">
+<div class="chat-page">
 
-        <!-- HEADER -->
-        <header class="chat-header">
+  <!-- HEADER -->
+  <header class="chat-header">
 
-            <button class="back-btn" id="backBtn">‹</button>
+    <button
+      type="button"
+      class="back-btn"
+      id="backBtn"
+      aria-label="Back"
+    >
+      ‹
+    </button>
 
-            <div class="chat-user-avatar" id="headerAvatar">
-                B
-            </div>
+    <div
+      class="chat-user-avatar"
+      id="headerAvatar"
+    >
+      ?
+    </div>
 
-            <div class="chat-user-info">
-                <h2 id="chatUserName">Brijesh</h2>
-                <span id="onlineStatus">Connecting...</span>
-            </div>
+    <div class="chat-user-info">
 
-            <button class="chat-menu-btn" id="chatMenuBtn">
-                ⋮
-            </button>
+      <h2 id="chatUserName">
+        Loading...
+      </h2>
 
-        </header>
-
-
-        <!-- MESSAGES -->
-        <main class="messages" id="messages">
-
-            <div class="message received">
-                <div class="message-bubble">
-                    Hello 👋
-                </div>
-
-                <span class="message-time">
-                    Demo
-                </span>
-            </div>
-
-        </main>
-
-
-        <!-- ATTACHMENT MENU -->
-        <div class="attachment-menu" id="attachmentMenu">
-
-            <button type="button" id="photoBtn">
-                📷
-                <span>Photo</span>
-            </button>
-
-            <button type="button" id="fileBtn">
-                📄
-                <span>File</span>
-            </button>
-
-            <button type="button" id="cameraBtn">
-                📸
-                <span>Camera</span>
-            </button>
-
-        </div>
-
-
-        <!-- MESSAGE COMPOSER -->
-        <form class="message-composer" id="messageForm">
-
-            <button
-                type="button"
-                class="composer-btn"
-                id="attachmentBtn"
-            >
-                📎
-            </button>
-
-            <input
-                type="text"
-                id="messageInput"
-                placeholder="Write a message..."
-                autocomplete="off"
-            >
-
-            <button
-                type="button"
-                class="emoji-btn"
-                id="emojiBtn"
-            >
-                😊
-            </button>
-
-            <button
-                type="submit"
-                class="send-btn"
-                id="sendBtn"
-            >
-                ➤
-            </button>
-
-        </form>
+      <span id="onlineStatus">
+        Loading conversation...
+      </span>
 
     </div>
 
+    <button
+      type="button"
+      class="chat-menu-btn"
+      id="chatMenuBtn"
+      aria-label="Menu"
+    >
+      ⋮
+    </button>
 
-    <!-- CHAT JAVASCRIPT -->
-    <script src="js/chat.js"></script>
+  </header>
+
+
+  <!-- MESSAGES -->
+  <main
+    class="messages"
+    id="messages"
+  >
+
+    <div
+      class="loading"
+      id="loading"
+    ></div>
+
+  </main>
+
+
+  <!-- ATTACHMENT MENU -->
+  <div
+    class="attachment-menu"
+    id="attachmentMenu"
+  >
+
+    <button
+      type="button"
+      id="photoBtn"
+    >
+      📷
+      <span>Photo</span>
+    </button>
+
+    <button
+      type="button"
+      id="fileBtn"
+    >
+      📄
+      <span>File</span>
+    </button>
+
+    <button
+      type="button"
+      id="cameraBtn"
+    >
+      📸
+      <span>Camera</span>
+    </button>
+
+  </div>
+
+
+  <!-- MESSAGE COMPOSER -->
+  <form
+    class="message-composer"
+    id="messageForm"
+  >
+
+    <button
+      type="button"
+      class="composer-btn"
+      id="attachmentBtn"
+      aria-label="Attachment"
+    >
+      📎
+    </button>
+
+    <input
+      type="text"
+      id="messageInput"
+      placeholder="Write a message..."
+      autocomplete="off"
+      maxlength="5000"
+    >
+
+    <button
+      type="button"
+      class="emoji-btn"
+      id="emojiBtn"
+      aria-label="Emoji"
+    >
+      😊
+    </button>
+
+    <button
+      type="submit"
+      class="send-btn"
+      id="sendBtn"
+      aria-label="Send"
+    >
+      ➤
+    </button>
+
+  </form>
+
+</div>
+
+
+<script>
+/* ========================================
+   TELESUPAR REAL CHAT
+======================================== */
+
+const API_URL = "https://telesupar.onrender.com";
+
+
+/* ========================================
+   URL
+======================================== */
+
+const params =
+  new URLSearchParams(
+    window.location.search
+  );
+
+const conversationId =
+  String(
+    params.get("id") || ""
+  ).trim();
+
+
+/* ========================================
+   ELEMENTS
+======================================== */
+
+const messagesContainer =
+  document.getElementById("messages");
+
+const loading =
+  document.getElementById("loading");
+
+const messageForm =
+  document.getElementById("messageForm");
+
+const messageInput =
+  document.getElementById("messageInput");
+
+const sendBtn =
+  document.getElementById("sendBtn");
+
+const chatUserName =
+  document.getElementById("chatUserName");
+
+const headerAvatar =
+  document.getElementById("headerAvatar");
+
+const onlineStatus =
+  document.getElementById("onlineStatus");
+
+const backBtn =
+  document.getElementById("backBtn");
+
+const attachmentBtn =
+  document.getElementById("attachmentBtn");
+
+const attachmentMenu =
+  document.getElementById("attachmentMenu");
+
+const emojiBtn =
+  document.getElementById("emojiBtn");
+
+const chatMenuBtn =
+  document.getElementById("chatMenuBtn");
+
+
+/* ========================================
+   LOGIN DATA
+======================================== */
+
+const token =
+  localStorage.getItem(
+    "telesupar_token"
+  );
+
+let currentUser = null;
+
+try {
+
+  const savedUser =
+    localStorage.getItem(
+      "telesupar_user"
+    );
+
+  if (savedUser) {
+    currentUser =
+      JSON.parse(savedUser);
+  }
+
+} catch (error) {
+
+  console.log(
+    "Could not read saved user"
+  );
+
+}
+
+
+/* ========================================
+   SOCKET
+======================================== */
+
+let socket = null;
+
+
+/* ========================================
+   BASIC CHECK
+======================================== */
+
+if (!token) {
+
+  alert(
+    "Please login first."
+  );
+
+  window.location.href =
+    "login.html";
+
+} else if (!conversationId) {
+
+  alert(
+    "Conversation ID missing."
+  );
+
+  window.location.href =
+    "home.html";
+
+}
+
+
+/* ========================================
+   API HELPER
+======================================== */
+
+async function api(
+  path,
+  options = {}
+) {
+
+  const headers = {
+    ...(options.headers || {}),
+    "Authorization":
+      "Bearer " + token
+  };
+
+  if (
+    options.body &&
+    !headers["Content-Type"]
+  ) {
+
+    headers["Content-Type"] =
+      "application/json";
+
+  }
+
+  const response =
+    await fetch(
+      API_URL + path,
+      {
+        ...options,
+        headers
+      }
+    );
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    data = {};
+  }
+
+  if (!response.ok) {
+
+    throw new Error(
+      data.message ||
+      "Server request failed"
+    );
+
+  }
+
+  return data;
+}
+
+
+/* ========================================
+   INIT
+======================================== */
+
+async function initChat() {
+
+  try {
+
+    if (!conversationId) {
+      return;
+    }
+
+    /*
+      Get recent conversations.
+
+      This also gives us the real
+      other user's name.
+    */
+
+    const chatData =
+      await api(
+        "/api/conversations"
+      );
+
+    const conversations =
+      Array.isArray(
+        chatData.conversations
+      )
+        ? chatData.conversations
+        : [];
+
+    const conversation =
+      conversations.find(
+        function (item) {
+
+          return String(
+            item.id ||
+            item._id ||
+            ""
+          ) === conversationId;
+
+        }
+      );
+
+    if (
+      conversation &&
+      conversation.user
+    ) {
+
+      const user =
+        conversation.user;
+
+      const name =
+        user.displayName ||
+        user.username ||
+        "User";
+
+      chatUserName.textContent =
+        name;
+
+      headerAvatar.textContent =
+        name
+          .charAt(0)
+          .toUpperCase();
+
+    } else {
+
+      chatUserName.textContent =
+        "Chat";
+
+      headerAvatar.textContent =
+        "?";
+
+    }
+
+
+    /*
+      Load real MongoDB messages.
+    */
+
+    await loadMessages();
+
+
+    /*
+      Connect realtime Socket.IO.
+    */
+
+    connectSocket();
+
+
+  } catch (error) {
+
+    console.error(
+      "CHAT INIT ERROR:",
+      error
+    );
+
+    showError(
+      error.message ||
+      "Could not load chat"
+    );
+
+  }
+
+}
+
+
+/* ========================================
+   LOAD REAL MESSAGES
+======================================== */
+
+async function loadMessages() {
+
+  try {
+
+    const data =
+      await api(
+        "/api/conversations/" +
+        encodeURIComponent(
+          conversationId
+        ) +
+        "/messages"
+      );
+
+    const list =
+      Array.isArray(data.messages)
+        ? data.messages
+        : [];
+
+    messagesContainer.innerHTML = "";
+
+    if (list.length === 0) {
+
+      showEmpty();
+
+      return;
+    }
+
+    list.forEach(
+      function (message) {
+
+        addMessage(
+          message,
+          false
+        );
+
+      }
+    );
+
+    scrollToBottom();
+
+  } catch (error) {
+
+    console.error(
+      "LOAD MESSAGES ERROR:",
+      error
+    );
+
+    showError(
+      error.message ||
+      "Could not load messages"
+    );
+
+  }
+
+}
+
+
+/* ========================================
+   SHOW EMPTY
+======================================== */
+
+function showEmpty() {
+
+  messagesContainer.innerHTML = "";
+
+  const empty =
+    document.createElement(
+      "div"
+    );
+
+  empty.className =
+    "empty-chat";
+
+  empty.textContent =
+    "No messages yet. Start the conversation.";
+
+  messagesContainer.appendChild(
+    empty
+  );
+
+}
+
+
+/* ========================================
+   SHOW ERROR
+======================================== */
+
+function showError(message) {
+
+  messagesContainer.innerHTML = "";
+
+  const error =
+    document.createElement(
+      "div"
+    );
+
+  error.className =
+    "empty-chat";
+
+  error.textContent =
+    message;
+
+  messagesContainer.appendChild(
+    error
+  );
+
+}
+
+
+/* ========================================
+   ADD MESSAGE
+======================================== */
+
+function addMessage(
+  message,
+  shouldScroll = true
+) {
+
+  if (!message) {
+    return;
+  }
+
+  /*
+    Remove empty state.
+  */
+
+  const empty =
+    messagesContainer.querySelector(
+      ".empty-chat"
+    );
+
+  if (empty) {
+    empty.remove();
+  }
+
+
+  /*
+    Prevent duplicate realtime message.
+  */
+
+  const existing =
+    messagesContainer.querySelector(
+      '[data-message-id="' +
+      String(message.id || "") +
+      '"]'
+    );
+
+  if (existing) {
+    return;
+  }
+
+
+  const senderId =
+    String(
+      message.senderId ||
+      ""
+    );
+
+  const myId =
+    currentUser
+      ? String(
+          currentUser.id ||
+          currentUser._id ||
+          ""
+        )
+      : "";
+
+
+  const wrapper =
+    document.createElement(
+      "div"
+    );
+
+  wrapper.className =
+    senderId === myId
+      ? "message sent"
+      : "message received";
+
+
+  if (message.id) {
+
+    wrapper.dataset.messageId =
+      String(message.id);
+
+  }
+
+
+  const bubble =
+    document.createElement(
+      "div"
+    );
+
+  bubble.className =
+    "message-bubble";
+
+  /*
+    textContent is intentional:
+    it prevents HTML injection.
+  */
+
+  bubble.textContent =
+    String(
+      message.text || ""
+    );
+
+
+  const time =
+    document.createElement(
+      "span"
+    );
+
+  time.className =
+    "message-time";
+
+  time.textContent =
+    formatTime(
+      message.createdAt
+    );
+
+
+  wrapper.appendChild(
+    bubble
+  );
+
+  wrapper.appendChild(
+    time
+  );
+
+  messagesContainer.appendChild(
+    wrapper
+  );
+
+
+  if (shouldScroll) {
+    scrollToBottom();
+  }
+
+}
+
+
+/* ========================================
+   FORMAT TIME
+======================================== */
+
+function formatTime(value) {
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+
+    return "now";
+
+  }
+
+  return date.toLocaleTimeString(
+    [],
+    {
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
+
+}
+
+
+/* ========================================
+   SCROLL
+======================================== */
+
+function scrollToBottom() {
+
+  requestAnimationFrame(
+    function () {
+
+      messagesContainer.scrollTop =
+        messagesContainer.scrollHeight;
+
+    }
+  );
+
+}
+
+
+/* ========================================
+   SOCKET CONNECT
+======================================== */
+
+function connectSocket() {
+
+  socket =
+    io(
+      API_URL,
+      {
+        transports: [
+          "websocket",
+          "polling"
+        ]
+      }
+    );
+
+
+  socket.on(
+    "connect",
+    function () {
+
+      console.log(
+        "Socket connected:",
+        socket.id
+      );
+
+      onlineStatus.textContent =
+        "Connected";
+
+      onlineStatus.classList.add(
+        "connected"
+      );
+
+
+      /*
+        Authenticate real logged-in user.
+      */
+
+      socket.emit(
+        "authenticate",
+        token
+      );
+
+
+      /*
+        Join this exact conversation.
+      */
+
+      socket.emit(
+        "joinConversation",
+        conversationId
+      );
+
+    }
+  );
+
+
+  socket.on(
+    "connect_error",
+    function (error) {
+
+      console.error(
+        "Socket error:",
+        error
+      );
+
+      onlineStatus.textContent =
+        "Reconnecting...";
+
+      onlineStatus.classList.remove(
+        "connected"
+      );
+
+    }
+  );
+
+
+  socket.on(
+    "disconnect",
+    function () {
+
+      onlineStatus.textContent =
+        "Disconnected";
+
+      onlineStatus.classList.remove(
+        "connected"
+      );
+
+    }
+  );
+
+
+  /*
+    Backend emits newMessage
+    after saving it to MongoDB.
+  */
+
+  socket.on(
+    "newMessage",
+    function (message) {
+
+      if (!message) {
+        return;
+      }
+
+      if (
+        String(
+          message.conversationId || ""
+        ) !== conversationId
+      ) {
+        return;
+      }
+
+      addMessage(
+        message,
+        true
+      );
+
+    }
+  );
+
+
+  socket.on(
+    "authError",
+    function (message) {
+
+      console.error(
+        "Socket auth error:",
+        message
+      );
+
+    }
+  );
+
+}
+
+
+/* ========================================
+   SEND MESSAGE
+======================================== */
+
+messageForm.addEventListener(
+  "submit",
+  async function (event) {
+
+    event.preventDefault();
+
+    const text =
+      messageInput.value.trim();
+
+    if (!text) {
+      return;
+    }
+
+    if (!conversationId) {
+      return;
+    }
+
+
+    sendBtn.disabled = true;
+
+    messageInput.disabled = true;
+
+
+    try {
+
+      /*
+        REST API saves message to MongoDB.
+
+        Backend then emits "newMessage"
+        through Socket.IO.
+
+        So we DON'T manually add the
+        returned message here.
+      */
+
+      await api(
+        "/api/conversations/" +
+        encodeURIComponent(
+          conversationId
+        ) +
+        "/messages",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            text: text
+          })
+        }
+      );
+
+
+      messageInput.value = "";
+
+      messageInput.focus();
+
+
+    } catch (error) {
+
+      console.error(
+        "SEND MESSAGE ERROR:",
+        error
+      );
+
+      alert(
+        error.message ||
+        "Message could not be sent"
+      );
+
+    } finally {
+
+      sendBtn.disabled = false;
+
+      messageInput.disabled = false;
+
+      messageInput.focus();
+
+    }
+
+  }
+);
+
+
+/* ========================================
+   ENTER TO SEND
+======================================== */
+
+messageInput.addEventListener(
+  "keydown",
+  function (event) {
+
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
+
+      event.preventDefault();
+
+      messageForm.requestSubmit();
+
+    }
+
+  }
+);
+
+
+/* ========================================
+   BACK
+======================================== */
+
+backBtn.addEventListener(
+  "click",
+  function () {
+
+    if (socket) {
+
+      socket.emit(
+        "leaveConversation",
+        conversationId
+      );
+
+      socket.disconnect();
+
+    }
+
+    window.location.href =
+      "home.html";
+
+  }
+);
+
+
+/* ========================================
+   ATTACHMENT MENU
+======================================== */
+
+attachmentBtn.addEventListener(
+  "click",
+  function (event) {
+
+    event.stopPropagation();
+
+    attachmentMenu.classList.toggle(
+      "show"
+    );
+
+  }
+);
+
+
+document.addEventListener(
+  "click",
+  function () {
+
+    attachmentMenu.classList.remove(
+      "show"
+    );
+
+  }
+);
+
+
+attachmentMenu.addEventListener(
+  "click",
+  function (event) {
+
+    event.stopPropagation();
+
+  }
+);
+
+
+/* ========================================
+   PHOTO / FILE / CAMERA
+======================================== */
+
+document
+  .getElementById("photoBtn")
+  .addEventListener(
+    "click",
+    function () {
+
+      alert(
+        "Photo sending will be connected after media storage is added."
+      );
+
+    }
+  );
+
+
+document
+  .getElementById("fileBtn")
+  .addEventListener(
+    "click",
+    function () {
+
+      alert(
+        "File sending will be connected after file storage is added."
+      );
+
+    }
+  );
+
+
+document
+  .getElementById("cameraBtn")
+  .addEventListener(
+    "click",
+    function () {
+
+      alert(
+        "Camera sending will be connected after media storage is added."
+      );
+
+    }
+  );
+
+
+/* ========================================
+   EMOJI
+======================================== */
+
+emojiBtn.addEventListener(
+  "click",
+  function () {
+
+    messageInput.value +=
+      messageInput.value
+        ? " 😊"
+        : "😊";
+
+    messageInput.focus();
+
+  }
+);
+
+
+/* ========================================
+   CHAT MENU
+======================================== */
+
+chatMenuBtn.addEventListener(
+  "click",
+  function () {
+
+    alert(
+      "Chat options will be added next."
+    );
+
+  }
+);
+
+
+/* ========================================
+   START
+======================================== */
+
+if (
+  token &&
+  conversationId
+) {
+
+  initChat();
+
+}
+</script>
 
 </body>
 </html>
