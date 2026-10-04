@@ -1,83 +1,91 @@
-/* =========================================================
-   TELESUPAR
-   CHAT.JS
-   STEP 1 — STABLE 1 TO 1 CHAT
-========================================================= */
-
-const API = "https://telesupar.onrender.com";
+const API =
+    "https://telesupar.onrender.com";
 
 const token =
-    localStorage.getItem("telesupar_token");
+    localStorage.getItem(
+        "telesupar_token"
+    );
 
 const storedUser =
-    localStorage.getItem("telesupar_user");
+    localStorage.getItem(
+        "telesupar_user"
+    );
 
 let currentUser = null;
-
 let conversationId = null;
-
 let otherUser = null;
-
 let socket = null;
 
-let messagesCache = new Map();
+let messagesCache =
+    new Map();
 
 let isSending = false;
-
 let typingTimer = null;
 
-let otherUserTyping = false;
 
-
-/* =========================================================
+/* =========================================
    DOM
-========================================================= */
+========================================= */
 
 const messagesEl =
-    document.getElementById("messages");
+    document.getElementById(
+        "messages"
+    );
 
 const form =
-    document.getElementById("messageForm");
+    document.getElementById(
+        "messageForm"
+    );
 
 const input =
-    document.getElementById("messageInput");
+    document.getElementById(
+        "messageInput"
+    );
 
 const sendBtn =
-    document.getElementById("sendBtn");
+    document.getElementById(
+        "sendBtn"
+    );
 
 const chatUserName =
-    document.getElementById("chatUserName");
+    document.getElementById(
+        "chatUserName"
+    );
 
 const headerAvatar =
-    document.getElementById("headerAvatar");
+    document.getElementById(
+        "headerAvatar"
+    );
 
 const onlineStatus =
-    document.getElementById("onlineStatus");
+    document.getElementById(
+        "onlineStatus"
+    );
 
 const backBtn =
-    document.getElementById("backBtn");
+    document.getElementById(
+        "backBtn"
+    );
 
 const attachmentBtn =
-    document.getElementById("attachmentBtn");
+    document.getElementById(
+        "attachmentBtn"
+    );
 
 const attachmentMenu =
-    document.getElementById("attachmentMenu");
-
-const photoBtn =
-    document.getElementById("photoBtn");
-
-const fileBtn =
-    document.getElementById("fileBtn");
-
-const cameraBtn =
-    document.getElementById("cameraBtn");
+    document.getElementById(
+        "attachmentMenu"
+    );
 
 
-/* =========================================================
+/* =========================================
    AUTH
-========================================================= */
+========================================= */
 
-if (!token || !storedUser) {
+if (
+    !token ||
+    !storedUser
+) {
 
     window.location.href =
         "login.html";
@@ -86,16 +94,18 @@ if (!token || !storedUser) {
 try {
 
     currentUser =
-        JSON.parse(storedUser);
+        JSON.parse(
+            storedUser
+        );
 
-} catch (error) {
-
-    localStorage.removeItem(
-        "telesupar_user"
-    );
+} catch {
 
     localStorage.removeItem(
         "telesupar_token"
+    );
+
+    localStorage.removeItem(
+        "telesupar_user"
     );
 
     window.location.href =
@@ -103,9 +113,9 @@ try {
 }
 
 
-/* =========================================================
+/* =========================================
    CHAT ID
-========================================================= */
+========================================= */
 
 const params =
     new URLSearchParams(
@@ -117,9 +127,9 @@ conversationId =
     params.get("conversationId");
 
 
-/* =========================================================
+/* =========================================
    API
-========================================================= */
+========================================= */
 
 async function api(
     url,
@@ -128,19 +138,21 @@ async function api(
 
     const headers = {
 
-        "Authorization":
+        Authorization:
             `Bearer ${token}`,
 
         ...(options.headers || {})
     };
 
-
     if (
         options.body &&
-        typeof options.body !== "string"
+        typeof options.body !==
+        "string"
     ) {
 
-        headers["Content-Type"] =
+        headers[
+            "Content-Type"
+        ] =
             "application/json";
 
         options.body =
@@ -148,7 +160,6 @@ async function api(
                 options.body
             );
     }
-
 
     const response =
         await fetch(
@@ -159,9 +170,7 @@ async function api(
             }
         );
 
-
     let data = null;
-
 
     try {
 
@@ -173,10 +182,12 @@ async function api(
         data = null;
     }
 
-
     if (!response.ok) {
 
-        if (response.status === 401) {
+        if (
+            response.status ===
+            401
+        ) {
 
             localStorage.removeItem(
                 "telesupar_token"
@@ -192,22 +203,19 @@ async function api(
             return;
         }
 
-
         throw new Error(
             data?.message ||
-            data?.error ||
             "Request failed"
         );
     }
-
 
     return data;
 }
 
 
-/* =========================================================
+/* =========================================
    INIT
-========================================================= */
+========================================= */
 
 async function initChat() {
 
@@ -219,7 +227,6 @@ async function initChat() {
 
         return;
     }
-
 
     try {
 
@@ -235,7 +242,9 @@ async function initChat() {
 
         setTimeout(
             () => {
-                scrollToBottom(false);
+                scrollToBottom(
+                    false
+                );
             },
             100
         );
@@ -243,7 +252,6 @@ async function initChat() {
     } catch (error) {
 
         console.error(
-            "Chat initialization error:",
             error
         );
 
@@ -255,9 +263,9 @@ async function initChat() {
 }
 
 
-/* =========================================================
-   LOAD CONVERSATION
-========================================================= */
+/* =========================================
+   LOAD CONVERSATION INFO
+========================================= */
 
 async function loadConversationInfo() {
 
@@ -266,13 +274,13 @@ async function loadConversationInfo() {
             "/api/conversations"
         );
 
+    let list = [];
 
-    let conversations = [];
+    if (
+        Array.isArray(data)
+    ) {
 
-
-    if (Array.isArray(data)) {
-
-        conversations = data;
+        list = data;
 
     } else if (
         Array.isArray(
@@ -280,34 +288,26 @@ async function loadConversationInfo() {
         )
     ) {
 
-        conversations =
+        list =
             data.conversations;
-
-    } else if (
-        Array.isArray(data?.data)
-    ) {
-
-        conversations =
-            data.data;
     }
 
-
     const conversation =
-        conversations.find(
+        list.find(
             item => {
 
                 const id =
                     item.id ||
-                    item._id ||
-                    item.conversationId;
+                    item._id;
 
                 return (
                     String(id) ===
-                    String(conversationId)
+                    String(
+                        conversationId
+                    )
                 );
             }
         );
-
 
     if (!conversation) {
 
@@ -316,37 +316,10 @@ async function loadConversationInfo() {
         );
     }
 
-
     otherUser =
         conversation.otherUser ||
         conversation.user ||
-        conversation.receiver ||
         null;
-
-
-    if (!otherUser) {
-
-        const members =
-            conversation.members || [];
-
-
-        otherUser =
-            members.find(
-                member => {
-
-                    const id =
-                        member.id ||
-                        member._id ||
-                        member.userId;
-
-                    return (
-                        String(id) !==
-                        String(currentUser.id)
-                    );
-                }
-            ) || null;
-    }
-
 
     if (!otherUser) {
 
@@ -355,88 +328,94 @@ async function loadConversationInfo() {
         );
     }
 
-
     updateHeader();
 }
 
 
-/* =========================================================
+/* =========================================
    HEADER
-========================================================= */
+========================================= */
 
 function updateHeader() {
 
     const name =
-        otherUser?.displayName ||
-        otherUser?.name ||
-        otherUser?.username ||
+        otherUser.displayName ||
+        otherUser.name ||
+        otherUser.username ||
         "Unknown User";
-
 
     chatUserName.textContent =
         name;
 
-
-    const avatar =
+    headerAvatar.textContent =
         name
             .trim()
             .charAt(0)
             .toUpperCase() ||
         "?";
 
+    /*
+        IMPORTANT:
 
-    headerAvatar.textContent =
-        avatar;
+        Don't always show offline.
 
+        Backend now returns isOnline.
+    */
 
-    setOffline();
+    if (
+        otherUser.isOnline === true
+    ) {
+
+        setOnline();
+
+    } else {
+
+        setOffline(
+            otherUser.lastSeen
+        );
+    }
 }
 
 
-/* =========================================================
+/* =========================================
    LOAD MESSAGES
-========================================================= */
+========================================= */
 
 async function loadMessages() {
 
     const data =
         await api(
-            `/api/conversations/${encodeURIComponent(conversationId)}/messages`
+            `/api/conversations/${encodeURIComponent(
+                conversationId
+            )}/messages`
         );
-
 
     let list = [];
 
-
-    if (Array.isArray(data)) {
+    if (
+        Array.isArray(data)
+    ) {
 
         list = data;
 
     } else if (
-        Array.isArray(data?.messages)
+        Array.isArray(
+            data?.messages
+        )
     ) {
 
-        list = data.messages;
-
-    } else if (
-        Array.isArray(data?.data)
-    ) {
-
-        list = data.data;
+        list =
+            data.messages;
     }
 
-
     messagesCache.clear();
-
 
     list.forEach(
         message => {
 
             const id =
                 message.id ||
-                message._id ||
-                message.messageId;
-
+                message._id;
 
             if (id) {
 
@@ -448,23 +427,25 @@ async function loadMessages() {
         }
     );
 
-
     renderMessages();
 
     await markConversationRead();
 }
 
 
-/* =========================================================
-   RENDER
-========================================================= */
+/* =========================================
+   RENDER MESSAGES
+========================================= */
 
 function renderMessages() {
 
-    messagesEl.innerHTML = "";
+    messagesEl.innerHTML =
+        "";
 
-
-    if (messagesCache.size === 0) {
+    if (
+        messagesCache.size ===
+        0
+    ) {
 
         messagesEl.innerHTML = `
             <div class="empty-chat">
@@ -472,9 +453,7 @@ function renderMessages() {
                     <div style="
                         font-size:30px;
                         margin-bottom:8px;
-                    ">
-                        💬
-                    </div>
+                    ">💬</div>
 
                     <div>
                         No messages yet
@@ -493,7 +472,6 @@ function renderMessages() {
         return;
     }
 
-
     const list =
         Array.from(
             messagesCache.values()
@@ -503,19 +481,19 @@ function renderMessages() {
                 getMessageTime(b)
         );
 
-
     let lastDate = null;
-
 
     list.forEach(
         message => {
 
             const dateKey =
-                getDateKey(message);
-
+                getDateKey(
+                    message
+                );
 
             if (
-                dateKey !== lastDate
+                dateKey !==
+                lastDate
             ) {
 
                 addDateSeparator(
@@ -530,7 +508,6 @@ function renderMessages() {
                     dateKey;
             }
 
-
             messagesEl.appendChild(
                 createMessageElement(
                     message
@@ -541,26 +518,29 @@ function renderMessages() {
 }
 
 
-/* =========================================================
+/* =========================================
    MESSAGE ELEMENT
-========================================================= */
+========================================= */
 
 function createMessageElement(
     message
 ) {
 
     const senderId =
-        getSenderId(message);
-
+        getSenderId(
+            message
+        );
 
     const isMine =
         String(senderId) ===
-        String(currentUser.id);
-
+        String(
+            currentUser.id
+        );
 
     const wrapper =
-        document.createElement("div");
-
+        document.createElement(
+            "div"
+        );
 
     wrapper.className =
         `message ${
@@ -569,44 +549,58 @@ function createMessageElement(
                 : "received"
         }`;
 
-
     const bubble =
-        document.createElement("div");
-
+        document.createElement(
+            "div"
+        );
 
     bubble.className =
         "message-bubble";
 
-
     bubble.textContent =
-        message.text ??
-        message.message ??
+        message.text ||
         "";
-
 
     wrapper.appendChild(
         bubble
     );
 
-
     const meta =
-        document.createElement("div");
-
+        document.createElement(
+            "div"
+        );
 
     meta.className =
         "message-time";
 
-
     const time =
         formatTime(
-            getMessageTime(message)
+            getMessageTime(
+                message
+            )
         );
-
 
     if (isMine) {
 
-        meta.innerHTML =
-            `${time} <span class="message-status">${getStatus(message)}</span>`;
+        const status =
+            getStatus(
+                message
+            );
+
+        meta.innerHTML = `
+            ${time}
+            <span
+                class="message-status"
+                style="
+                    color:${status.color};
+                    font-weight:700;
+                    margin-left:3px;
+                    letter-spacing:-2px;
+                "
+            >
+                ${status.icon}
+            </span>
+        `;
 
     } else {
 
@@ -614,210 +608,97 @@ function createMessageElement(
             time;
     }
 
-
     wrapper.appendChild(
         meta
     );
-
-
-    wrapper.dataset.messageId =
-        message.id ||
-        message._id ||
-        "";
-
 
     return wrapper;
 }
 
 
-/* =========================================================
-   DATE
-========================================================= */
+/* =========================================
+   MESSAGE STATUS
+========================================= */
 
-function addDateSeparator(
-    text
+function getStatus(
+    message
 ) {
 
-    const separator =
-        document.createElement("div");
+    /*
+        SENT
 
+        Server accepted message,
+        but receiver isn't connected.
+    */
 
-    separator.style.textAlign =
-        "center";
+    if (
+        !message.deliveredAt &&
+        !message.seenAt
+    ) {
 
-    separator.style.margin =
-        "15px 0";
+        return {
 
-    separator.style.color =
-        "#687384";
+            icon:
+                "✓",
 
-    separator.style.fontSize =
-        "11px";
-
-
-    separator.textContent =
-        text;
-
-
-    messagesEl.appendChild(
-        separator
-    );
-}
-
-
-/* =========================================================
-   SEND
-========================================================= */
-
-async function sendMessage() {
-
-    if (isSending) return;
-
-
-    const text =
-        input.value.trim();
-
-
-    if (!text) return;
-
-
-    if (!conversationId) {
-
-        showTemporaryError(
-            "Conversation not found."
-        );
-
-        return;
+            color:
+                "#d0d7e2"
+        };
     }
 
+    /*
+        SEEN
 
-    isSending = true;
+        Seen is always checked
+        BEFORE delivered.
+    */
 
-    setSendLoading(true);
+    if (
+        message.seenAt
+    ) {
 
+        return {
 
-    try {
+            icon:
+                "✓✓",
 
-        const data =
-            await api(
-                `/api/conversations/${encodeURIComponent(conversationId)}/messages`,
-                {
-                    method:"POST",
-
-                    body:{
-                        text
-                    }
-                }
-            );
-
-
-        const message =
-            data?.message ||
-            data?.data ||
-            data;
-
-
-        if (message) {
-
-            const id =
-                message.id ||
-                message._id ||
-                message.messageId;
-
-
-            if (id) {
-
-                messagesCache.set(
-                    String(id),
-                    message
-                );
-            }
-        }
-
-
-        input.value = "";
-
-
-        renderMessages();
-
-        scrollToBottom(true);
-
-
-    } catch(error) {
-
-        console.error(
-            "Send message error:",
-            error
-        );
-
-
-        showTemporaryError(
-            error.message ||
-            "Message failed to send."
-        );
-
-    } finally {
-
-        isSending = false;
-
-        setSendLoading(false);
-
-        input.focus();
+            color:
+                "#4fa3ff"
+        };
     }
+
+    /*
+        DELIVERED
+    */
+
+    if (
+        message.deliveredAt
+    ) {
+
+        return {
+
+            icon:
+                "✓✓",
+
+            color:
+                "#e5ebf5"
+        };
+    }
+
+    return {
+
+        icon:
+            "✓",
+
+        color:
+            "#d0d7e2"
+    };
 }
 
 
-/* =========================================================
-   FORM
-========================================================= */
-
-if (form) {
-
-    form.addEventListener(
-        "submit",
-        event => {
-
-            event.preventDefault();
-
-            sendMessage();
-        }
-    );
-}
-
-
-/* =========================================================
-   ENTER
-========================================================= */
-
-if (input) {
-
-    input.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
-
-                event.preventDefault();
-
-                sendMessage();
-            }
-        }
-    );
-
-
-    input.addEventListener(
-        "input",
-        handleTyping
-    );
-}
-
-
-/* =========================================================
+/* =========================================
    SOCKET
-========================================================= */
+========================================= */
 
 function connectSocket() {
 
@@ -826,22 +707,19 @@ function connectSocket() {
         "undefined"
     ) {
 
-        setOffline();
-
         return;
     }
-
 
     socket =
         io(
             API,
             {
-                transports:[
+                transports: [
                     "websocket",
                     "polling"
                 ],
 
-                reconnection:true,
+                reconnection: true,
 
                 reconnectionAttempts:
                     Infinity,
@@ -854,7 +732,6 @@ function connectSocket() {
             }
         );
 
-
     socket.on(
         "connect",
         () => {
@@ -863,39 +740,32 @@ function connectSocket() {
                 "TELESUPAR socket connected"
             );
 
-
-            setOnline();
-
-
             socket.emit(
                 "authenticate",
-                {
-                    token
-                }
+                token
             );
-
 
             socket.emit(
                 "joinConversation",
-                {
-                    conversationId
-                }
+                conversationId
             );
-
 
             markConversationRead();
         }
     );
 
-
     socket.on(
         "disconnect",
         () => {
 
-            setOffline();
+            /*
+                Don't immediately say
+                other user is offline.
+
+                Server will tell us.
+            */
         }
     );
-
 
     socket.on(
         "connect_error",
@@ -905,8 +775,84 @@ function connectSocket() {
                 "Socket error:",
                 error.message
             );
+        }
+    );
 
-            setOffline();
+
+    /* =====================================
+       PRESENCE
+    ====================================== */
+
+    socket.on(
+        "presence",
+        data => {
+
+            if (
+                String(
+                    data?.userId
+                ) ===
+                String(
+                    getOtherUserId()
+                )
+            ) {
+
+                if (
+                    data.online
+                ) {
+
+                    setOnline();
+
+                } else {
+
+                    setOffline(
+                        data.lastSeen
+                    );
+                }
+            }
+        }
+    );
+
+
+    socket.on(
+        "userOnline",
+        userId => {
+
+            if (
+                String(userId) ===
+                String(
+                    getOtherUserId()
+                )
+            ) {
+
+                setOnline();
+            }
+        }
+    );
+
+
+    socket.on(
+        "userOffline",
+        data => {
+
+            const userId =
+                typeof data ===
+                "string"
+
+                    ? data
+
+                    : data?.userId;
+
+            if (
+                String(userId) ===
+                String(
+                    getOtherUserId()
+                )
+            ) {
+
+                setOffline(
+                    data?.lastSeen
+                );
+            }
         }
     );
 
@@ -919,18 +865,13 @@ function connectSocket() {
         "newMessage",
         message => {
 
-            if (!message) return;
-
-
-            const messageConversationId =
-                message.conversationId ||
-                message.chatId;
-
+            if (!message) {
+                return;
+            }
 
             if (
-                messageConversationId &&
                 String(
-                    messageConversationId
+                    message.conversationId
                 ) !==
                 String(
                     conversationId
@@ -940,15 +881,13 @@ function connectSocket() {
                 return;
             }
 
-
             const id =
                 message.id ||
-                message._id ||
-                message.messageId;
+                message._id;
 
-
-            if (!id) return;
-
+            if (!id) {
+                return;
+            }
 
             if (
                 messagesCache.has(
@@ -956,24 +895,38 @@ function connectSocket() {
                 )
             ) {
 
+                /*
+                    Existing message may
+                    have updated delivery
+                    state.
+                */
+
+                messagesCache.set(
+                    String(id),
+                    message
+                );
+
+                renderMessages();
+
                 return;
             }
-
 
             messagesCache.set(
                 String(id),
                 message
             );
 
-
             renderMessages();
 
-            scrollToBottom(true);
-
+            scrollToBottom(
+                true
+            );
 
             if (
                 String(
-                    getSenderId(message)
+                    getSenderId(
+                        message
+                    )
                 ) !==
                 String(
                     currentUser.id
@@ -995,32 +948,29 @@ function connectSocket() {
         payload => {
 
             const id =
-                payload?.messageId ||
-                payload?.id;
+                payload?.messageId;
 
-
-            if (!id) return;
-
+            if (!id) {
+                return;
+            }
 
             const message =
                 messagesCache.get(
                     String(id)
                 );
 
-
-            if (!message) return;
-
+            if (!message) {
+                return;
+            }
 
             message.deliveredAt =
                 payload.deliveredAt ||
-                new Date().toISOString();
-
+                new Date();
 
             messagesCache.set(
                 String(id),
                 message
             );
-
 
             renderMessages();
         }
@@ -1036,9 +986,8 @@ function connectSocket() {
         payload => {
 
             if (
-                payload?.conversationId &&
                 String(
-                    payload.conversationId
+                    payload?.conversationId
                 ) !==
                 String(
                     conversationId
@@ -1048,11 +997,9 @@ function connectSocket() {
                 return;
             }
 
-
             const seenAt =
-                payload?.seenAt ||
-                new Date().toISOString();
-
+                payload.seenAt ||
+                new Date();
 
             messagesCache.forEach(
                 message => {
@@ -1068,56 +1015,36 @@ function connectSocket() {
                         )
                     ) {
 
-                        message.seenAt =
-                            seenAt;
+                        /*
+                            Only messages
+                            before/equal seen
+                            time should become
+                            seen.
+                        */
+
+                        const messageTime =
+                            getMessageTime(
+                                message
+                            );
+
+                        const seenTime =
+                            new Date(
+                                seenAt
+                            ).getTime();
+
+                        if (
+                            messageTime <=
+                            seenTime
+                        ) {
+
+                            message.seenAt =
+                                seenAt;
+                        }
                     }
                 }
             );
 
-
             renderMessages();
-        }
-    );
-
-
-    /* =====================================
-       ONLINE
-    ====================================== */
-
-    socket.on(
-        "userOnline",
-        userId => {
-
-            if (
-                String(userId) ===
-                String(
-                    getOtherUserId()
-                )
-            ) {
-
-                setOnline();
-            }
-        }
-    );
-
-
-    /* =====================================
-       OFFLINE
-    ====================================== */
-
-    socket.on(
-        "userOffline",
-        userId => {
-
-            if (
-                String(userId) ===
-                String(
-                    getOtherUserId()
-                )
-            ) {
-
-                setOffline();
-            }
         }
     );
 
@@ -1128,12 +1055,11 @@ function connectSocket() {
 
     socket.on(
         "typing",
-        payload => {
+        data => {
 
             if (
-                payload?.conversationId &&
                 String(
-                    payload.conversationId
+                    data?.conversationId
                 ) !==
                 String(
                     conversationId
@@ -1143,10 +1069,9 @@ function connectSocket() {
                 return;
             }
 
-
             if (
                 String(
-                    payload?.userId
+                    data?.userId
                 ) !==
                 String(
                     getOtherUserId()
@@ -1156,161 +1081,245 @@ function connectSocket() {
                 return;
             }
 
+            if (
+                data.isTyping
+            ) {
 
-            showTyping(
-                payload?.isTyping === true
-            );
+                onlineStatus.textContent =
+                    "typing...";
+
+                onlineStatus.classList.remove(
+                    "connected"
+                );
+
+            } else {
+
+                updatePresenceFromUser();
+            }
         }
     );
 }
 
 
-/* =========================================================
+/* =========================================
    READ
-========================================================= */
+========================================= */
 
 async function markConversationRead() {
 
-    if (!conversationId) return;
-
+    if (!conversationId) {
+        return;
+    }
 
     try {
 
         await api(
-            `/api/conversations/${encodeURIComponent(conversationId)}/read`,
+            `/api/conversations/${encodeURIComponent(
+                conversationId
+            )}/read`,
             {
-                method:"POST"
+                method:
+                    "POST"
             }
         );
 
-    } catch(error) {
+    } catch (error) {
 
         console.warn(
-            "Read status error:",
+            "Read error:",
             error.message
         );
     }
 }
 
 
-/* =========================================================
-   TYPING
-========================================================= */
+/* =========================================
+   SEND
+========================================= */
 
-function handleTyping() {
+async function sendMessage() {
 
-    if (
-        !socket ||
-        !socket.connected
-    ) {
-
+    if (isSending) {
         return;
     }
 
+    const text =
+        input.value.trim();
 
-    socket.emit(
-        "typing",
-        {
-            conversationId,
-            isTyping:true
-        }
-    );
+    if (!text) {
+        return;
+    }
 
+    isSending =
+        true;
 
-    clearTimeout(
-        typingTimer
-    );
+    sendBtn.disabled =
+        true;
 
+    try {
 
-    typingTimer =
-        setTimeout(
-            () => {
+        const data =
+            await api(
+                `/api/conversations/${encodeURIComponent(
+                    conversationId
+                )}/messages`,
+                {
+                    method:
+                        "POST",
 
-                socket.emit(
-                    "typing",
-                    {
-                        conversationId,
-                        isTyping:false
+                    body: {
+                        text
                     }
+                }
+            );
+
+        const message =
+            data?.message;
+
+        if (message) {
+
+            const id =
+                message.id ||
+                message._id;
+
+            if (id) {
+
+                messagesCache.set(
+                    String(id),
+                    message
                 );
+            }
+        }
 
-            },
-            1200
-        );
-}
+        input.value =
+            "";
 
+        renderMessages();
 
-function showTyping(
-    isTyping
-) {
-
-    if (!onlineStatus) return;
-
-
-    if (isTyping) {
-
-        otherUserTyping =
-            true;
-
-
-        onlineStatus.textContent =
-            "typing...";
-
-
-        onlineStatus.classList.remove(
-            "connected"
+        scrollToBottom(
+            true
         );
 
-    } else {
+    } catch (error) {
 
-        otherUserTyping =
+        console.error(
+            error
+        );
+
+        showTemporaryError(
+            error.message ||
+            "Message failed."
+        );
+
+    } finally {
+
+        isSending =
             false;
 
-        setOnline();
+        sendBtn.disabled =
+            false;
+
+        input.focus();
     }
 }
 
 
-/* =========================================================
-   STATUS
-========================================================= */
+/* =========================================
+   FORM
+========================================= */
 
-function getStatus(
-    message
-) {
+form?.addEventListener(
+    "submit",
+    function(event) {
 
-    if (message.seenAt) {
+        event.preventDefault();
 
-        return "✓✓";
+        sendMessage();
     }
+);
 
 
-    if (
-        message.deliveredAt ||
-        message.status ===
-        "delivered"
-    ) {
+/* =========================================
+   ENTER
+========================================= */
 
-        return "✓✓";
+input?.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (
+            event.key ===
+            "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+            sendMessage();
+        }
     }
+);
 
 
-    return "✓";
-}
+/* =========================================
+   TYPING
+========================================= */
+
+input?.addEventListener(
+    "input",
+    function() {
+
+        if (
+            !socket ||
+            !socket.connected
+        ) {
+
+            return;
+        }
+
+        socket.emit(
+            "typing",
+            {
+                conversationId,
+
+                isTyping:
+                    true
+            }
+        );
+
+        clearTimeout(
+            typingTimer
+        );
+
+        typingTimer =
+            setTimeout(
+                function() {
+
+                    socket.emit(
+                        "typing",
+                        {
+                            conversationId,
+
+                            isTyping:
+                                false
+                        }
+                    );
+
+                },
+                1200
+            );
+    }
+);
 
 
-/* =========================================================
-   ONLINE
-========================================================= */
+/* =========================================
+   PRESENCE UI
+========================================= */
 
 function setOnline() {
 
-    if (!onlineStatus) return;
-
-
     onlineStatus.textContent =
         "online";
-
 
     onlineStatus.classList.add(
         "connected"
@@ -1318,75 +1327,106 @@ function setOnline() {
 }
 
 
-function setOffline() {
-
-    if (!onlineStatus) return;
-
-
-    onlineStatus.textContent =
-        "offline";
-
+function setOffline(
+    lastSeen
+) {
 
     onlineStatus.classList.remove(
         "connected"
     );
+
+    if (lastSeen) {
+
+        onlineStatus.textContent =
+            "last seen " +
+            formatLastSeen(
+                lastSeen
+            );
+
+    } else {
+
+        onlineStatus.textContent =
+            "offline";
+    }
 }
 
 
-/* =========================================================
-   SEND LOADING
-========================================================= */
+function updatePresenceFromUser() {
 
-function setSendLoading(
-    loading
-) {
+    if (
+        otherUser?.isOnline
+    ) {
 
-    if (!sendBtn) return;
+        setOnline();
 
+    } else {
 
-    sendBtn.disabled =
-        loading;
-
-
-    sendBtn.style.opacity =
-        loading
-            ? "0.55"
-            : "1";
+        setOffline(
+            otherUser?.lastSeen
+        );
+    }
 }
 
 
-/* =========================================================
-   SCROLL
-========================================================= */
-
-function scrollToBottom(
-    smooth = true
+function formatLastSeen(
+    value
 ) {
 
-    if (!messagesEl) return;
+    const date =
+        new Date(value);
 
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
 
-    requestAnimationFrame(
-        () => {
+        return "recently";
+    }
 
-            messagesEl.scrollTo({
+    return date.toLocaleTimeString(
+        [],
+        {
+            hour:
+                "2-digit",
 
-                top:
-                    messagesEl.scrollHeight,
-
-                behavior:
-                    smooth
-                        ? "smooth"
-                        : "auto"
-            });
+            minute:
+                "2-digit"
         }
     );
 }
 
 
-/* =========================================================
+/* =========================================
+   IDS
+========================================= */
+
+function getSenderId(
+    message
+) {
+
+    return (
+        message.senderId ||
+        message.sender?._id ||
+        message.sender?.id ||
+        message.userId
+    );
+}
+
+
+function getOtherUserId() {
+
+    return (
+        otherUser?.id ||
+        otherUser?._id ||
+        otherUser?.userId
+    );
+}
+
+
+/* =========================================
    TIME
-========================================================= */
+========================================= */
 
 function getMessageTime(
     message
@@ -1410,8 +1450,11 @@ function formatTime(
     ).toLocaleTimeString(
         [],
         {
-            hour:"2-digit",
-            minute:"2-digit"
+            hour:
+                "2-digit",
+
+            minute:
+                "2-digit"
         }
     );
 }
@@ -1427,7 +1470,6 @@ function getDateKey(
                 message
             )
         );
-
 
     return [
         date.getFullYear(),
@@ -1450,11 +1492,9 @@ function formatDateSeparator(
     const yesterday =
         new Date();
 
-
     yesterday.setDate(
         yesterday.getDate() - 1
     );
-
 
     if (
         date.toDateString() ===
@@ -1464,7 +1504,6 @@ function formatDateSeparator(
         return "Today";
     }
 
-
     if (
         date.toDateString() ===
         yesterday.toDateString()
@@ -1473,54 +1512,87 @@ function formatDateSeparator(
         return "Yesterday";
     }
 
-
     return date.toLocaleDateString(
         [],
         {
-            day:"numeric",
-            month:"short",
-            year:"numeric"
+            day:
+                "numeric",
+
+            month:
+                "short",
+
+            year:
+                "numeric"
         }
     );
 }
 
 
-/* =========================================================
-   IDS
-========================================================= */
+/* =========================================
+   DATE SEPARATOR
+========================================= */
 
-function getSenderId(
-    message
+function addDateSeparator(
+    text
 ) {
 
-    return (
-        message.senderId ||
-        message.sender?._id ||
-        message.sender?.id ||
-        message.userId ||
-        message.from
+    const separator =
+        document.createElement(
+            "div"
+        );
+
+    separator.style.textAlign =
+        "center";
+
+    separator.style.margin =
+        "15px 0";
+
+    separator.style.color =
+        "#687384";
+
+    separator.style.fontSize =
+        "11px";
+
+    separator.textContent =
+        text;
+
+    messagesEl.appendChild(
+        separator
     );
 }
 
 
-function getOtherUserId() {
+/* =========================================
+   SCROLL
+========================================= */
 
-    return (
-        otherUser?.id ||
-        otherUser?._id ||
-        otherUser?.userId
+function scrollToBottom(
+    smooth = true
+) {
+
+    requestAnimationFrame(
+        function() {
+
+            messagesEl.scrollTo({
+
+                top:
+                    messagesEl.scrollHeight,
+
+                behavior:
+                    smooth
+                        ? "smooth"
+                        : "auto"
+            });
+        }
     );
 }
 
 
-/* =========================================================
+/* =========================================
    LOADING
-========================================================= */
+========================================= */
 
 function setLoading() {
-
-    if (!messagesEl) return;
-
 
     messagesEl.innerHTML = `
         <div class="empty-chat">
@@ -1530,32 +1602,20 @@ function setLoading() {
 }
 
 
-/* =========================================================
+/* =========================================
    ERROR
-========================================================= */
+========================================= */
 
 function showError(
     message
 ) {
 
-    if (!messagesEl) return;
-
-
     messagesEl.innerHTML = `
         <div class="empty-chat">
             <div>
-
-                <div style="
-                    font-size:28px;
-                    margin-bottom:8px;
-                ">
-                    ⚠️
-                </div>
-
-                <div>
-                    ${escapeHTML(message)}
-                </div>
-
+                ⚠️
+                <br><br>
+                ${escapeHTML(message)}
             </div>
         </div>
     `;
@@ -1566,84 +1626,66 @@ function showTemporaryError(
     message
 ) {
 
-    const old =
-        document.querySelector(
-            ".chat-error-toast"
-        );
-
-
-    if (old) old.remove();
-
-
     const toast =
         document.createElement(
             "div"
         );
 
-
-    toast.className =
-        "chat-error-toast";
-
-
     toast.textContent =
         message;
-
 
     Object.assign(
         toast.style,
         {
 
-            position:"fixed",
+            position:
+                "fixed",
 
-            left:"50%",
+            left:
+                "50%",
 
-            bottom:"92px",
+            bottom:
+                "95px",
 
             transform:
                 "translateX(-50%)",
 
-            background:"#2a1115",
+            background:
+                "#2a1115",
 
-            color:"#ffb8c0",
-
-            border:
-                "1px solid rgba(255,100,120,.25)",
+            color:
+                "#ffb8c0",
 
             padding:
                 "10px 14px",
 
-            borderRadius:"12px",
+            borderRadius:
+                "12px",
 
-            fontSize:"12px",
+            fontSize:
+                "12px",
 
-            zIndex:"9999",
-
-            maxWidth:"90%",
-
-            textAlign:"center"
+            zIndex:
+                "9999"
         }
     );
-
 
     document.body.appendChild(
         toast
     );
 
-
     setTimeout(
         () => {
-
             toast.remove();
-
         },
         2500
     );
 }
 
 
-/* =========================================================
+/* =========================================
    ESCAPE
-========================================================= */
+========================================= */
 
 function escapeHTML(
     value
@@ -1678,30 +1720,26 @@ function escapeHTML(
 }
 
 
-/* =========================================================
+/* =========================================
    ATTACHMENT MENU
-========================================================= */
+========================================= */
 
-if (attachmentBtn) {
+attachmentBtn?.addEventListener(
+    "click",
+    function(event) {
 
-    attachmentBtn.addEventListener(
-        "click",
-        event => {
+        event.stopPropagation();
 
-            event.stopPropagation();
-
-
-            attachmentMenu?.classList.toggle(
-                "show"
-            );
-        }
-    );
-}
+        attachmentMenu?.classList.toggle(
+            "show"
+        );
+    }
+);
 
 
 document.addEventListener(
     "click",
-    event => {
+    function(event) {
 
         if (
             attachmentMenu &&
@@ -1720,85 +1758,22 @@ document.addEventListener(
 );
 
 
-/* =========================================================
-   ATTACHMENT PLACEHOLDERS
-========================================================= */
-
-photoBtn?.addEventListener(
-    "click",
-    () => {
-
-        showTemporaryError(
-            "Photo sharing will be added next."
-        );
-    }
-);
-
-
-fileBtn?.addEventListener(
-    "click",
-    () => {
-
-        showTemporaryError(
-            "File sharing will be added next."
-        );
-    }
-);
-
-
-cameraBtn?.addEventListener(
-    "click",
-    () => {
-
-        showTemporaryError(
-            "Camera sharing will be added next."
-        );
-    }
-);
-
-
-/* =========================================================
+/* =========================================
    BACK
-========================================================= */
+========================================= */
 
-if (backBtn) {
+backBtn?.addEventListener(
+    "click",
+    function() {
 
-    backBtn.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "home.html";
-        }
-    );
-}
-
-
-/* =========================================================
-   CLEANUP
-========================================================= */
-
-window.addEventListener(
-    "beforeunload",
-    () => {
-
-        if (socket) {
-
-            socket.emit(
-                "leaveConversation",
-                {
-                    conversationId
-                }
-            );
-
-            socket.disconnect();
-        }
+        window.location.href =
+            "home.html";
     }
 );
 
 
-/* =========================================================
+/* =========================================
    START
-========================================================= */
+========================================= */
 
 initChat();
