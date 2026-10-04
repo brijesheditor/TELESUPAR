@@ -1,196 +1,125 @@
-/* =========================================
-   TELESUPAR - REAL CHAT
-========================================= */
+/* =========================================================
+   TELESUPAR — CHAT.JS
+   STEP 1 — STABLE REAL-TIME 1 TO 1 CHAT
+========================================================= */
 
-const API_URL =
-    "https://telesupar.onrender.com";
+const API = "https://telesupar.onrender.com";
 
-const token =
-    localStorage.getItem(
-        "telesupar_token"
-    );
+const token = localStorage.getItem("telesupar_token");
+const storedUser = localStorage.getItem("telesupar_user");
 
 let currentUser = null;
+let conversationId = null;
+let otherUser = null;
 let socket = null;
 
-/* =========================================
-   CONVERSATION
-========================================= */
+let messagesCache = new Map();
+let isLoading = false;
+let isSending = false;
+let typingTimer = null;
+let otherUserTyping = false;
 
-const params =
-    new URLSearchParams(
-        window.location.search
-    );
 
-const conversationId =
-    String(
-        params.get("id") ||
-        ""
-    ).trim();
+/* =========================================================
+   DOM
+========================================================= */
 
-/* =========================================
-   AUTH
-========================================= */
+const messagesEl = document.getElementById("messages");
+const form = document.getElementById("messageForm");
+const input = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
+
+const chatUserName = document.getElementById("chatUserName");
+const headerAvatar = document.getElementById("headerAvatar");
+const onlineStatus = document.getElementById("onlineStatus");
+
+const backBtn = document.getElementById("backBtn");
+
+const attachmentBtn = document.getElementById("attachmentBtn");
+const attachmentMenu = document.getElementById("attachmentMenu");
+
+const photoBtn = document.getElementById("photoBtn");
+const fileBtn = document.getElementById("fileBtn");
+const cameraBtn = document.getElementById("cameraBtn");
+
+
+/* =========================================================
+   AUTH CHECK
+========================================================= */
+
+if (!token || !storedUser) {
+    window.location.href = "login.html";
+}
 
 try {
-
-    const saved =
-        localStorage.getItem(
-            "telesupar_user"
-        );
-
-    if (saved) {
-
-        currentUser =
-            JSON.parse(
-                saved
-            );
-    }
-
+    currentUser = JSON.parse(storedUser);
 } catch (error) {
-
-    console.error(
-        "USER PARSE ERROR:",
-        error
-    );
+    localStorage.removeItem("telesupar_user");
+    localStorage.removeItem("telesupar_token");
+    window.location.href = "login.html";
 }
 
-if (!token) {
 
-    window.location.replace(
-        "login.html"
-    );
-}
+/* =========================================================
+   GET CONVERSATION ID
+========================================================= */
+
+const params = new URLSearchParams(window.location.search);
+
+conversationId =
+    params.get("id") ||
+    params.get("conversationId");
+
 
 if (!conversationId) {
-
-    alert(
-        "Conversation ID missing"
-    );
-
-    window.location.replace(
-        "home.html"
-    );
+    showError("Chat ID not found.");
 }
 
-/* =========================================
-   ELEMENTS
-========================================= */
 
-const messagesContainer =
-    document.getElementById(
-        "messages"
-    );
+/* =========================================================
+   API HELPER
+========================================================= */
 
-const messageForm =
-    document.getElementById(
-        "messageForm"
-    );
-
-const messageInput =
-    document.getElementById(
-        "messageInput"
-    );
-
-const chatUserName =
-    document.getElementById(
-        "chatUserName"
-    );
-
-const headerAvatar =
-    document.getElementById(
-        "headerAvatar"
-    );
-
-const onlineStatus =
-    document.getElementById(
-        "onlineStatus"
-    );
-
-const backBtn =
-    document.getElementById(
-        "backBtn"
-    );
-
-const attachmentBtn =
-    document.getElementById(
-        "attachmentBtn"
-    );
-
-const attachmentMenu =
-    document.getElementById(
-        "attachmentMenu"
-    );
-
-/* =========================================
-   API
-========================================= */
-
-async function api(
-    path,
-    options = {}
-) {
+async function api(url, options = {}) {
 
     const headers = {
-        "Authorization":
-            "Bearer " + token,
-
+        "Authorization": `Bearer ${token}`,
         ...(options.headers || {})
     };
 
     if (
         options.body &&
-        !headers["Content-Type"]
+        typeof options.body !== "string"
     ) {
-
-        headers["Content-Type"] =
-            "application/json";
+        headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(options.body);
     }
 
-    const response =
-        await fetch(
-            API_URL + path,
-            {
-                ...options,
-                headers
-            }
-        );
+    const response = await fetch(API + url, {
+        ...options,
+        headers
+    });
 
-    let data = {};
+    let data = null;
 
     try {
-
-        data =
-            await response.json();
-
-    } catch (error) {
-
-        data = {};
+        data = await response.json();
+    } catch {
+        data = null;
     }
 
     if (!response.ok) {
 
-        if (
-            response.status === 401
-        ) {
-
-            localStorage.removeItem(
-                "telesupar_token"
-            );
-
-            localStorage.removeItem(
-                "telesupar_user"
-            );
-
-            window.location.replace(
-                "login.html"
-            );
-
+        if (response.status === 401) {
+            localStorage.removeItem("telesupar_token");
+            localStorage.removeItem("telesupar_user");
+            window.location.href = "login.html";
             return;
         }
 
         throw new Error(
-            data.message ||
+            data?.message ||
+            data?.error ||
             "Request failed"
         );
     }
@@ -198,1080 +127,1303 @@ async function api(
     return data;
 }
 
-/* =========================================
-   LOAD CONVERSATION USER
-========================================= */
 
-async function loadChatInfo() {
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+async function initChat() {
+
+    if (!conversationId) return;
 
     try {
 
-        const data =
-            await api(
-                "/api/conversations"
-            );
+        setLoading();
 
-        const chats =
-            Array.isArray(
-                data.conversations
-            )
-                ? data.conversations
-                : [];
+        await loadConversationInfo();
 
-        const chat =
-            chats.find(
-                function(item) {
+        await loadMessages();
 
-                    return String(
-                        item._id ||
-                        item.id ||
-                        ""
-                    ) ===
-                    conversationId;
+        connectSocket();
 
-                }
-            );
+        markConversationRead();
 
-        if (
-            chat &&
-            (
-                chat.otherUser ||
-                chat.user
-            )
-        ) {
-
-            const user =
-                chat.otherUser ||
-                chat.user;
-
-            const name =
-                user.displayName ||
-                user.username ||
-                "User";
-
-            setChatUser(
-                name
-            );
-
-            /*
-                Store actual other user ID
-                for status/read handling.
-            */
-
-            window.chatOtherUserId =
-                String(
-                    user.id ||
-                    user._id ||
-                    ""
-                );
-
-        } else {
-
-            /*
-                Fallback:
-                conversation may exist but
-                not yet returned due to old
-                data. Try conversation endpoint
-                by finding from messages/users.
-            */
-
-            setChatUser(
-                "Chat"
-            );
-        }
+        setTimeout(() => {
+            scrollToBottom(false);
+        }, 100);
 
     } catch (error) {
 
-        console.error(
-            "CHAT INFO ERROR:",
-            error
-        );
+        console.error("Chat init error:", error);
 
-        setChatUser(
-            "Chat"
+        showError(
+            error.message ||
+            "Could not load chat."
         );
     }
 }
 
-/* =========================================
-   SET USER
-========================================= */
 
-function setChatUser(
-    name
-) {
+/* =========================================================
+   LOAD CONVERSATION INFO
+========================================================= */
 
-    if (chatUserName) {
+async function loadConversationInfo() {
 
-        chatUserName.textContent =
-            name;
+    const data = await api("/api/conversations");
+
+    let conversations = [];
+
+    if (Array.isArray(data)) {
+        conversations = data;
+    } else if (Array.isArray(data?.conversations)) {
+        conversations = data.conversations;
+    } else if (Array.isArray(data?.data)) {
+        conversations = data.data;
     }
 
-    if (headerAvatar) {
+    const conversation = conversations.find(item => {
 
-        headerAvatar.textContent =
-            String(
-                name || "?"
-            )
-                .charAt(0)
-                .toUpperCase();
+        const id =
+            item.id ||
+            item._id ||
+            item.conversationId;
+
+        return String(id) === String(conversationId);
+    });
+
+    if (!conversation) {
+        throw new Error("Conversation not found.");
     }
+
+
+    otherUser =
+        conversation.otherUser ||
+        conversation.user ||
+        conversation.receiver ||
+        null;
+
+
+    if (!otherUser) {
+
+        const members = conversation.members || [];
+
+        otherUser =
+            members.find(member => {
+
+                const id =
+                    member.id ||
+                    member._id ||
+                    member.userId;
+
+                return String(id) !== String(currentUser.id);
+            }) || null;
+    }
+
+
+    if (!otherUser) {
+        throw new Error("Chat user not found.");
+    }
+
+
+    updateHeader();
 }
 
-/* =========================================
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+function updateHeader() {
+
+    const name =
+        otherUser?.displayName ||
+        otherUser?.name ||
+        otherUser?.username ||
+        "Unknown User";
+
+
+    chatUserName.textContent = name;
+
+
+    const avatarText =
+        name
+            .trim()
+            .charAt(0)
+            .toUpperCase() || "?";
+
+
+    headerAvatar.textContent = avatarText;
+
+
+    setOffline();
+}
+
+
+/* =========================================================
    LOAD MESSAGES
-========================================= */
+========================================================= */
 
 async function loadMessages() {
 
-    try {
-
-        const data =
-            await api(
-                "/api/conversations/" +
-                encodeURIComponent(
-                    conversationId
-                ) +
-                "/messages"
-            );
-
-        const list =
-            Array.isArray(
-                data.messages
-            )
-                ? data.messages
-                : [];
-
-        if (messagesContainer) {
-
-            messagesContainer.innerHTML =
-                "";
-
-            if (!list.length) {
-
-                showEmpty();
-
-            } else {
-
-                list.forEach(
-                    function(message) {
-
-                        renderMessage(
-                            message
-                        );
-
-                    }
-                );
-
-                scrollBottom();
-            }
-        }
-
-        /*
-            Opening/loading chat also
-            marks messages as seen.
-        */
-
-        await markAsRead();
-
-    } catch (error) {
-
-        console.error(
-            "MESSAGE LOAD ERROR:",
-            error
-        );
-
-        if (messagesContainer) {
-
-            messagesContainer.innerHTML = `
-
-                <div class="empty-chat">
-
-                    ${escapeHTML(
-                        error.message
-                    )}
-
-                </div>
-
-            `;
-        }
-    }
-}
-
-/* =========================================
-   MARK READ
-========================================= */
-
-async function markAsRead() {
-
-    try {
-
+    const data =
         await api(
-            "/api/conversations/" +
-            encodeURIComponent(
-                conversationId
-            ) +
-            "/read",
-            {
-                method:
-                    "POST"
-            }
+            `/api/conversations/${encodeURIComponent(conversationId)}/messages`
         );
 
-    } catch (error) {
 
-        console.error(
-            "MARK READ ERROR:",
-            error
-        );
-    }
-}
+    let list = [];
 
-/* =========================================
-   EMPTY
-========================================= */
-
-function showEmpty() {
-
-    if (!messagesContainer) {
-        return;
+    if (Array.isArray(data)) {
+        list = data;
+    } else if (Array.isArray(data?.messages)) {
+        list = data.messages;
+    } else if (Array.isArray(data?.data)) {
+        list = data.data;
     }
 
-    const empty =
-        document.createElement(
-            "div"
-        );
 
-    empty.className =
-        "empty-chat";
+    messagesCache.clear();
 
-    empty.textContent =
-        "No messages yet. Start the conversation.";
 
-    messagesContainer.appendChild(
-        empty
-    );
-}
+    list.forEach(message => {
 
-/* =========================================
-   ESCAPE
-========================================= */
-
-function escapeHTML(
-    value
-) {
-
-    return String(
-        value || ""
-    )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-}
-
-/* =========================================
-   TIME
-========================================= */
-
-function formatTime(
-    value
-) {
-
-    const date =
-        new Date(value);
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-        return "";
-    }
-
-    return date.toLocaleTimeString(
-        [],
-        {
-            hour:
-                "2-digit",
-
-            minute:
-                "2-digit"
-        }
-    );
-}
-
-/* =========================================
-   RENDER MESSAGE
-========================================= */
-
-function renderMessage(
-    message
-) {
-
-    if (
-        !message ||
-        !messagesContainer
-    ) {
-        return;
-    }
-
-    const messageId =
-        String(
+        const id =
             message.id ||
             message._id ||
-            ""
-        );
+            message.messageId;
 
-    /*
-        Prevent duplicates
-    */
 
-    if (messageId) {
-
-        const existing =
-            messagesContainer.querySelector(
-                '[data-message-id="' +
-                messageId +
-                '"]'
-            );
-
-        if (existing) {
-
-            updateMessageStatus(
-                existing,
+        if (id) {
+            messagesCache.set(
+                String(id),
                 message
             );
-
-            return;
         }
+    });
+
+
+    renderMessages();
+
+
+    await markConversationRead();
+}
+
+
+/* =========================================================
+   RENDER ALL MESSAGES
+========================================================= */
+
+function renderMessages() {
+
+    messagesEl.innerHTML = "";
+
+
+    if (messagesCache.size === 0) {
+
+        const empty = document.createElement("div");
+
+        empty.className = "empty-chat";
+
+        empty.innerHTML = `
+            <div>
+                <div style="font-size:30px;margin-bottom:8px;">💬</div>
+                <div>No messages yet</div>
+                <div style="margin-top:5px;font-size:11px;">
+                    Start the conversation
+                </div>
+            </div>
+        `;
+
+        messagesEl.appendChild(empty);
+
+        return;
     }
 
-    const empty =
-        messagesContainer.querySelector(
-            ".empty-chat"
+
+    const list =
+        Array.from(messagesCache.values())
+            .sort(
+                (a, b) =>
+                    getMessageTime(a) -
+                    getMessageTime(b)
+            );
+
+
+    let lastDate = null;
+
+
+    list.forEach(message => {
+
+        const dateKey =
+            getDateKey(message);
+
+
+        if (dateKey !== lastDate) {
+
+            addDateSeparator(
+                formatDateSeparator(
+                    getMessageTime(message)
+                )
+            );
+
+            lastDate = dateKey;
+        }
+
+
+        messagesEl.appendChild(
+            createMessageElement(message)
         );
+    });
+}
 
-    if (empty) {
-        empty.remove();
-    }
+
+/* =========================================================
+   CREATE MESSAGE
+========================================================= */
+
+function createMessageElement(message) {
 
     const senderId =
-        String(
-            message.senderId ||
-            ""
-        );
+        getSenderId(message);
 
-    const myId =
-        String(
-            currentUser?.id ||
-            currentUser?._id ||
-            ""
-        );
 
-    const mine =
-        senderId === myId;
+    const isMine =
+        String(senderId) ===
+        String(currentUser.id);
+
 
     const wrapper =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
+
 
     wrapper.className =
-        mine
-            ? "message sent"
-            : "message received";
+        `message ${isMine ? "sent" : "received"}`;
 
-    if (messageId) {
-
-        wrapper.dataset.messageId =
-            messageId;
-    }
 
     const bubble =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
+
 
     bubble.className =
         "message-bubble";
 
+
     bubble.textContent =
-        message.text ||
+        message.text ??
+        message.message ??
         "";
 
+
+    wrapper.appendChild(bubble);
+
+
     const meta =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    meta.style.display =
-        "flex";
 
-    meta.style.alignItems =
-        "center";
-
-    meta.style.justifyContent =
-        "flex-end";
-
-    meta.style.gap =
-        "4px";
-
-    const time =
-        document.createElement(
-            "span"
-        );
-
-    time.className =
+    meta.className =
         "message-time";
 
-    time.textContent =
+
+    const time =
         formatTime(
-            message.createdAt
+            getMessageTime(message)
         );
 
-    meta.appendChild(
-        time
-    );
+
+    if (isMine) {
+
+        meta.innerHTML =
+            `${time} <span class="message-status">${getStatus(message)}</span>`;
+
+    } else {
+
+        meta.textContent = time;
+    }
+
+
+    wrapper.appendChild(meta);
+
 
     /*
-        SENT MESSAGE STATUS
+       Long press / click foundation.
+       Later we will add:
+       Reply
+       Edit
+       Delete
+       Forward
     */
 
-    if (mine) {
+    wrapper.dataset.messageId =
+        message.id ||
+        message._id ||
+        "";
 
-        const ticks =
-            document.createElement(
-                "span"
-            );
 
-        ticks.className =
-            "message-status";
+    wrapper.addEventListener(
+        "click",
+        () => {
 
-        ticks.dataset.status =
-            getMessageStatus(
-                message
-            );
+            /*
+              Future message menu will be added here.
+            */
 
-        ticks.textContent =
-            getStatusIcon(
-                message
-            );
-
-        ticks.style.fontSize =
-            "11px";
-
-        ticks.style.fontWeight =
-            "700";
-
-        ticks.style.letterSpacing =
-            "-3px";
-
-        meta.appendChild(
-            ticks
-        );
-    }
-
-    wrapper.appendChild(
-        bubble
+        }
     );
 
-    wrapper.appendChild(
-        meta
-    );
 
-    messagesContainer.appendChild(
-        wrapper
-    );
+    return wrapper;
 }
 
-/* =========================================
-   MESSAGE STATUS
-========================================= */
 
-function getMessageStatus(
-    message
-) {
+/* =========================================================
+   DATE SEPARATOR
+========================================================= */
 
-    if (message.seenAt) {
+function addDateSeparator(text) {
 
-        return "seen";
-    }
+    const separator =
+        document.createElement("div");
 
-    if (message.deliveredAt) {
 
-        return "delivered";
-    }
+    separator.style.textAlign = "center";
+    separator.style.margin = "15px 0";
+    separator.style.color = "#687384";
+    separator.style.fontSize = "11px";
 
-    return "sent";
+
+    separator.textContent = text;
+
+
+    messagesEl.appendChild(separator);
 }
 
-function getStatusIcon(
-    message
-) {
 
-    const status =
-        getMessageStatus(
-            message
-        );
+/* =========================================================
+   SEND MESSAGE
+========================================================= */
 
-    if (
-        status ===
-        "seen"
-    ) {
+async function sendMessage() {
 
-        return "✓✓";
-    }
+    if (isSending) return;
 
-    if (
-        status ===
-        "delivered"
-    ) {
 
-        return "✓✓";
-    }
+    const text =
+        input.value.trim();
 
-    return "✓";
-}
 
-/* =========================================
-   UPDATE MESSAGE STATUS
-========================================= */
+    if (!text) return;
 
-function updateMessageStatus(
-    element,
-    message
-) {
 
-    const statusElement =
-        element.querySelector(
-            ".message-status"
-        );
-
-    if (!statusElement) {
+    if (!conversationId) {
+        showError("Conversation not found.");
         return;
     }
 
-    statusElement.dataset.status =
-        getMessageStatus(
-            message
-        );
 
-    statusElement.textContent =
-        getStatusIcon(
-            message
-        );
-}
+    isSending = true;
 
-/* =========================================
-   SOCKET
-========================================= */
+    setSendLoading(true);
 
-function connectSocket() {
 
-    if (
-        typeof io ===
-        "undefined"
-    ) {
+    try {
 
-        console.error(
-            "Socket.IO library missing"
-        );
-
-        return;
-    }
-
-    socket =
-        io(
-            API_URL,
-            {
-                transports: [
-                    "websocket",
-                    "polling"
-                ]
-            }
-        );
-
-    socket.on(
-        "connect",
-        function() {
-
-            console.log(
-                "Chat socket connected"
-            );
-
-            if (onlineStatus) {
-
-                onlineStatus.textContent =
-                    "Connected";
-
-                onlineStatus.classList.add(
-                    "connected"
-                );
-            }
-
-            socket.emit(
-                "authenticate",
-                token
-            );
-
-            /*
-                Join conversation.
-                Backend will also mark
-                incoming messages as seen.
-            */
-
-            socket.emit(
-                "joinConversation",
-                conversationId
-            );
-
-        }
-    );
-
-    socket.on(
-        "connect_error",
-        function(error) {
-
-            console.error(
-                "SOCKET ERROR:",
-                error
-            );
-
-            if (onlineStatus) {
-
-                onlineStatus.textContent =
-                    "Connecting...";
-
-                onlineStatus.classList.remove(
-                    "connected"
-                );
-            }
-        }
-    );
-
-    socket.on(
-        "disconnect",
-        function() {
-
-            if (onlineStatus) {
-
-                onlineStatus.textContent =
-                    "Disconnected";
-
-                onlineStatus.classList.remove(
-                    "connected"
-                );
-            }
-        }
-    );
-
-    /*
-        REAL NEW MESSAGE
-    */
-
-    socket.on(
-        "newMessage",
-        function(message) {
-
-            if (!message) {
-                return;
-            }
-
-            if (
-                String(
-                    message.conversationId ||
-                    ""
-                ) !==
-                conversationId
-            ) {
-                return;
-            }
-
-            renderMessage(
-                message
-            );
-
-            scrollBottom();
-
-            /*
-                If this is from the
-                other user, immediately
-                mark it read because
-                this chat is open.
-            */
-
-            const myId =
-                String(
-                    currentUser?.id ||
-                    currentUser?._id ||
-                    ""
-                );
-
-            if (
-                String(
-                    message.senderId ||
-                    ""
-                ) !==
-                myId
-            ) {
-
-                markAsRead();
-            }
-        }
-    );
-
-    /*
-        MESSAGE DELIVERED
-    */
-
-    socket.on(
-        "messageDelivered",
-        function(data) {
-
-            if (!data) {
-                return;
-            }
-
-            if (
-                String(
-                    data.conversationId ||
-                    ""
-                ) !==
-                conversationId
-            ) {
-                return;
-            }
-
-            const element =
-                messagesContainer?.querySelector(
-                    '[data-message-id="' +
-                    data.messageId +
-                    '"]'
-                );
-
-            if (!element) {
-                return;
-            }
-
-            const status =
-                element.querySelector(
-                    ".message-status"
-                );
-
-            if (status) {
-
-                status.textContent =
-                    "✓✓";
-
-                status.dataset.status =
-                    "delivered";
-            }
-        }
-    );
-
-    /*
-        MESSAGE SEEN
-    */
-
-    socket.on(
-        "messagesSeen",
-        function(data) {
-
-            if (!data) {
-                return;
-            }
-
-            if (
-                String(
-                    data.conversationId ||
-                    ""
-                ) !==
-                conversationId
-            ) {
-                return;
-            }
-
-            if (!messagesContainer) {
-                return;
-            }
-
-            const sentMessages =
-                messagesContainer.querySelectorAll(
-                    ".message.sent"
-                );
-
-            sentMessages.forEach(
-                function(message) {
-
-                    const status =
-                        message.querySelector(
-                            ".message-status"
-                        );
-
-                    if (status) {
-
-                        status.textContent =
-                            "✓✓";
-
-                        status.dataset.status =
-                            "seen";
+        const data =
+            await api(
+                `/api/conversations/${encodeURIComponent(conversationId)}/messages`,
+                {
+                    method: "POST",
+                    body: {
+                        text
                     }
                 }
             );
-        }
-    );
 
-    /*
-        USER ONLINE
-    */
 
-    socket.on(
-        "userOnline",
-        function(userId) {
+        const message =
+            data?.message ||
+            data?.data ||
+            data;
 
-            if (
-                String(userId) ===
-                String(
-                    window.chatOtherUserId ||
-                    ""
-                )
-            ) {
 
-                if (onlineStatus) {
+        if (message) {
 
-                    onlineStatus.textContent =
-                        "Online";
+            const id =
+                message.id ||
+                message._id ||
+                message.messageId;
 
-                    onlineStatus.classList.add(
-                        "connected"
-                    );
-                }
+
+            if (id) {
+
+                messagesCache.set(
+                    String(id),
+                    message
+                );
             }
         }
-    );
 
-    /*
-        USER OFFLINE
-    */
 
-    socket.on(
-        "userOffline",
-        function(userId) {
+        input.value = "";
 
-            if (
-                String(userId) ===
-                String(
-                    window.chatOtherUserId ||
-                    ""
-                )
-            ) {
 
-                if (onlineStatus) {
+        renderMessages();
 
-                    onlineStatus.textContent =
-                        "Offline";
 
-                    onlineStatus.classList.remove(
-                        "connected"
-                    );
-                }
-            }
-        }
-    );
+        scrollToBottom(true);
+
+
+    } catch (error) {
+
+        console.error(
+            "Send message error:",
+            error
+        );
+
+
+        showTemporaryError(
+            error.message ||
+            "Message failed to send."
+        );
+
+    } finally {
+
+        isSending = false;
+
+        setSendLoading(false);
+
+        input.focus();
+    }
 }
 
-/* =========================================
-   SEND MESSAGE
-========================================= */
 
-if (messageForm) {
+/* =========================================================
+   FORM SUBMIT
+========================================================= */
 
-    messageForm.addEventListener(
+if (form) {
+
+    form.addEventListener(
         "submit",
-        async function(event) {
+        event => {
 
             event.preventDefault();
 
-            if (!messageInput) {
-                return;
-            }
-
-            const text =
-                messageInput.value.trim();
-
-            if (!text) {
-                return;
-            }
-
-            const sendButton =
-                document.getElementById(
-                    "sendBtn"
-                );
-
-            messageInput.disabled =
-                true;
-
-            if (sendButton) {
-                sendButton.disabled =
-                    true;
-            }
-
-            try {
-
-                await api(
-                    "/api/conversations/" +
-                    encodeURIComponent(
-                        conversationId
-                    ) +
-                    "/messages",
-                    {
-                        method:
-                            "POST",
-
-                        body:
-                            JSON.stringify({
-                                text
-                            })
-                    }
-                );
-
-                /*
-                    DO NOT manually render.
-                    Socket newMessage will
-                    render it once.
-                */
-
-                messageInput.value =
-                    "";
-
-                messageInput.focus();
-
-            } catch (error) {
-
-                console.error(
-                    "SEND ERROR:",
-                    error
-                );
-
-                alert(
-                    error.message ||
-                    "Could not send message"
-                );
-
-            } finally {
-
-                messageInput.disabled =
-                    false;
-
-                if (sendButton) {
-                    sendButton.disabled =
-                        false;
-                }
-
-                messageInput.focus();
-            }
-
+            sendMessage();
         }
     );
 }
 
-/* =========================================
+
+/* =========================================================
    ENTER TO SEND
-========================================= */
+========================================================= */
 
-if (messageInput) {
+if (input) {
 
-    messageInput.addEventListener(
+    input.addEventListener(
         "keydown",
-        function(event) {
+        event => {
 
             if (
-                event.key ===
-                "Enter" &&
+                event.key === "Enter" &&
                 !event.shiftKey
             ) {
 
                 event.preventDefault();
 
-                if (messageForm) {
+                sendMessage();
+            }
+        }
+    );
 
-                    messageForm.requestSubmit();
+
+    input.addEventListener(
+        "input",
+        handleTyping
+    );
+}
+
+
+/* =========================================================
+   SOCKET.IO
+========================================================= */
+
+function connectSocket() {
+
+    if (typeof io === "undefined") {
+
+        console.warn(
+            "Socket.IO library not available."
+        );
+
+        setOffline();
+
+        return;
+    }
+
+
+    socket =
+        io(API, {
+            transports: [
+                "websocket",
+                "polling"
+            ],
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000
+        });
+
+
+    socket.on(
+        "connect",
+        () => {
+
+            console.log(
+                "TELESUPAR socket connected:",
+                socket.id
+            );
+
+
+            setOnline();
+
+
+            socket.emit(
+                "authenticate",
+                {
+                    token
+                }
+            );
+
+
+            socket.emit(
+                "joinConversation",
+                {
+                    conversationId
+                }
+            );
+
+
+            markConversationRead();
+        }
+    );
+
+
+    socket.on(
+        "disconnect",
+        () => {
+
+            console.log(
+                "TELESUPAR socket disconnected"
+            );
+
+            setOffline();
+        }
+    );
+
+
+    socket.on(
+        "connect_error",
+        error => {
+
+            console.warn(
+                "Socket connection error:",
+                error.message
+            );
+
+            setOffline();
+        }
+    );
+
+
+    /* =========================
+       NEW MESSAGE
+    ========================= */
+
+    socket.on(
+        "newMessage",
+        message => {
+
+            if (!message) return;
+
+
+            const messageConversationId =
+                message.conversationId ||
+                message.chatId;
+
+
+            if (
+                messageConversationId &&
+                String(messageConversationId) !==
+                String(conversationId)
+            ) {
+                return;
+            }
+
+
+            const id =
+                message.id ||
+                message._id ||
+                message.messageId;
+
+
+            if (!id) return;
+
+
+            const alreadyExists =
+                messagesCache.has(
+                    String(id)
+                );
+
+
+            if (!alreadyExists) {
+
+                messagesCache.set(
+                    String(id),
+                    message
+                );
+
+
+                renderMessages();
+
+                scrollToBottom(true);
+
+
+                /*
+                  If incoming message is currently
+                  visible, immediately mark seen.
+                */
+
+                if (
+                    String(getSenderId(message)) !==
+                    String(currentUser.id)
+                ) {
+
+                    markConversationRead();
                 }
             }
         }
     );
-}
 
-/* =========================================
-   BACK
-========================================= */
 
-if (backBtn) {
+    /* =========================
+       MESSAGE DELIVERED
+    ========================= */
 
-    backBtn.addEventListener(
-        "click",
-        function() {
+    socket.on(
+        "messageDelivered",
+        payload => {
 
-            if (socket) {
+            const id =
+                payload?.messageId ||
+                payload?.id;
 
-                socket.emit(
-                    "leaveConversation",
-                    conversationId
+
+            if (!id) return;
+
+
+            const old =
+                messagesCache.get(
+                    String(id)
                 );
 
-                socket.disconnect();
+
+            if (!old) return;
+
+
+            old.deliveredAt =
+                payload.deliveredAt ||
+                new Date().toISOString();
+
+
+            messagesCache.set(
+                String(id),
+                old
+            );
+
+
+            renderMessages();
+        }
+    );
+
+
+    /* =========================
+       MESSAGES SEEN
+    ========================= */
+
+    socket.on(
+        "messagesSeen",
+        payload => {
+
+            if (
+                payload?.conversationId &&
+                String(payload.conversationId) !==
+                String(conversationId)
+            ) {
+                return;
             }
 
-            window.location.href =
-                "home.html";
+
+            const seenAt =
+                payload?.seenAt ||
+                new Date().toISOString();
+
+
+            messagesCache.forEach(
+                message => {
+
+                    if (
+                        String(getSenderId(message)) ===
+                        String(currentUser.id)
+                    ) {
+
+                        message.seenAt =
+                            seenAt;
+                    }
+                }
+            );
+
+
+            renderMessages();
+        }
+    );
+
+
+    /* =========================
+       ONLINE
+    ========================= */
+
+    socket.on(
+        "userOnline",
+        userId => {
+
+            if (
+                String(userId) ===
+                String(getOtherUserId())
+            ) {
+
+                setOnline();
+            }
+        }
+    );
+
+
+    socket.on(
+        "userOffline",
+        userId => {
+
+            if (
+                String(userId) ===
+                String(getOtherUserId())
+            ) {
+
+                setOffline();
+            }
+        }
+    );
+
+
+    /* =========================
+       TYPING
+    ========================= */
+
+    socket.on(
+        "typing",
+        payload => {
+
+            if (
+                payload?.conversationId &&
+                String(payload.conversationId) !==
+                String(conversationId)
+            ) {
+                return;
+            }
+
+
+            if (
+                String(payload?.userId) !==
+                String(getOtherUserId())
+            ) {
+                return;
+            }
+
+
+            showTyping(
+                payload?.isTyping === true
+            );
         }
     );
 }
 
-/* =========================================
-   ATTACHMENT
-========================================= */
+
+/* =========================================================
+   READ / SEEN
+========================================================= */
+
+async function markConversationRead() {
+
+    if (!conversationId) return;
+
+
+    try {
+
+        await api(
+            `/api/conversations/${encodeURIComponent(conversationId)}/read`,
+            {
+                method: "POST"
+            }
+        );
+
+
+        if (socket?.connected) {
+
+            socket.emit(
+                "messagesSeen",
+                {
+                    conversationId
+                }
+            );
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "Read status error:",
+            error.message
+        );
+    }
+}
+
+
+/* =========================================================
+   TYPING
+========================================================= */
+
+function handleTyping() {
+
+    if (!socket?.connected) return;
+
+
+    socket.emit(
+        "typing",
+        {
+            conversationId,
+            isTyping: true
+        }
+    );
+
+
+    clearTimeout(
+        typingTimer
+    );
+
+
+    typingTimer =
+        setTimeout(
+            () => {
+
+                socket.emit(
+                    "typing",
+                    {
+                        conversationId,
+                        isTyping: false
+                    }
+                );
+
+            },
+            1200
+        );
+}
+
+
+function showTyping(isTyping) {
+
+    if (!onlineStatus) return;
+
+
+    if (isTyping) {
+
+        if (!otherUserTyping) {
+
+            otherUserTyping = true;
+
+            onlineStatus.textContent =
+                "typing...";
+            
+            onlineStatus.classList.remove(
+                "connected"
+            );
+        }
+
+    } else {
+
+        otherUserTyping = false;
+
+        setOnline();
+    }
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+function getStatus(message) {
+
+    if (message.seenAt) {
+        return "✓✓";
+    }
+
+
+    if (
+        message.deliveredAt ||
+        message.status === "delivered"
+    ) {
+        return "✓✓";
+    }
+
+
+    return "✓";
+}
+
+
+/* =========================================================
+   ONLINE / OFFLINE
+========================================================= */
+
+function setOnline() {
+
+    if (!onlineStatus) return;
+
+
+    onlineStatus.textContent =
+        "online";
+
+
+    onlineStatus.classList.add(
+        "connected"
+    );
+}
+
+
+function setOffline() {
+
+    if (!onlineStatus) return;
+
+
+    onlineStatus.textContent =
+        "offline";
+
+
+    onlineStatus.classList.remove(
+        "connected"
+    );
+}
+
+
+/* =========================================================
+   SEND LOADING
+========================================================= */
+
+function setSendLoading(loading) {
+
+    if (!sendBtn) return;
+
+
+    sendBtn.disabled =
+        loading;
+
+
+    if (loading) {
+
+        sendBtn.style.opacity =
+            "0.65";
+
+    } else {
+
+        sendBtn.style.opacity =
+            "1";
+    }
+}
+
+
+/* =========================================================
+   SCROLL
+========================================================= */
+
+function scrollToBottom(smooth = true) {
+
+    if (!messagesEl) return;
+
+
+    requestAnimationFrame(
+        () => {
+
+            messagesEl.scrollTo({
+                top: messagesEl.scrollHeight,
+                behavior:
+                    smooth
+                        ? "smooth"
+                        : "auto"
+            });
+        }
+    );
+}
+
+
+/* =========================================================
+   MESSAGE TIME
+========================================================= */
+
+function getMessageTime(message) {
+
+    return new Date(
+        message.createdAt ||
+        message.timestamp ||
+        message.sentAt ||
+        Date.now()
+    ).getTime();
+}
+
+
+function formatTime(timestamp) {
+
+    return new Date(
+        timestamp
+    ).toLocaleTimeString(
+        [],
+        {
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    );
+}
+
+
+function getDateKey(message) {
+
+    const date =
+        new Date(
+            getMessageTime(message)
+        );
+
+
+    return [
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+    ].join("-");
+}
+
+
+function formatDateSeparator(timestamp) {
+
+    const date =
+        new Date(timestamp);
+
+
+    const today =
+        new Date();
+
+
+    const yesterday =
+        new Date();
+
+
+    yesterday.setDate(
+        yesterday.getDate() - 1
+    );
+
+
+    if (
+        date.toDateString() ===
+        today.toDateString()
+    ) {
+        return "Today";
+    }
+
+
+    if (
+        date.toDateString() ===
+        yesterday.toDateString()
+    ) {
+        return "Yesterday";
+    }
+
+
+    return date.toLocaleDateString(
+        [],
+        {
+            day: "numeric",
+            month: "short",
+            year: "numeric"
+        }
+    );
+}
+
+
+/* =========================================================
+   IDS
+========================================================= */
+
+function getSenderId(message) {
+
+    return (
+        message.senderId ||
+        message.sender?._id ||
+        message.sender?.id ||
+        message.userId ||
+        message.from
+    );
+}
+
+
+function getOtherUserId() {
+
+    return (
+        otherUser?.id ||
+        otherUser?._id ||
+        otherUser?.userId
+    );
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+function setLoading() {
+
+    if (!messagesEl) return;
+
+
+    messagesEl.innerHTML = `
+        <div class="empty-chat">
+            Loading messages...
+        </div>
+    `;
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+function showError(message) {
+
+    if (!messagesEl) return;
+
+
+    messagesEl.innerHTML = `
+        <div class="empty-chat">
+            <div>
+                <div style="font-size:28px;margin-bottom:8px;">⚠️</div>
+                <div>${escapeHTML(message)}</div>
+            </div>
+        </div>
+    `;
+}
+
+
+function showTemporaryError(message) {
+
+    const old =
+        document.querySelector(
+            ".chat-error-toast"
+        );
+
+
+    if (old) old.remove();
+
+
+    const toast =
+        document.createElement("div");
+
+
+    toast.className =
+        "chat-error-toast";
+
+
+    toast.textContent =
+        message;
+
+
+    Object.assign(
+        toast.style,
+        {
+            position: "fixed",
+            left: "50%",
+            bottom: "90px",
+            transform: "translateX(-50%)",
+            background: "#2a1115",
+            color: "#ffb8c0",
+            border: "1px solid rgba(255,100,120,.25)",
+            padding: "10px 14px",
+            borderRadius: "12px",
+            fontSize: "12px",
+            zIndex: "999"
+        }
+    );
+
+
+    document.body.appendChild(
+        toast
+    );
+
+
+    setTimeout(
+        () => toast.remove(),
+        2500
+    );
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+/* =========================================================
+   ATTACHMENT MENU
+========================================================= */
 
 if (attachmentBtn) {
 
     attachmentBtn.addEventListener(
         "click",
-        function(event) {
+        event => {
 
             event.stopPropagation();
 
-            if (attachmentMenu) {
-
-                attachmentMenu.classList.toggle(
-                    "show"
-                );
-            }
+            attachmentMenu?.classList.toggle(
+                "show"
+            );
         }
     );
 }
 
+
 document.addEventListener(
     "click",
-    function() {
+    event => {
 
-        if (attachmentMenu) {
+        if (
+            attachmentMenu &&
+            !attachmentMenu.contains(event.target) &&
+            event.target !== attachmentBtn
+        ) {
 
             attachmentMenu.classList.remove(
                 "show"
@@ -1280,37 +1432,98 @@ document.addEventListener(
     }
 );
 
-/* =========================================
-   SCROLL
-========================================= */
 
-function scrollBottom() {
+/* =========================================================
+   ATTACHMENT PLACEHOLDERS
+========================================================= */
 
-    if (!messagesContainer) {
-        return;
+photoBtn?.addEventListener(
+    "click",
+    () => {
+
+        showTemporaryError(
+            "Photo sharing will be added in the next phase."
+        );
     }
+);
 
-    requestAnimationFrame(
-        function() {
 
-            messagesContainer.scrollTop =
-                messagesContainer.scrollHeight;
+fileBtn?.addEventListener(
+    "click",
+    () => {
 
+        showTemporaryError(
+            "File sharing will be added in the next phase."
+        );
+    }
+);
+
+
+cameraBtn?.addEventListener(
+    "click",
+    () => {
+
+        showTemporaryError(
+            "Camera sharing will be added in the next phase."
+        );
+    }
+);
+
+
+/* =========================================================
+   BACK BUTTON
+========================================================= */
+
+if (backBtn) {
+
+    backBtn.addEventListener(
+        "click",
+        () => {
+
+            if (
+                document.referrer &&
+                document.referrer.includes(
+                    "home.html"
+                )
+            ) {
+
+                history.back();
+
+            } else {
+
+                window.location.href =
+                    "home.html";
+            }
         }
     );
 }
 
-/* =========================================
+
+/* =========================================================
+   CLEANUP
+========================================================= */
+
+window.addEventListener(
+    "beforeunload",
+    () => {
+
+        if (socket) {
+
+            socket.emit(
+                "leaveConversation",
+                {
+                    conversationId
+                }
+            );
+
+            socket.disconnect();
+        }
+    }
+);
+
+
+/* =========================================================
    START
-========================================= */
+========================================================= */
 
-async function startChat() {
-
-    await loadChatInfo();
-
-    await loadMessages();
-
-    connectSocket();
-}
-
-startChat();
+initChat();
