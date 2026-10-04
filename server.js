@@ -9,6 +9,10 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -16,35 +20,22 @@ const io = new Server(server, {
   }
 });
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 const PORT = process.env.PORT || 3000;
-
 const MONGODB_URI = process.env.MONGODB_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!MONGODB_URI) {
-  console.error("MONGODB_URI is missing");
-}
-
-if (!JWT_SECRET) {
-  console.error("JWT_SECRET is missing");
-}
-
-const client = new MongoClient(MONGODB_URI);
 
 let db;
 let users;
 let messages;
 let conversations;
 
+const client = new MongoClient(MONGODB_URI);
+
 /* =========================
    DATABASE
 ========================= */
 
-async function connectDB() {
+async function connectDatabase() {
   await client.connect();
 
   db = client.db("telesupar");
@@ -53,18 +44,20 @@ async function connectDB() {
   messages = db.collection("messages");
   conversations = db.collection("conversations");
 
-  await users.createIndex({ username: 1 }, { unique: true });
-  await users.createIndex({ email: 1 }, { unique: true });
+  await users.createIndex(
+    { username: 1 },
+    { unique: true }
+  );
+
+  await users.createIndex(
+    { email: 1 },
+    { unique: true }
+  );
 
   await conversations.createIndex(
     { memberKey: 1 },
     { unique: true }
   );
-
-  await conversations.createIndex({
-    members: 1,
-    updatedAt: -1
-  });
 
   console.log("MongoDB connected successfully");
 }
@@ -73,7 +66,7 @@ async function connectDB() {
    HELPERS
 ========================= */
 
-function createToken(user) {
+function makeToken(user) {
   return jwt.sign(
     {
       id: user._id.toString(),
@@ -87,7 +80,7 @@ function createToken(user) {
   );
 }
 
-function safeUser(user) {
+function publicUser(user) {
   return {
     id: user._id.toString(),
     username: user.username,
@@ -97,31 +90,25 @@ function safeUser(user) {
   };
 }
 
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/* =========================
-   AUTH MIDDLEWARE
-========================= */
-
 function auth(req, res, next) {
   const header = req.headers.authorization || "";
 
   if (!header.startsWith("Bearer ")) {
     return res.status(401).json({
       success: false,
-      message: "Authentication required"
+      message: "Login required"
     });
   }
 
   const token = header.substring(7);
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(
+      token,
+      JWT_SECRET
+    );
 
     req.user = decoded;
-
     next();
   } catch (error) {
     return res.status(401).json({
@@ -131,18 +118,26 @@ function auth(req, res, next) {
   }
 }
 
+function validId(id) {
+  return ObjectId.isValid(id);
+}
+
 /* =========================
-   HEALTH
+   HOME
 ========================= */
 
-app.get("/", (req, res) => {
+app.get("/", function (req, res) {
   res.json({
-    name: "TELESUPAR API",
+    name: "TELESUPAR",
     status: "running"
   });
 });
 
-app.get("/api/health", async (req, res) => {
+/* =========================
+   HEALTH
+========================= */
+
+app.get("/api/health", async function (req, res) {
   try {
     await db.command({ ping: 1 });
 
@@ -162,33 +157,37 @@ app.get("/api/health", async (req, res) => {
    REGISTER
 ========================= */
 
-app.post("/api/register", async (req, res) => {
+app.post("/api/register", async function (req, res) {
   try {
-    const {
-      username,
-      displayName,
-      email,
-      password
-    } = req.body;
+    const username = String(
+      req.body.username || ""
+    ).trim().toLowerCase();
 
-    if (!username || !displayName || !email || !password) {
+    const displayName = String(
+      req.body.displayName || ""
+    ).trim();
+
+    const email = String(
+      req.body.email || ""
+    ).trim().toLowerCase();
+
+    const password = String(
+      req.body.password || ""
+    );
+
+    if (
+      !username ||
+      !displayName ||
+      !email ||
+      !password
+    ) {
       return res.status(400).json({
         success: false,
         message: "All fields are required"
       });
     }
 
-    const cleanUsername = username
-      .trim()
-      .toLowerCase();
-
-    const cleanEmail = email
-      .trim()
-      .toLowerCase();
-
-    const cleanDisplayName = displayName.trim();
-
-    if (cleanUsername.length < 3) {
+    if (username.length < 3) {
       return res.status(400).json({
         success: false,
         message: "Username must be at least 3 characters"
@@ -202,14 +201,14 @@ app.post("/api/register", async (req, res) => {
       });
     }
 
-    const existingUser = await users.findOne({
+    const existing = await users.findOne({
       $or: [
-        { username: cleanUsername },
-        { email: cleanEmail }
+        { username: username },
+        { email: email }
       ]
     });
 
-    if (existingUser) {
+    if (existing) {
       return res.status(409).json({
         success: false,
         message: "Username or email already exists"
@@ -221,25 +220,25 @@ app.post("/api/register", async (req, res) => {
       12
     );
 
-    const newUser = {
-      username: cleanUsername,
-      displayName: cleanDisplayName,
-      email: cleanEmail,
+    const user = {
+      username: username,
+      displayName: displayName,
+      email: email,
       password: hashedPassword,
       createdAt: new Date()
     };
 
-    const result = await users.insertOne(newUser);
+    const result = await users.insertOne(user);
 
-    newUser._id = result.insertedId;
+    user._id = result.insertedId;
 
-    const token = createToken(newUser);
+    const token = makeToken(user);
 
     res.status(201).json({
       success: true,
       message: "Account created successfully",
-      token,
-      user: safeUser(newUser)
+      token: token,
+      user: publicUser(user)
     });
 
   } catch (error) {
@@ -256,12 +255,15 @@ app.post("/api/register", async (req, res) => {
    LOGIN
 ========================= */
 
-app.post("/api/login", async (req, res) => {
+app.post("/api/login", async function (req, res) {
   try {
-    const {
-      email,
-      password
-    } = req.body;
+    const email = String(
+      req.body.email || ""
+    ).trim().toLowerCase();
+
+    const password = String(
+      req.body.password || ""
+    );
 
     if (!email || !password) {
       return res.status(400).json({
@@ -270,12 +272,8 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
-    const cleanEmail = email
-      .trim()
-      .toLowerCase();
-
     const user = await users.findOne({
-      email: cleanEmail
+      email: email
     });
 
     if (!user) {
@@ -285,25 +283,25 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
-    const passwordMatch = await bcrypt.compare(
+    const match = await bcrypt.compare(
       password,
       user.password
     );
 
-    if (!passwordMatch) {
+    if (!match) {
       return res.status(401).json({
         success: false,
         message: "Invalid email or password"
       });
     }
 
-    const token = createToken(user);
+    const token = makeToken(user);
 
     res.json({
       success: true,
       message: "Login successful",
-      token,
-      user: safeUser(user)
+      token: token,
+      user: publicUser(user)
     });
 
   } catch (error) {
@@ -317,10 +315,10 @@ app.post("/api/login", async (req, res) => {
 });
 
 /* =========================
-   CURRENT USER
+   MY PROFILE
 ========================= */
 
-app.get("/api/me", auth, async (req, res) => {
+app.get("/api/me", auth, async function (req, res) {
   try {
     const user = await users.findOne({
       _id: new ObjectId(req.user.id)
@@ -335,10 +333,12 @@ app.get("/api/me", auth, async (req, res) => {
 
     res.json({
       success: true,
-      user: safeUser(user)
+      user: publicUser(user)
     });
 
   } catch (error) {
+    console.error("ME ERROR:", error);
+
     res.status(500).json({
       success: false,
       message: "Could not load profile"
@@ -347,12 +347,14 @@ app.get("/api/me", auth, async (req, res) => {
 });
 
 /* =========================
-   SEARCH / REAL USERS
+   REAL USERS / SEARCH
 ========================= */
 
-app.get("/api/users", auth, async (req, res) => {
+app.get("/api/users", auth, async function (req, res) {
   try {
-    const search = (req.query.search || "").trim();
+    const search = String(
+      req.query.search || ""
+    ).trim();
 
     const query = {
       _id: {
@@ -361,25 +363,23 @@ app.get("/api/users", auth, async (req, res) => {
     };
 
     if (search) {
-      const safeSearch = escapeRegex(search);
-
       query.$or = [
         {
           username: {
-            $regex: safeSearch,
+            $regex: search,
             $options: "i"
           }
         },
         {
           displayName: {
-            $regex: safeSearch,
+            $regex: search,
             $options: "i"
           }
         }
       ];
     }
 
-    const result = await users
+    const list = await users
       .find(query)
       .project({
         password: 0
@@ -392,7 +392,7 @@ app.get("/api/users", auth, async (req, res) => {
 
     res.json({
       success: true,
-      users: result.map(safeUser)
+      users: list.map(publicUser)
     });
 
   } catch (error) {
@@ -406,18 +406,18 @@ app.get("/api/users", auth, async (req, res) => {
 });
 
 /* =========================
-   CREATE / GET CONVERSATION
+   CREATE CONVERSATION
 ========================= */
 
 app.post(
   "/api/conversations/:userId",
   auth,
-  async (req, res) => {
+  async function (req, res) {
     try {
       const myId = req.user.id;
       const otherId = req.params.userId;
 
-      if (!ObjectId.isValid(otherId)) {
+      if (!validId(otherId)) {
         return res.status(400).json({
           success: false,
           message: "Invalid user ID"
@@ -442,58 +442,77 @@ app.post(
         });
       }
 
-      const sortedIds = [
+      const ids = [
         myId,
         otherId
       ].sort();
 
-      const memberKey = sortedIds.join(":");
+      const memberKey = ids.join(":");
 
-      const now = new Date();
+      let conversation =
+        await conversations.findOne({
+          memberKey: memberKey
+        });
 
-      const conversation =
-        await conversations.findOneAndUpdate(
-          {
-            memberKey
-          },
-          {
-            $setOnInsert: {
-              memberKey,
-              members: sortedIds.map(
-                id => new ObjectId(id)
-              ),
-              createdAt: now,
-              updatedAt: now,
-              lastMessage: "",
-              lastMessageAt: null
-            }
-          },
-          {
-            upsert: true,
-            returnDocument: "after"
+      if (!conversation) {
+        const newConversation = {
+          memberKey: memberKey,
+          members: [
+            new ObjectId(ids[0]),
+            new ObjectId(ids[1])
+          ],
+          lastMessage: "",
+          lastMessageAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        try {
+          const result =
+            await conversations.insertOne(
+              newConversation
+            );
+
+          newConversation._id =
+            result.insertedId;
+
+          conversation =
+            newConversation;
+
+        } catch (insertError) {
+          conversation =
+            await conversations.findOne({
+              memberKey: memberKey
+            });
+
+          if (!conversation) {
+            throw insertError;
           }
-        );
+        }
+      }
 
       res.json({
         success: true,
         conversation: {
           id: conversation._id.toString(),
-          memberKey: conversation.memberKey,
           members: conversation.members.map(
-            id => id.toString()
+            function (id) {
+              return id.toString();
+            }
           ),
-          createdAt: conversation.createdAt,
-          updatedAt: conversation.updatedAt,
-          lastMessage: conversation.lastMessage || "",
+          lastMessage:
+            conversation.lastMessage || "",
           lastMessageAt:
             conversation.lastMessageAt || null,
-          otherUser: safeUser(otherUser)
+          updatedAt:
+            conversation.updatedAt,
+          user: publicUser(otherUser)
         }
       });
 
     } catch (error) {
       console.error(
-        "CREATE CONVERSATION ERROR:",
+        "CONVERSATION ERROR:",
         error
       );
 
@@ -512,89 +531,54 @@ app.post(
 app.get(
   "/api/conversations",
   auth,
-  async (req, res) => {
+  async function (req, res) {
     try {
-      const myObjectId =
-        new ObjectId(req.user.id);
+      const myId = new ObjectId(req.user.id);
 
-      const conversationList =
-        await conversations
-          .find({
-            members: myObjectId
-          })
-          .sort({
-            updatedAt: -1
-          })
-          .limit(50)
-          .toArray();
+      const list = await conversations
+        .find({
+          members: myId
+        })
+        .sort({
+          updatedAt: -1
+        })
+        .limit(50)
+        .toArray();
 
-      if (conversationList.length === 0) {
-        return res.json({
-          success: true,
-          conversations: []
+      const result = [];
+
+      for (const conversation of list) {
+        let otherId = null;
+
+        for (const member of conversation.members) {
+          if (member.toString() !== req.user.id) {
+            otherId = member;
+            break;
+          }
+        }
+
+        let otherUser = null;
+
+        if (otherId) {
+          otherUser = await users.findOne({
+            _id: otherId
+          });
+        }
+
+        result.push({
+          id: conversation._id.toString(),
+          lastMessage:
+            conversation.lastMessage || "",
+          lastMessageAt:
+            conversation.lastMessageAt || null,
+          updatedAt:
+            conversation.updatedAt,
+          user:
+            otherUser
+              ? publicUser(otherUser)
+              : null
         });
       }
-
-      const otherIds = [];
-
-      for (const conversation of conversationList) {
-        const other = conversation.members.find(
-          id => id.toString() !== req.user.id
-        );
-
-        if (other) {
-          otherIds.push(other);
-        }
-      }
-
-      const otherUsers =
-        await users
-          .find({
-            _id: {
-              $in: otherIds
-            }
-          })
-          .project({
-            password: 0
-          })
-          .toArray();
-
-      const userMap = new Map();
-
-      for (const user of otherUsers) {
-        userMap.set(
-          user._id.toString(),
-          safeUser(user)
-        );
-      }
-
-      const result = conversationList.map(
-        conversation => {
-          const otherId =
-            conversation.members.find(
-              id =>
-                id.toString() !==
-                req.user.id
-            );
-
-          return {
-            id: conversation._id.toString(),
-            lastMessage:
-              conversation.lastMessage || "",
-            lastMessageAt:
-              conversation.lastMessageAt ||
-              null,
-            updatedAt:
-              conversation.updatedAt,
-            user:
-              otherId
-                ? userMap.get(
-                    otherId.toString()
-                  )
-                : null
-          };
-        }
-      );
 
       res.json({
         success: true,
@@ -603,13 +587,13 @@ app.get(
 
     } catch (error) {
       console.error(
-        "CONVERSATIONS ERROR:",
+        "RECENT CHATS ERROR:",
         error
       );
 
       res.status(500).json({
         success: false,
-        message: "Could not load conversations"
+        message: "Could not load chats"
       });
     }
   }
@@ -622,12 +606,12 @@ app.get(
 app.get(
   "/api/conversations/:conversationId/messages",
   auth,
-  async (req, res) => {
+  async function (req, res) {
     try {
       const conversationId =
         req.params.conversationId;
 
-      if (!ObjectId.isValid(conversationId)) {
+      if (!validId(conversationId)) {
         return res.status(400).json({
           success: false,
           message: "Invalid conversation ID"
@@ -647,37 +631,46 @@ app.get(
         });
       }
 
-      const chatMessages =
-        await messages
-          .find({
-            conversationId:
-              new ObjectId(conversationId)
-          })
-          .sort({
-            createdAt: 1
-          })
-          .limit(200)
-          .toArray();
+      const list = await messages
+        .find({
+          conversationId:
+            new ObjectId(conversationId)
+        })
+        .sort({
+          createdAt: 1
+        })
+        .limit(200)
+        .toArray();
 
-      res.json({
-        success: true,
-        messages: chatMessages.map(
-          message => ({
+      const output = list
+        .filter(function (message) {
+          return (
+            message.conversationId &&
+            message.senderId &&
+            message.text !== undefined
+          );
+        })
+        .map(function (message) {
+          return {
             id: message._id.toString(),
             conversationId:
               message.conversationId.toString(),
             senderId:
               message.senderId.toString(),
-            text: message.text || "",
+            text: message.text,
             createdAt:
               message.createdAt
-          })
-        )
+          };
+        });
+
+      res.json({
+        success: true,
+        messages: output
       });
 
     } catch (error) {
       console.error(
-        "CHAT HISTORY ERROR:",
+        "HISTORY ERROR:",
         error
       );
 
@@ -690,13 +683,13 @@ app.get(
 );
 
 /* =========================
-   SEND MESSAGE API
+   SEND MESSAGE
 ========================= */
 
 app.post(
   "/api/conversations/:conversationId/messages",
   auth,
-  async (req, res) => {
+  async function (req, res) {
     try {
       const conversationId =
         req.params.conversationId;
@@ -705,7 +698,7 @@ app.post(
         req.body.text || ""
       ).trim();
 
-      if (!ObjectId.isValid(conversationId)) {
+      if (!validId(conversationId)) {
         return res.status(400).json({
           success: false,
           message: "Invalid conversation ID"
@@ -716,13 +709,6 @@ app.post(
         return res.status(400).json({
           success: false,
           message: "Message cannot be empty"
-        });
-      }
-
-      if (text.length > 5000) {
-        return res.status(400).json({
-          success: false,
-          message: "Message is too long"
         });
       }
 
@@ -746,7 +732,7 @@ app.post(
           new ObjectId(conversationId),
         senderId:
           new ObjectId(req.user.id),
-        text,
+        text: text,
         createdAt: now
       };
 
@@ -757,7 +743,8 @@ app.post(
 
       await conversations.updateOne(
         {
-          _id: new ObjectId(conversationId)
+          _id:
+            new ObjectId(conversationId)
         },
         {
           $set: {
@@ -770,14 +757,14 @@ app.post(
 
       const output = {
         id: result.insertedId.toString(),
-        conversationId,
+        conversationId: conversationId,
         senderId: req.user.id,
-        text,
+        text: text,
         createdAt: now
       };
 
       io.to(
-        `conversation:${conversationId}`
+        "conversation:" + conversationId
       ).emit(
         "newMessage",
         output
@@ -806,985 +793,89 @@ app.post(
    SOCKET.IO
 ========================= */
 
-const onlineUsers = new Map();
+io.on("connection", function (socket) {
 
-io.on("connection", socket => {
   console.log(
     "Socket connected:",
     socket.id
   );
 
-  /* New authenticated connection */
+  socket.on(
+    "authenticate",
+    function (token) {
+      try {
+        const decoded = jwt.verify(
+          token,
+          JWT_SECRET
+        );
 
-  socket.on("authenticate", token => {
-    try {
-      const decoded = jwt.verify(
-        token,
-        JWT_SECRET
-      );
+        socket.user = decoded;
 
-      socket.user = decoded;
+        socket.join(
+          "user:" + decoded.id
+        );
 
-      const userRoom =
-        `user:${decoded.id}`;
+        io.emit(
+          "userOnline",
+          decoded.id
+        );
 
-      socket.join(userRoom);
-
-      onlineUsers.set(
-        decoded.id,
-        socket.id
-      );
-
-      io.emit(
-        "userOnline",
-        decoded.id
-      );
-
-    } catch (error) {
-      socket.emit(
-        "authError",
-        "Invalid token"
-      );
+      } catch (error) {
+        socket.emit(
+          "authError",
+          "Invalid token"
+        );
+      }
     }
-  });
-
-  /* Join a conversation room */
+  );
 
   socket.on(
     "joinConversation",
-    conversationId => {
-      if (!socket.user) return;
+    function (conversationId) {
+      if (!socket.user) {
+        return;
+      }
+
+      if (!validId(conversationId)) {
+        return;
+      }
 
       socket.join(
-        `conversation:${conversationId}`
+        "conversation:" + conversationId
       );
     }
   );
-
-  /* Leave conversation */
 
   socket.on(
     "leaveConversation",
-    conversationId => {
+    function (conversationId) {
       socket.leave(
-        `conversation:${conversationId}`
+        "conversation:" + conversationId
       );
     }
   );
 
-  /* Compatibility with old frontend */
-
-  socket.on("join", username => {
-    socket.username = username;
-
-    console.log(
-      `${username} joined socket`
-    );
-const express = require("express");
-const http = require("http");
-const cors = require("cors");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { MongoClient, ObjectId } = require("mongodb");
-const { Server } = require("socket.io");
-
-const app = express();
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
-
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-const PORT = process.env.PORT || 3000;
-
-const MONGODB_URI = process.env.MONGODB_URI;
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!MONGODB_URI) {
-  console.error("MONGODB_URI is missing");
-}
-
-if (!JWT_SECRET) {
-  console.error("JWT_SECRET is missing");
-}
-
-const client = new MongoClient(MONGODB_URI);
-
-let db;
-let users;
-let messages;
-let conversations;
-
-/* =========================
-   DATABASE
-========================= */
-
-async function connectDB() {
-  await client.connect();
-
-  db = client.db("telesupar");
-
-  users = db.collection("users");
-  messages = db.collection("messages");
-  conversations = db.collection("conversations");
-
-  await users.createIndex({ username: 1 }, { unique: true });
-  await users.createIndex({ email: 1 }, { unique: true });
-
-  await conversations.createIndex(
-    { memberKey: 1 },
-    { unique: true }
-  );
-
-  await conversations.createIndex({
-    members: 1,
-    updatedAt: -1
-  });
-
-  console.log("MongoDB connected successfully");
-}
-
-/* =========================
-   HELPERS
-========================= */
-
-function createToken(user) {
-  return jwt.sign(
-    {
-      id: user._id.toString(),
-      username: user.username,
-      email: user.email
-    },
-    JWT_SECRET,
-    {
-      expiresIn: "30d"
-    }
-  );
-}
-
-function safeUser(user) {
-  return {
-    id: user._id.toString(),
-    username: user.username,
-    displayName: user.displayName || user.username,
-    email: user.email,
-    createdAt: user.createdAt
-  };
-}
-
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/* =========================
-   AUTH MIDDLEWARE
-========================= */
-
-function auth(req, res, next) {
-  const header = req.headers.authorization || "";
-
-  if (!header.startsWith("Bearer ")) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required"
-    });
-  }
-
-  const token = header.substring(7);
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    req.user = decoded;
-
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired token"
-    });
-  }
-}
-
-/* =========================
-   HEALTH
-========================= */
-
-app.get("/", (req, res) => {
-  res.json({
-    name: "TELESUPAR API",
-    status: "running"
-  });
-});
-
-app.get("/api/health", async (req, res) => {
-  try {
-    await db.command({ ping: 1 });
-
-    res.json({
-      status: "ok",
-      mongodb: "connected"
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: "error",
-      mongodb: "disconnected"
-    });
-  }
-});
-
-/* =========================
-   REGISTER
-========================= */
-
-app.post("/api/register", async (req, res) => {
-  try {
-    const {
-      username,
-      displayName,
-      email,
-      password
-    } = req.body;
-
-    if (!username || !displayName || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required"
-      });
-    }
-
-    const cleanUsername = username
-      .trim()
-      .toLowerCase();
-
-    const cleanEmail = email
-      .trim()
-      .toLowerCase();
-
-    const cleanDisplayName = displayName.trim();
-
-    if (cleanUsername.length < 3) {
-      return res.status(400).json({
-        success: false,
-        message: "Username must be at least 3 characters"
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters"
-      });
-    }
-
-    const existingUser = await users.findOne({
-      $or: [
-        { username: cleanUsername },
-        { email: cleanEmail }
-      ]
-    });
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: "Username or email already exists"
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(
-      password,
-      12
-    );
-
-    const newUser = {
-      username: cleanUsername,
-      displayName: cleanDisplayName,
-      email: cleanEmail,
-      password: hashedPassword,
-      createdAt: new Date()
-    };
-
-    const result = await users.insertOne(newUser);
-
-    newUser._id = result.insertedId;
-
-    const token = createToken(newUser);
-
-    res.status(201).json({
-      success: true,
-      message: "Account created successfully",
-      token,
-      user: safeUser(newUser)
-    });
-
-  } catch (error) {
-    console.error("REGISTER ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Registration failed"
-    });
-  }
-});
-
-/* =========================
-   LOGIN
-========================= */
-
-app.post("/api/login", async (req, res) => {
-  try {
-    const {
-      email,
-      password
-    } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and password are required"
-      });
-    }
-
-    const cleanEmail = email
-      .trim()
-      .toLowerCase();
-
-    const user = await users.findOne({
-      email: cleanEmail
-    });
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password"
-      });
-    }
-
-    const passwordMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
-
-    if (!passwordMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password"
-      });
-    }
-
-    const token = createToken(user);
-
-    res.json({
-      success: true,
-      message: "Login successful",
-      token,
-      user: safeUser(user)
-    });
-
-  } catch (error) {
-    console.error("LOGIN ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Login failed"
-    });
-  }
-});
-
-/* =========================
-   CURRENT USER
-========================= */
-
-app.get("/api/me", auth, async (req, res) => {
-  try {
-    const user = await users.findOne({
-      _id: new ObjectId(req.user.id)
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    res.json({
-      success: true,
-      user: safeUser(user)
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Could not load profile"
-    });
-  }
-});
-
-/* =========================
-   SEARCH / REAL USERS
-========================= */
-
-app.get("/api/users", auth, async (req, res) => {
-  try {
-    const search = (req.query.search || "").trim();
-
-    const query = {
-      _id: {
-        $ne: new ObjectId(req.user.id)
-      }
-    };
-
-    if (search) {
-      const safeSearch = escapeRegex(search);
-
-      query.$or = [
-        {
-          username: {
-            $regex: safeSearch,
-            $options: "i"
-          }
-        },
-        {
-          displayName: {
-            $regex: safeSearch,
-            $options: "i"
-          }
-        }
-      ];
-    }
-
-    const result = await users
-      .find(query)
-      .project({
-        password: 0
-      })
-      .sort({
-        displayName: 1
-      })
-      .limit(50)
-      .toArray();
-
-    res.json({
-      success: true,
-      users: result.map(safeUser)
-    });
-
-  } catch (error) {
-    console.error("USERS ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Could not load users"
-    });
-  }
-});
-
-/* =========================
-   CREATE / GET CONVERSATION
-========================= */
-
-app.post(
-  "/api/conversations/:userId",
-  auth,
-  async (req, res) => {
-    try {
-      const myId = req.user.id;
-      const otherId = req.params.userId;
-
-      if (!ObjectId.isValid(otherId)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid user ID"
-        });
-      }
-
-      if (myId === otherId) {
-        return res.status(400).json({
-          success: false,
-          message: "You cannot chat with yourself"
-        });
-      }
-
-      const otherUser = await users.findOne({
-        _id: new ObjectId(otherId)
-      });
-
-      if (!otherUser) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found"
-        });
-      }
-
-      const sortedIds = [
-        myId,
-        otherId
-      ].sort();
-
-      const memberKey = sortedIds.join(":");
-
-      const now = new Date();
-
-      const conversation =
-        await conversations.findOneAndUpdate(
-          {
-            memberKey
-          },
-          {
-            $setOnInsert: {
-              memberKey,
-              members: sortedIds.map(
-                id => new ObjectId(id)
-              ),
-              createdAt: now,
-              updatedAt: now,
-              lastMessage: "",
-              lastMessageAt: null
-            }
-          },
-          {
-            upsert: true,
-            returnDocument: "after"
-          }
-        );
-
-      res.json({
-        success: true,
-        conversation: {
-          id: conversation._id.toString(),
-          memberKey: conversation.memberKey,
-          members: conversation.members.map(
-            id => id.toString()
-          ),
-          createdAt: conversation.createdAt,
-          updatedAt: conversation.updatedAt,
-          lastMessage: conversation.lastMessage || "",
-          lastMessageAt:
-            conversation.lastMessageAt || null,
-          otherUser: safeUser(otherUser)
-        }
-      });
-
-    } catch (error) {
-      console.error(
-        "CREATE CONVERSATION ERROR:",
-        error
-      );
-
-      res.status(500).json({
-        success: false,
-        message: "Could not create conversation"
-      });
-    }
-  }
-);
-
-/* =========================
-   RECENT CHATS
-========================= */
-
-app.get(
-  "/api/conversations",
-  auth,
-  async (req, res) => {
-    try {
-      const myObjectId =
-        new ObjectId(req.user.id);
-
-      const conversationList =
-        await conversations
-          .find({
-            members: myObjectId
-          })
-          .sort({
-            updatedAt: -1
-          })
-          .limit(50)
-          .toArray();
-
-      if (conversationList.length === 0) {
-        return res.json({
-          success: true,
-          conversations: []
-        });
-      }
-
-      const otherIds = [];
-
-      for (const conversation of conversationList) {
-        const other = conversation.members.find(
-          id => id.toString() !== req.user.id
-        );
-
-        if (other) {
-          otherIds.push(other);
-        }
-      }
-
-      const otherUsers =
-        await users
-          .find({
-            _id: {
-              $in: otherIds
-            }
-          })
-          .project({
-            password: 0
-          })
-          .toArray();
-
-      const userMap = new Map();
-
-      for (const user of otherUsers) {
-        userMap.set(
-          user._id.toString(),
-          safeUser(user)
-        );
-      }
-
-      const result = conversationList.map(
-        conversation => {
-          const otherId =
-            conversation.members.find(
-              id =>
-                id.toString() !==
-                req.user.id
-            );
-
-          return {
-            id: conversation._id.toString(),
-            lastMessage:
-              conversation.lastMessage || "",
-            lastMessageAt:
-              conversation.lastMessageAt ||
-              null,
-            updatedAt:
-              conversation.updatedAt,
-            user:
-              otherId
-                ? userMap.get(
-                    otherId.toString()
-                  )
-                : null
-          };
-        }
-      );
-
-      res.json({
-        success: true,
-        conversations: result
-      });
-
-    } catch (error) {
-      console.error(
-        "CONVERSATIONS ERROR:",
-        error
-      );
-
-      res.status(500).json({
-        success: false,
-        message: "Could not load conversations"
-      });
-    }
-  }
-);
-
-/* =========================
-   CHAT HISTORY
-========================= */
-
-app.get(
-  "/api/conversations/:conversationId/messages",
-  auth,
-  async (req, res) => {
-    try {
-      const conversationId =
-        req.params.conversationId;
-
-      if (!ObjectId.isValid(conversationId)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid conversation ID"
-        });
-      }
-
-      const conversation =
-        await conversations.findOne({
-          _id: new ObjectId(conversationId),
-          members: new ObjectId(req.user.id)
-        });
-
-      if (!conversation) {
-        return res.status(404).json({
-          success: false,
-          message: "Conversation not found"
-        });
-      }
-
-      const chatMessages =
-        await messages
-          .find({
-            conversationId:
-              new ObjectId(conversationId)
-          })
-          .sort({
-            createdAt: 1
-          })
-          .limit(200)
-          .toArray();
-
-      res.json({
-        success: true,
-        messages: chatMessages.map(
-          message => ({
-            id: message._id.toString(),
-            conversationId:
-              message.conversationId.toString(),
-            senderId:
-              message.senderId.toString(),
-            text: message.text || "",
-            createdAt:
-              message.createdAt
-          })
-        )
-      });
-
-    } catch (error) {
-      console.error(
-        "CHAT HISTORY ERROR:",
-        error
-      );
-
-      res.status(500).json({
-        success: false,
-        message: "Could not load messages"
-      });
-    }
-  }
-);
-
-/* =========================
-   SEND MESSAGE API
-========================= */
-
-app.post(
-  "/api/conversations/:conversationId/messages",
-  auth,
-  async (req, res) => {
-    try {
-      const conversationId =
-        req.params.conversationId;
-
-      const text = String(
-        req.body.text || ""
-      ).trim();
-
-      if (!ObjectId.isValid(conversationId)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid conversation ID"
-        });
-      }
-
-      if (!text) {
-        return res.status(400).json({
-          success: false,
-          message: "Message cannot be empty"
-        });
-      }
-
-      if (text.length > 5000) {
-        return res.status(400).json({
-          success: false,
-          message: "Message is too long"
-        });
-      }
-
-      const conversation =
-        await conversations.findOne({
-          _id: new ObjectId(conversationId),
-          members: new ObjectId(req.user.id)
-        });
-
-      if (!conversation) {
-        return res.status(404).json({
-          success: false,
-          message: "Conversation not found"
-        });
-      }
-
-      const now = new Date();
-
-      const newMessage = {
-        conversationId:
-          new ObjectId(conversationId),
-        senderId:
-          new ObjectId(req.user.id),
-        text,
-        createdAt: now
-      };
-
-      const result =
-        await messages.insertOne(
-          newMessage
-        );
-
-      await conversations.updateOne(
-        {
-          _id: new ObjectId(conversationId)
-        },
-        {
-          $set: {
-            lastMessage: text,
-            lastMessageAt: now,
-            updatedAt: now
-          }
-        }
-      );
-
-      const output = {
-        id: result.insertedId.toString(),
-        conversationId,
-        senderId: req.user.id,
-        text,
-        createdAt: now
-      };
-
-      io.to(
-        `conversation:${conversationId}`
-      ).emit(
-        "newMessage",
-        output
-      );
-
-      res.status(201).json({
-        success: true,
-        message: output
-      });
-
-    } catch (error) {
-      console.error(
-        "SEND MESSAGE ERROR:",
-        error
-      );
-
-      res.status(500).json({
-        success: false,
-        message: "Could not send message"
-      });
-    }
-  }
-);
-
-/* =========================
-   SOCKET.IO
-========================= */
-
-const onlineUsers = new Map();
-
-io.on("connection", socket => {
-  console.log(
-    "Socket connected:",
-    socket.id
-  );
-
-  /* New authenticated connection */
-
-  socket.on("authenticate", token => {
-    try {
-      const decoded = jwt.verify(
-        token,
-        JWT_SECRET
-      );
-
-      socket.user = decoded;
-
-      const userRoom =
-        `user:${decoded.id}`;
-
-      socket.join(userRoom);
-
-      onlineUsers.set(
-        decoded.id,
-        socket.id
-      );
-
-      io.emit(
-        "userOnline",
-        decoded.id
-      );
-
-    } catch (error) {
-      socket.emit(
-        "authError",
-        "Invalid token"
-      );
-    }
-  });
-
-  /* Join a conversation room */
+  /* Old frontend compatibility */
 
   socket.on(
-    "joinConversation",
-    conversationId => {
-      if (!socket.user) return;
-
-      socket.join(
-        `conversation:${conversationId}`
-      );
+    "join",
+    function (username) {
+      socket.username = username;
     }
   );
-
-  /* Leave conversation */
-
-  socket.on(
-    "leaveConversation",
-    conversationId => {
-      socket.leave(
-        `conversation:${conversationId}`
-      );
-    }
-  );
-
-  /* Compatibility with old frontend */
-
-  socket.on("join", username => {
-    socket.username = username;
-
-    console.log(
-      `${username} joined socket`
-    );
-  });
-
-  /* Old message format compatibility */
 
   socket.on(
     "sendMessage",
-    async data => {
+    async function (data) {
       try {
 
-        /*
-          NEW FORMAT:
-          {
-            conversationId,
-            text
-          }
-        */
-
         if (
+          socket.user &&
           data &&
           data.conversationId &&
-          data.text &&
-          socket.user
+          data.text
         ) {
+
           const conversationId =
             data.conversationId;
 
@@ -1792,11 +883,11 @@ io.on("connection", socket => {
             data.text
           ).trim();
 
-          if (!text) return;
+          if (!validId(conversationId)) {
+            return;
+          }
 
-          if (!ObjectId.isValid(
-            conversationId
-          )) {
+          if (!text) {
             return;
           }
 
@@ -1812,11 +903,13 @@ io.on("connection", socket => {
                 )
             });
 
-          if (!conversation) return;
+          if (!conversation) {
+            return;
+          }
 
           const now = new Date();
 
-          const newMessage = {
+          const message = {
             conversationId:
               new ObjectId(
                 conversationId
@@ -1825,13 +918,13 @@ io.on("connection", socket => {
               new ObjectId(
                 socket.user.id
               ),
-            text,
+            text: text,
             createdAt: now
           };
 
           const result =
             await messages.insertOne(
-              newMessage
+              message
             );
 
           await conversations.updateOne(
@@ -1850,96 +943,67 @@ io.on("connection", socket => {
             }
           );
 
-          const output = {
-            id:
-              result.insertedId.toString(),
-            conversationId,
-            senderId:
-              socket.user.id,
-            text,
-            createdAt: now
-          };
-
           io.to(
-            `conversation:${conversationId}`
+            "conversation:" +
+              conversationId
           ).emit(
             "newMessage",
-            output
+            {
+              id:
+                result.insertedId.toString(),
+              conversationId:
+                conversationId,
+              senderId:
+                socket.user.id,
+              text: text,
+              createdAt: now
+            }
           );
 
           return;
         }
 
-        /*
-          OLD FORMAT
-        */
-
-        if (
-          data &&
-          data.username &&
-          data.message
-        ) {
-          const oldMessage = {
-            username: data.username,
-            message: data.message,
-            time: new Date()
-          };
-
-          await messages.insertOne(
-            oldMessage
-          );
-
-          io.emit(
-            "receiveMessage",
-            oldMessage
-          );
-        }
-
       } catch (error) {
         console.error(
-          "SOCKET MESSAGE ERROR:",
+          "SOCKET ERROR:",
           error
         );
       }
     }
   );
 
-  socket.on("disconnect", () => {
-    console.log(
-      "Socket disconnected:",
-      socket.id
-    );
-
-    if (socket.user) {
-      onlineUsers.delete(
-        socket.user.id
-      );
-
-      io.emit(
-        "userOffline",
-        socket.user.id
+  socket.on(
+    "disconnect",
+    function () {
+      console.log(
+        "Socket disconnected:",
+        socket.id
       );
     }
-  });
+  );
 });
 
 /* =========================
-   START SERVER
+   START
 ========================= */
 
-connectDB()
-  .then(() => {
+connectDatabase()
+  .then(function () {
+
     server.listen(
       PORT,
       "0.0.0.0",
-      () => {
+      function () {
         console.log(
-          `TELESUPAR server running on port ${PORT}`
+          "TELESUPAR server running on port " +
+          PORT
         );
       }
     );
+
   })
-  .catch(error => {
+  .catch(function (error) {
+
     console.error(
       "MongoDB connection failed:",
       error
