@@ -1,22 +1,31 @@
 /* =========================================================
-   TELESUPAR — CHAT.JS
-   STEP 1 — STABLE REAL-TIME 1 TO 1 CHAT
+   TELESUPAR
+   CHAT.JS
+   STEP 1 — STABLE 1 TO 1 CHAT
 ========================================================= */
 
 const API = "https://telesupar.onrender.com";
 
-const token = localStorage.getItem("telesupar_token");
-const storedUser = localStorage.getItem("telesupar_user");
+const token =
+    localStorage.getItem("telesupar_token");
+
+const storedUser =
+    localStorage.getItem("telesupar_user");
 
 let currentUser = null;
+
 let conversationId = null;
+
 let otherUser = null;
+
 let socket = null;
 
 let messagesCache = new Map();
-let isLoading = false;
+
 let isSending = false;
+
 let typingTimer = null;
+
 let otherUserTyping = false;
 
 
@@ -24,98 +33,165 @@ let otherUserTyping = false;
    DOM
 ========================================================= */
 
-const messagesEl = document.getElementById("messages");
-const form = document.getElementById("messageForm");
-const input = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
+const messagesEl =
+    document.getElementById("messages");
 
-const chatUserName = document.getElementById("chatUserName");
-const headerAvatar = document.getElementById("headerAvatar");
-const onlineStatus = document.getElementById("onlineStatus");
+const form =
+    document.getElementById("messageForm");
 
-const backBtn = document.getElementById("backBtn");
+const input =
+    document.getElementById("messageInput");
 
-const attachmentBtn = document.getElementById("attachmentBtn");
-const attachmentMenu = document.getElementById("attachmentMenu");
+const sendBtn =
+    document.getElementById("sendBtn");
 
-const photoBtn = document.getElementById("photoBtn");
-const fileBtn = document.getElementById("fileBtn");
-const cameraBtn = document.getElementById("cameraBtn");
+const chatUserName =
+    document.getElementById("chatUserName");
+
+const headerAvatar =
+    document.getElementById("headerAvatar");
+
+const onlineStatus =
+    document.getElementById("onlineStatus");
+
+const backBtn =
+    document.getElementById("backBtn");
+
+const attachmentBtn =
+    document.getElementById("attachmentBtn");
+
+const attachmentMenu =
+    document.getElementById("attachmentMenu");
+
+const photoBtn =
+    document.getElementById("photoBtn");
+
+const fileBtn =
+    document.getElementById("fileBtn");
+
+const cameraBtn =
+    document.getElementById("cameraBtn");
 
 
 /* =========================================================
-   AUTH CHECK
+   AUTH
 ========================================================= */
 
 if (!token || !storedUser) {
-    window.location.href = "login.html";
+
+    window.location.href =
+        "login.html";
 }
 
 try {
-    currentUser = JSON.parse(storedUser);
+
+    currentUser =
+        JSON.parse(storedUser);
+
 } catch (error) {
-    localStorage.removeItem("telesupar_user");
-    localStorage.removeItem("telesupar_token");
-    window.location.href = "login.html";
+
+    localStorage.removeItem(
+        "telesupar_user"
+    );
+
+    localStorage.removeItem(
+        "telesupar_token"
+    );
+
+    window.location.href =
+        "login.html";
 }
 
 
 /* =========================================================
-   GET CONVERSATION ID
+   CHAT ID
 ========================================================= */
 
-const params = new URLSearchParams(window.location.search);
+const params =
+    new URLSearchParams(
+        window.location.search
+    );
 
 conversationId =
     params.get("id") ||
     params.get("conversationId");
 
 
-if (!conversationId) {
-    showError("Chat ID not found.");
-}
-
-
 /* =========================================================
-   API HELPER
+   API
 ========================================================= */
 
-async function api(url, options = {}) {
+async function api(
+    url,
+    options = {}
+) {
 
     const headers = {
-        "Authorization": `Bearer ${token}`,
+
+        "Authorization":
+            `Bearer ${token}`,
+
         ...(options.headers || {})
     };
+
 
     if (
         options.body &&
         typeof options.body !== "string"
     ) {
-        headers["Content-Type"] = "application/json";
-        options.body = JSON.stringify(options.body);
+
+        headers["Content-Type"] =
+            "application/json";
+
+        options.body =
+            JSON.stringify(
+                options.body
+            );
     }
 
-    const response = await fetch(API + url, {
-        ...options,
-        headers
-    });
+
+    const response =
+        await fetch(
+            API + url,
+            {
+                ...options,
+                headers
+            }
+        );
+
 
     let data = null;
 
+
     try {
-        data = await response.json();
+
+        data =
+            await response.json();
+
     } catch {
+
         data = null;
     }
+
 
     if (!response.ok) {
 
         if (response.status === 401) {
-            localStorage.removeItem("telesupar_token");
-            localStorage.removeItem("telesupar_user");
-            window.location.href = "login.html";
+
+            localStorage.removeItem(
+                "telesupar_token"
+            );
+
+            localStorage.removeItem(
+                "telesupar_user"
+            );
+
+            window.location.href =
+                "login.html";
+
             return;
         }
+
 
         throw new Error(
             data?.message ||
@@ -124,17 +200,26 @@ async function api(url, options = {}) {
         );
     }
 
+
     return data;
 }
 
 
 /* =========================================================
-   INITIALIZE
+   INIT
 ========================================================= */
 
 async function initChat() {
 
-    if (!conversationId) return;
+    if (!conversationId) {
+
+        showError(
+            "Chat ID not found."
+        );
+
+        return;
+    }
+
 
     try {
 
@@ -148,13 +233,19 @@ async function initChat() {
 
         markConversationRead();
 
-        setTimeout(() => {
-            scrollToBottom(false);
-        }, 100);
+        setTimeout(
+            () => {
+                scrollToBottom(false);
+            },
+            100
+        );
 
     } catch (error) {
 
-        console.error("Chat init error:", error);
+        console.error(
+            "Chat initialization error:",
+            error
+        );
 
         showError(
             error.message ||
@@ -165,35 +256,64 @@ async function initChat() {
 
 
 /* =========================================================
-   LOAD CONVERSATION INFO
+   LOAD CONVERSATION
 ========================================================= */
 
 async function loadConversationInfo() {
 
-    const data = await api("/api/conversations");
+    const data =
+        await api(
+            "/api/conversations"
+        );
+
 
     let conversations = [];
 
+
     if (Array.isArray(data)) {
+
         conversations = data;
-    } else if (Array.isArray(data?.conversations)) {
-        conversations = data.conversations;
-    } else if (Array.isArray(data?.data)) {
-        conversations = data.data;
+
+    } else if (
+        Array.isArray(
+            data?.conversations
+        )
+    ) {
+
+        conversations =
+            data.conversations;
+
+    } else if (
+        Array.isArray(data?.data)
+    ) {
+
+        conversations =
+            data.data;
     }
 
-    const conversation = conversations.find(item => {
 
-        const id =
-            item.id ||
-            item._id ||
-            item.conversationId;
+    const conversation =
+        conversations.find(
+            item => {
 
-        return String(id) === String(conversationId);
-    });
+                const id =
+                    item.id ||
+                    item._id ||
+                    item.conversationId;
+
+                return (
+                    String(id) ===
+                    String(conversationId)
+                );
+            }
+        );
+
 
     if (!conversation) {
-        throw new Error("Conversation not found.");
+
+        throw new Error(
+            "Conversation not found."
+        );
     }
 
 
@@ -206,23 +326,33 @@ async function loadConversationInfo() {
 
     if (!otherUser) {
 
-        const members = conversation.members || [];
+        const members =
+            conversation.members || [];
+
 
         otherUser =
-            members.find(member => {
+            members.find(
+                member => {
 
-                const id =
-                    member.id ||
-                    member._id ||
-                    member.userId;
+                    const id =
+                        member.id ||
+                        member._id ||
+                        member.userId;
 
-                return String(id) !== String(currentUser.id);
-            }) || null;
+                    return (
+                        String(id) !==
+                        String(currentUser.id)
+                    );
+                }
+            ) || null;
     }
 
 
     if (!otherUser) {
-        throw new Error("Chat user not found.");
+
+        throw new Error(
+            "Chat user not found."
+        );
     }
 
 
@@ -243,17 +373,20 @@ function updateHeader() {
         "Unknown User";
 
 
-    chatUserName.textContent = name;
+    chatUserName.textContent =
+        name;
 
 
-    const avatarText =
+    const avatar =
         name
             .trim()
             .charAt(0)
-            .toUpperCase() || "?";
+            .toUpperCase() ||
+        "?";
 
 
-    headerAvatar.textContent = avatarText;
+    headerAvatar.textContent =
+        avatar;
 
 
     setOffline();
@@ -274,11 +407,21 @@ async function loadMessages() {
 
     let list = [];
 
+
     if (Array.isArray(data)) {
+
         list = data;
-    } else if (Array.isArray(data?.messages)) {
+
+    } else if (
+        Array.isArray(data?.messages)
+    ) {
+
         list = data.messages;
-    } else if (Array.isArray(data?.data)) {
+
+    } else if (
+        Array.isArray(data?.data)
+    ) {
+
         list = data.data;
     }
 
@@ -286,32 +429,34 @@ async function loadMessages() {
     messagesCache.clear();
 
 
-    list.forEach(message => {
+    list.forEach(
+        message => {
 
-        const id =
-            message.id ||
-            message._id ||
-            message.messageId;
+            const id =
+                message.id ||
+                message._id ||
+                message.messageId;
 
 
-        if (id) {
-            messagesCache.set(
-                String(id),
-                message
-            );
+            if (id) {
+
+                messagesCache.set(
+                    String(id),
+                    message
+                );
+            }
         }
-    });
+    );
 
 
     renderMessages();
-
 
     await markConversationRead();
 }
 
 
 /* =========================================================
-   RENDER ALL MESSAGES
+   RENDER
 ========================================================= */
 
 function renderMessages() {
@@ -321,68 +466,88 @@ function renderMessages() {
 
     if (messagesCache.size === 0) {
 
-        const empty = document.createElement("div");
+        messagesEl.innerHTML = `
+            <div class="empty-chat">
+                <div>
+                    <div style="
+                        font-size:30px;
+                        margin-bottom:8px;
+                    ">
+                        💬
+                    </div>
 
-        empty.className = "empty-chat";
+                    <div>
+                        No messages yet
+                    </div>
 
-        empty.innerHTML = `
-            <div>
-                <div style="font-size:30px;margin-bottom:8px;">💬</div>
-                <div>No messages yet</div>
-                <div style="margin-top:5px;font-size:11px;">
-                    Start the conversation
+                    <div style="
+                        margin-top:5px;
+                        font-size:11px;
+                    ">
+                        Start the conversation
+                    </div>
                 </div>
             </div>
         `;
-
-        messagesEl.appendChild(empty);
 
         return;
     }
 
 
     const list =
-        Array.from(messagesCache.values())
-            .sort(
-                (a, b) =>
-                    getMessageTime(a) -
-                    getMessageTime(b)
-            );
+        Array.from(
+            messagesCache.values()
+        ).sort(
+            (a,b) =>
+                getMessageTime(a) -
+                getMessageTime(b)
+        );
 
 
     let lastDate = null;
 
 
-    list.forEach(message => {
+    list.forEach(
+        message => {
 
-        const dateKey =
-            getDateKey(message);
+            const dateKey =
+                getDateKey(message);
 
 
-        if (dateKey !== lastDate) {
+            if (
+                dateKey !== lastDate
+            ) {
 
-            addDateSeparator(
-                formatDateSeparator(
-                    getMessageTime(message)
+                addDateSeparator(
+                    formatDateSeparator(
+                        getMessageTime(
+                            message
+                        )
+                    )
+                );
+
+                lastDate =
+                    dateKey;
+            }
+
+
+            messagesEl.appendChild(
+                createMessageElement(
+                    message
                 )
             );
-
-            lastDate = dateKey;
         }
-
-
-        messagesEl.appendChild(
-            createMessageElement(message)
-        );
-    });
+    );
 }
 
 
 /* =========================================================
-   CREATE MESSAGE
+   MESSAGE ELEMENT
 ========================================================= */
 
-function createMessageElement(message) {
+function createMessageElement(
+    message
+) {
 
     const senderId =
         getSenderId(message);
@@ -398,7 +563,11 @@ function createMessageElement(message) {
 
 
     wrapper.className =
-        `message ${isMine ? "sent" : "received"}`;
+        `message ${
+            isMine
+                ? "sent"
+                : "received"
+        }`;
 
 
     const bubble =
@@ -415,7 +584,9 @@ function createMessageElement(message) {
         "";
 
 
-    wrapper.appendChild(bubble);
+    wrapper.appendChild(
+        bubble
+    );
 
 
     const meta =
@@ -439,21 +610,15 @@ function createMessageElement(message) {
 
     } else {
 
-        meta.textContent = time;
+        meta.textContent =
+            time;
     }
 
 
-    wrapper.appendChild(meta);
+    wrapper.appendChild(
+        meta
+    );
 
-
-    /*
-       Long press / click foundation.
-       Later we will add:
-       Reply
-       Edit
-       Delete
-       Forward
-    */
 
     wrapper.dataset.messageId =
         message.id ||
@@ -461,47 +626,47 @@ function createMessageElement(message) {
         "";
 
 
-    wrapper.addEventListener(
-        "click",
-        () => {
-
-            /*
-              Future message menu will be added here.
-            */
-
-        }
-    );
-
-
     return wrapper;
 }
 
 
 /* =========================================================
-   DATE SEPARATOR
+   DATE
 ========================================================= */
 
-function addDateSeparator(text) {
+function addDateSeparator(
+    text
+) {
 
     const separator =
         document.createElement("div");
 
 
-    separator.style.textAlign = "center";
-    separator.style.margin = "15px 0";
-    separator.style.color = "#687384";
-    separator.style.fontSize = "11px";
+    separator.style.textAlign =
+        "center";
+
+    separator.style.margin =
+        "15px 0";
+
+    separator.style.color =
+        "#687384";
+
+    separator.style.fontSize =
+        "11px";
 
 
-    separator.textContent = text;
+    separator.textContent =
+        text;
 
 
-    messagesEl.appendChild(separator);
+    messagesEl.appendChild(
+        separator
+    );
 }
 
 
 /* =========================================================
-   SEND MESSAGE
+   SEND
 ========================================================= */
 
 async function sendMessage() {
@@ -517,7 +682,11 @@ async function sendMessage() {
 
 
     if (!conversationId) {
-        showError("Conversation not found.");
+
+        showTemporaryError(
+            "Conversation not found."
+        );
+
         return;
     }
 
@@ -533,8 +702,9 @@ async function sendMessage() {
             await api(
                 `/api/conversations/${encodeURIComponent(conversationId)}/messages`,
                 {
-                    method: "POST",
-                    body: {
+                    method:"POST",
+
+                    body:{
                         text
                     }
                 }
@@ -570,11 +740,10 @@ async function sendMessage() {
 
         renderMessages();
 
-
         scrollToBottom(true);
 
 
-    } catch (error) {
+    } catch(error) {
 
         console.error(
             "Send message error:",
@@ -599,7 +768,7 @@ async function sendMessage() {
 
 
 /* =========================================================
-   FORM SUBMIT
+   FORM
 ========================================================= */
 
 if (form) {
@@ -617,7 +786,7 @@ if (form) {
 
 
 /* =========================================================
-   ENTER TO SEND
+   ENTER
 ========================================================= */
 
 if (input) {
@@ -647,16 +816,15 @@ if (input) {
 
 
 /* =========================================================
-   SOCKET.IO
+   SOCKET
 ========================================================= */
 
 function connectSocket() {
 
-    if (typeof io === "undefined") {
-
-        console.warn(
-            "Socket.IO library not available."
-        );
+    if (
+        typeof io ===
+        "undefined"
+    ) {
 
         setOffline();
 
@@ -665,16 +833,26 @@ function connectSocket() {
 
 
     socket =
-        io(API, {
-            transports: [
-                "websocket",
-                "polling"
-            ],
-            reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 5000
-        });
+        io(
+            API,
+            {
+                transports:[
+                    "websocket",
+                    "polling"
+                ],
+
+                reconnection:true,
+
+                reconnectionAttempts:
+                    Infinity,
+
+                reconnectionDelay:
+                    1000,
+
+                reconnectionDelayMax:
+                    5000
+            }
+        );
 
 
     socket.on(
@@ -682,8 +860,7 @@ function connectSocket() {
         () => {
 
             console.log(
-                "TELESUPAR socket connected:",
-                socket.id
+                "TELESUPAR socket connected"
             );
 
 
@@ -715,10 +892,6 @@ function connectSocket() {
         "disconnect",
         () => {
 
-            console.log(
-                "TELESUPAR socket disconnected"
-            );
-
             setOffline();
         }
     );
@@ -729,7 +902,7 @@ function connectSocket() {
         error => {
 
             console.warn(
-                "Socket connection error:",
+                "Socket error:",
                 error.message
             );
 
@@ -738,9 +911,9 @@ function connectSocket() {
     );
 
 
-    /* =========================
+    /* =====================================
        NEW MESSAGE
-    ========================= */
+    ====================================== */
 
     socket.on(
         "newMessage",
@@ -756,9 +929,14 @@ function connectSocket() {
 
             if (
                 messageConversationId &&
-                String(messageConversationId) !==
-                String(conversationId)
+                String(
+                    messageConversationId
+                ) !==
+                String(
+                    conversationId
+                )
             ) {
+
                 return;
             }
 
@@ -772,45 +950,45 @@ function connectSocket() {
             if (!id) return;
 
 
-            const alreadyExists =
+            if (
                 messagesCache.has(
                     String(id)
-                );
+                )
+            ) {
+
+                return;
+            }
 
 
-            if (!alreadyExists) {
-
-                messagesCache.set(
-                    String(id),
-                    message
-                );
+            messagesCache.set(
+                String(id),
+                message
+            );
 
 
-                renderMessages();
+            renderMessages();
 
-                scrollToBottom(true);
+            scrollToBottom(true);
 
 
-                /*
-                  If incoming message is currently
-                  visible, immediately mark seen.
-                */
+            if (
+                String(
+                    getSenderId(message)
+                ) !==
+                String(
+                    currentUser.id
+                )
+            ) {
 
-                if (
-                    String(getSenderId(message)) !==
-                    String(currentUser.id)
-                ) {
-
-                    markConversationRead();
-                }
+                markConversationRead();
             }
         }
     );
 
 
-    /* =========================
-       MESSAGE DELIVERED
-    ========================= */
+    /* =====================================
+       DELIVERED
+    ====================================== */
 
     socket.on(
         "messageDelivered",
@@ -824,23 +1002,23 @@ function connectSocket() {
             if (!id) return;
 
 
-            const old =
+            const message =
                 messagesCache.get(
                     String(id)
                 );
 
 
-            if (!old) return;
+            if (!message) return;
 
 
-            old.deliveredAt =
+            message.deliveredAt =
                 payload.deliveredAt ||
                 new Date().toISOString();
 
 
             messagesCache.set(
                 String(id),
-                old
+                message
             );
 
 
@@ -849,9 +1027,9 @@ function connectSocket() {
     );
 
 
-    /* =========================
-       MESSAGES SEEN
-    ========================= */
+    /* =====================================
+       SEEN
+    ====================================== */
 
     socket.on(
         "messagesSeen",
@@ -859,9 +1037,14 @@ function connectSocket() {
 
             if (
                 payload?.conversationId &&
-                String(payload.conversationId) !==
-                String(conversationId)
+                String(
+                    payload.conversationId
+                ) !==
+                String(
+                    conversationId
+                )
             ) {
+
                 return;
             }
 
@@ -875,8 +1058,14 @@ function connectSocket() {
                 message => {
 
                     if (
-                        String(getSenderId(message)) ===
-                        String(currentUser.id)
+                        String(
+                            getSenderId(
+                                message
+                            )
+                        ) ===
+                        String(
+                            currentUser.id
+                        )
                     ) {
 
                         message.seenAt =
@@ -891,9 +1080,9 @@ function connectSocket() {
     );
 
 
-    /* =========================
+    /* =====================================
        ONLINE
-    ========================= */
+    ====================================== */
 
     socket.on(
         "userOnline",
@@ -901,7 +1090,9 @@ function connectSocket() {
 
             if (
                 String(userId) ===
-                String(getOtherUserId())
+                String(
+                    getOtherUserId()
+                )
             ) {
 
                 setOnline();
@@ -910,13 +1101,19 @@ function connectSocket() {
     );
 
 
+    /* =====================================
+       OFFLINE
+    ====================================== */
+
     socket.on(
         "userOffline",
         userId => {
 
             if (
                 String(userId) ===
-                String(getOtherUserId())
+                String(
+                    getOtherUserId()
+                )
             ) {
 
                 setOffline();
@@ -925,9 +1122,9 @@ function connectSocket() {
     );
 
 
-    /* =========================
+    /* =====================================
        TYPING
-    ========================= */
+    ====================================== */
 
     socket.on(
         "typing",
@@ -935,17 +1132,27 @@ function connectSocket() {
 
             if (
                 payload?.conversationId &&
-                String(payload.conversationId) !==
-                String(conversationId)
+                String(
+                    payload.conversationId
+                ) !==
+                String(
+                    conversationId
+                )
             ) {
+
                 return;
             }
 
 
             if (
-                String(payload?.userId) !==
-                String(getOtherUserId())
+                String(
+                    payload?.userId
+                ) !==
+                String(
+                    getOtherUserId()
+                )
             ) {
+
                 return;
             }
 
@@ -959,7 +1166,7 @@ function connectSocket() {
 
 
 /* =========================================================
-   READ / SEEN
+   READ
 ========================================================= */
 
 async function markConversationRead() {
@@ -972,22 +1179,11 @@ async function markConversationRead() {
         await api(
             `/api/conversations/${encodeURIComponent(conversationId)}/read`,
             {
-                method: "POST"
+                method:"POST"
             }
         );
 
-
-        if (socket?.connected) {
-
-            socket.emit(
-                "messagesSeen",
-                {
-                    conversationId
-                }
-            );
-        }
-
-    } catch (error) {
+    } catch(error) {
 
         console.warn(
             "Read status error:",
@@ -1003,14 +1199,20 @@ async function markConversationRead() {
 
 function handleTyping() {
 
-    if (!socket?.connected) return;
+    if (
+        !socket ||
+        !socket.connected
+    ) {
+
+        return;
+    }
 
 
     socket.emit(
         "typing",
         {
             conversationId,
-            isTyping: true
+            isTyping:true
         }
     );
 
@@ -1028,7 +1230,7 @@ function handleTyping() {
                     "typing",
                     {
                         conversationId,
-                        isTyping: false
+                        isTyping:false
                     }
                 );
 
@@ -1038,28 +1240,31 @@ function handleTyping() {
 }
 
 
-function showTyping(isTyping) {
+function showTyping(
+    isTyping
+) {
 
     if (!onlineStatus) return;
 
 
     if (isTyping) {
 
-        if (!otherUserTyping) {
+        otherUserTyping =
+            true;
 
-            otherUserTyping = true;
 
-            onlineStatus.textContent =
-                "typing...";
-            
-            onlineStatus.classList.remove(
-                "connected"
-            );
-        }
+        onlineStatus.textContent =
+            "typing...";
+
+
+        onlineStatus.classList.remove(
+            "connected"
+        );
 
     } else {
 
-        otherUserTyping = false;
+        otherUserTyping =
+            false;
 
         setOnline();
     }
@@ -1070,17 +1275,22 @@ function showTyping(isTyping) {
    STATUS
 ========================================================= */
 
-function getStatus(message) {
+function getStatus(
+    message
+) {
 
     if (message.seenAt) {
+
         return "✓✓";
     }
 
 
     if (
         message.deliveredAt ||
-        message.status === "delivered"
+        message.status ===
+        "delivered"
     ) {
+
         return "✓✓";
     }
 
@@ -1090,7 +1300,7 @@ function getStatus(message) {
 
 
 /* =========================================================
-   ONLINE / OFFLINE
+   ONLINE
 ========================================================= */
 
 function setOnline() {
@@ -1127,7 +1337,9 @@ function setOffline() {
    SEND LOADING
 ========================================================= */
 
-function setSendLoading(loading) {
+function setSendLoading(
+    loading
+) {
 
     if (!sendBtn) return;
 
@@ -1136,16 +1348,10 @@ function setSendLoading(loading) {
         loading;
 
 
-    if (loading) {
-
-        sendBtn.style.opacity =
-            "0.65";
-
-    } else {
-
-        sendBtn.style.opacity =
-            "1";
-    }
+    sendBtn.style.opacity =
+        loading
+            ? "0.55"
+            : "1";
 }
 
 
@@ -1153,7 +1359,9 @@ function setSendLoading(loading) {
    SCROLL
 ========================================================= */
 
-function scrollToBottom(smooth = true) {
+function scrollToBottom(
+    smooth = true
+) {
 
     if (!messagesEl) return;
 
@@ -1162,7 +1370,10 @@ function scrollToBottom(smooth = true) {
         () => {
 
             messagesEl.scrollTo({
-                top: messagesEl.scrollHeight,
+
+                top:
+                    messagesEl.scrollHeight,
+
                 behavior:
                     smooth
                         ? "smooth"
@@ -1174,10 +1385,12 @@ function scrollToBottom(smooth = true) {
 
 
 /* =========================================================
-   MESSAGE TIME
+   TIME
 ========================================================= */
 
-function getMessageTime(message) {
+function getMessageTime(
+    message
+) {
 
     return new Date(
         message.createdAt ||
@@ -1188,25 +1401,31 @@ function getMessageTime(message) {
 }
 
 
-function formatTime(timestamp) {
+function formatTime(
+    timestamp
+) {
 
     return new Date(
         timestamp
     ).toLocaleTimeString(
         [],
         {
-            hour: "2-digit",
-            minute: "2-digit"
+            hour:"2-digit",
+            minute:"2-digit"
         }
     );
 }
 
 
-function getDateKey(message) {
+function getDateKey(
+    message
+) {
 
     const date =
         new Date(
-            getMessageTime(message)
+            getMessageTime(
+                message
+            )
         );
 
 
@@ -1218,15 +1437,15 @@ function getDateKey(message) {
 }
 
 
-function formatDateSeparator(timestamp) {
+function formatDateSeparator(
+    timestamp
+) {
 
     const date =
         new Date(timestamp);
 
-
     const today =
         new Date();
-
 
     const yesterday =
         new Date();
@@ -1241,6 +1460,7 @@ function formatDateSeparator(timestamp) {
         date.toDateString() ===
         today.toDateString()
     ) {
+
         return "Today";
     }
 
@@ -1249,6 +1469,7 @@ function formatDateSeparator(timestamp) {
         date.toDateString() ===
         yesterday.toDateString()
     ) {
+
         return "Yesterday";
     }
 
@@ -1256,9 +1477,9 @@ function formatDateSeparator(timestamp) {
     return date.toLocaleDateString(
         [],
         {
-            day: "numeric",
-            month: "short",
-            year: "numeric"
+            day:"numeric",
+            month:"short",
+            year:"numeric"
         }
     );
 }
@@ -1268,7 +1489,9 @@ function formatDateSeparator(timestamp) {
    IDS
 ========================================================= */
 
-function getSenderId(message) {
+function getSenderId(
+    message
+) {
 
     return (
         message.senderId ||
@@ -1311,7 +1534,9 @@ function setLoading() {
    ERROR
 ========================================================= */
 
-function showError(message) {
+function showError(
+    message
+) {
 
     if (!messagesEl) return;
 
@@ -1319,15 +1544,27 @@ function showError(message) {
     messagesEl.innerHTML = `
         <div class="empty-chat">
             <div>
-                <div style="font-size:28px;margin-bottom:8px;">⚠️</div>
-                <div>${escapeHTML(message)}</div>
+
+                <div style="
+                    font-size:28px;
+                    margin-bottom:8px;
+                ">
+                    ⚠️
+                </div>
+
+                <div>
+                    ${escapeHTML(message)}
+                </div>
+
             </div>
         </div>
     `;
 }
 
 
-function showTemporaryError(message) {
+function showTemporaryError(
+    message
+) {
 
     const old =
         document.querySelector(
@@ -1339,7 +1576,9 @@ function showTemporaryError(message) {
 
 
     const toast =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     toast.className =
@@ -1353,17 +1592,35 @@ function showTemporaryError(message) {
     Object.assign(
         toast.style,
         {
-            position: "fixed",
-            left: "50%",
-            bottom: "90px",
-            transform: "translateX(-50%)",
-            background: "#2a1115",
-            color: "#ffb8c0",
-            border: "1px solid rgba(255,100,120,.25)",
-            padding: "10px 14px",
-            borderRadius: "12px",
-            fontSize: "12px",
-            zIndex: "999"
+
+            position:"fixed",
+
+            left:"50%",
+
+            bottom:"92px",
+
+            transform:
+                "translateX(-50%)",
+
+            background:"#2a1115",
+
+            color:"#ffb8c0",
+
+            border:
+                "1px solid rgba(255,100,120,.25)",
+
+            padding:
+                "10px 14px",
+
+            borderRadius:"12px",
+
+            fontSize:"12px",
+
+            zIndex:"9999",
+
+            maxWidth:"90%",
+
+            textAlign:"center"
         }
     );
 
@@ -1374,24 +1631,50 @@ function showTemporaryError(message) {
 
 
     setTimeout(
-        () => toast.remove(),
+        () => {
+
+            toast.remove();
+
+        },
         2500
     );
 }
 
 
 /* =========================================================
-   ESCAPE HTML
+   ESCAPE
 ========================================================= */
 
-function escapeHTML(value) {
+function escapeHTML(
+    value
+) {
 
     return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 }
 
 
@@ -1407,6 +1690,7 @@ if (attachmentBtn) {
 
             event.stopPropagation();
 
+
             attachmentMenu?.classList.toggle(
                 "show"
             );
@@ -1421,8 +1705,11 @@ document.addEventListener(
 
         if (
             attachmentMenu &&
-            !attachmentMenu.contains(event.target) &&
-            event.target !== attachmentBtn
+            !attachmentMenu.contains(
+                event.target
+            ) &&
+            event.target !==
+                attachmentBtn
         ) {
 
             attachmentMenu.classList.remove(
@@ -1442,7 +1729,7 @@ photoBtn?.addEventListener(
     () => {
 
         showTemporaryError(
-            "Photo sharing will be added in the next phase."
+            "Photo sharing will be added next."
         );
     }
 );
@@ -1453,7 +1740,7 @@ fileBtn?.addEventListener(
     () => {
 
         showTemporaryError(
-            "File sharing will be added in the next phase."
+            "File sharing will be added next."
         );
     }
 );
@@ -1464,14 +1751,14 @@ cameraBtn?.addEventListener(
     () => {
 
         showTemporaryError(
-            "Camera sharing will be added in the next phase."
+            "Camera sharing will be added next."
         );
     }
 );
 
 
 /* =========================================================
-   BACK BUTTON
+   BACK
 ========================================================= */
 
 if (backBtn) {
@@ -1480,20 +1767,8 @@ if (backBtn) {
         "click",
         () => {
 
-            if (
-                document.referrer &&
-                document.referrer.includes(
-                    "home.html"
-                )
-            ) {
-
-                history.back();
-
-            } else {
-
-                window.location.href =
-                    "home.html";
-            }
+            window.location.href =
+                "home.html";
         }
     );
 }
