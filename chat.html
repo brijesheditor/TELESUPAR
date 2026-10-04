@@ -216,13 +216,48 @@ body{
 
 .composer-area{
     flex-shrink:0;
-    padding:9px 11px calc(10px + env(safe-area-inset-bottom));
+
+    /* thoda upar floating feel */
+    padding:0 12px calc(18px + env(safe-area-inset-bottom));
+
     background:
         linear-gradient(
             to top,
-            rgba(7,10,15,1),
-            rgba(7,10,15,.94)
+            #070a0f 70%,
+            rgba(7,10,15,.88)
         );
+}
+
+.message-form{
+    min-height:58px;
+
+    display:flex;
+    align-items:center;
+    gap:9px;
+
+    padding:7px;
+
+    background:#111722;
+
+    border:1px solid rgba(255,255,255,.09);
+
+    border-radius:22px;
+
+    box-shadow:
+        0 12px 35px rgba(0,0,0,.42),
+        0 0 0 1px rgba(255,255,255,.015);
+
+    transform:translateY(-5px);
+}
+
+.messages{
+    flex:1;
+    overflow-y:auto;
+
+    /* composer se thoda extra space */
+    padding:18px 13px 32px;
+
+    scroll-behavior:smooth;
 }
 
 /* Floating message bar */
