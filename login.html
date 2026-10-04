@@ -2,18 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <meta name="theme-color" content="#070b14">
 
   <title>TELESUPAR — Login</title>
 
   <style>
-    /* ================================
-       RESET
-    ================================= */
-
     * {
       margin: 0;
       padding: 0;
@@ -28,24 +22,24 @@
 
     body {
       min-height: 100vh;
-      font-family: Arial, Helvetica, sans-serif;
-      color: #ffffff;
+      padding: 18px;
 
       display: flex;
       align-items: center;
       justify-content: center;
 
-      padding: 18px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #fff;
 
       background:
         radial-gradient(
           circle at 10% 0%,
-          rgba(30, 115, 255, 0.22),
+          rgba(30,115,255,.22),
           transparent 34%
         ),
         radial-gradient(
           circle at 90% 100%,
-          rgba(0, 210, 170, 0.16),
+          rgba(0,210,170,.16),
           transparent 35%
         ),
         #070b14;
@@ -53,87 +47,54 @@
       overflow-x: hidden;
     }
 
-
-    /* ================================
-       BACKGROUND GLOW
-    ================================= */
-
     .glow {
       position: fixed;
-
       width: 260px;
       height: 260px;
-
       border-radius: 50%;
-
       background: #1683ff;
-
       filter: blur(120px);
-
-      opacity: 0.14;
-
+      opacity: .14;
       top: -100px;
       left: -100px;
-
       pointer-events: none;
     }
 
     .glow-two {
       background: #00d4a8;
-
       top: auto;
       left: auto;
-
       right: -110px;
       bottom: -110px;
     }
 
-
-    /* ================================
-       MAIN
-    ================================= */
-
     .page {
       width: 100%;
       max-width: 430px;
-
       position: relative;
       z-index: 2;
     }
 
-
-    /* ================================
-       CARD
-    ================================= */
-
     .card {
       width: 100%;
-
       padding: 34px 24px 27px;
 
-      background: rgba(13, 19, 31, 0.92);
+      background: rgba(13,19,31,.94);
 
-      border: 1px solid rgba(255,255,255,0.08);
-
+      border: 1px solid rgba(255,255,255,.08);
       border-radius: 27px;
 
       box-shadow:
-        0 25px 70px rgba(0,0,0,0.48),
-        inset 0 1px 0 rgba(255,255,255,0.04);
+        0 25px 70px rgba(0,0,0,.48),
+        inset 0 1px 0 rgba(255,255,255,.04);
 
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
     }
 
-
-    /* ================================
-       LOGO
-    ================================= */
-
     .logo {
       width: 72px;
       height: 72px;
-
       margin: 0 auto 20px;
 
       display: flex;
@@ -149,50 +110,34 @@
           #0069e8
         );
 
-      color: #ffffff;
+      color: white;
 
       font-size: 25px;
       font-weight: 900;
-
       letter-spacing: 1px;
 
       box-shadow:
-        0 15px 35px rgba(22,133,255,0.30);
+        0 15px 35px rgba(22,133,255,.30);
     }
-
-
-    /* ================================
-       HEADING
-    ================================= */
 
     .title {
       text-align: center;
-
       font-size: 30px;
-
       font-weight: 800;
-
-      letter-spacing: -0.8px;
+      letter-spacing: -.8px;
     }
 
     .subtitle {
+      margin-top: 8px;
+      margin-bottom: 28px;
+
       text-align: center;
 
       color: #8d99ad;
 
       font-size: 14px;
-
       line-height: 1.5;
-
-      margin-top: 8px;
-
-      margin-bottom: 28px;
     }
-
-
-    /* ================================
-       INPUT
-    ================================= */
 
     .input-group {
       margin-bottom: 17px;
@@ -200,13 +145,11 @@
 
     .input-group label {
       display: block;
-
       margin-bottom: 8px;
 
       color: #cbd4e4;
 
       font-size: 13px;
-
       font-weight: 700;
     }
 
@@ -221,18 +164,15 @@
       padding: 0 16px;
 
       border-radius: 14px;
-
       border: 1px solid #273248;
-
       outline: none;
 
       background: #090f1a;
-
-      color: #ffffff;
+      color: #fff;
 
       font-size: 15px;
 
-      transition: 0.2s ease;
+      transition: .2s ease;
     }
 
     .input-wrapper input::placeholder {
@@ -243,13 +183,8 @@
       border-color: #2586ff;
 
       box-shadow:
-        0 0 0 3px rgba(37,134,255,0.12);
+        0 0 0 3px rgba(37,134,255,.12);
     }
-
-
-    /* ================================
-       PASSWORD
-    ================================= */
 
     .password-input {
       padding-right: 72px !important;
@@ -266,38 +201,29 @@
       padding: 8px;
 
       border: none;
-
       background: transparent;
 
       color: #6f91bd;
 
       font-size: 11px;
-
       font-weight: 800;
 
       cursor: pointer;
     }
 
     .show-password:hover {
-      color: #ffffff;
+      color: #fff;
     }
-
-
-    /* ================================
-       MESSAGE
-    ================================= */
 
     .message {
       display: none;
 
       margin: 4px 0 14px;
-
       padding: 12px 14px;
 
       border-radius: 12px;
 
       font-size: 13px;
-
       line-height: 1.4;
     }
 
@@ -308,30 +234,24 @@
     .message.error {
       color: #ffb9c0;
 
-      background: rgba(255,65,85,0.10);
+      background: rgba(255,65,85,.10);
 
-      border: 1px solid rgba(255,65,85,0.18);
+      border: 1px solid rgba(255,65,85,.18);
     }
 
     .message.success {
       color: #a2f1d9;
 
-      background: rgba(0,210,168,0.09);
+      background: rgba(0,210,168,.09);
 
-      border: 1px solid rgba(0,210,168,0.18);
+      border: 1px solid rgba(0,210,168,.18);
     }
-
-
-    /* ================================
-       LOGIN BUTTON
-    ================================= */
 
     .login-btn {
       width: 100%;
       height: 54px;
 
       border: none;
-
       border-radius: 15px;
 
       background:
@@ -341,18 +261,17 @@
           #006be7
         );
 
-      color: #ffffff;
+      color: #fff;
 
       font-size: 15px;
-
       font-weight: 800;
 
       cursor: pointer;
 
       box-shadow:
-        0 13px 30px rgba(22,133,255,0.23);
+        0 13px 30px rgba(22,133,255,.23);
 
-      transition: 0.2s ease;
+      transition: .2s ease;
     }
 
     .login-btn:hover {
@@ -360,28 +279,20 @@
     }
 
     .login-btn:active {
-      transform: scale(0.98);
+      transform: scale(.98);
     }
 
     .login-btn:disabled {
-      opacity: 0.65;
-
+      opacity: .65;
       cursor: not-allowed;
-
       transform: none;
     }
 
-
-    /* ================================
-       CREATE ACCOUNT
-    ================================= */
-
     .register-section {
       margin-top: 25px;
-
       padding-top: 23px;
 
-      border-top: 1px solid rgba(255,255,255,0.07);
+      border-top: 1px solid rgba(255,255,255,.07);
 
       text-align: center;
     }
@@ -390,7 +301,6 @@
       margin-bottom: 12px;
 
       color: #7f8ca1;
-
       font-size: 13px;
     }
 
@@ -403,40 +313,27 @@
       justify-content: center;
 
       border-radius: 14px;
-
       border: 1px solid #29354c;
 
       background: #101725;
 
-      color: #ffffff;
+      color: #fff;
 
       text-decoration: none;
 
       font-size: 14px;
-
       font-weight: 800;
 
-      transition: 0.2s ease;
+      transition: .2s ease;
     }
 
     .create-account-btn:hover {
       background: #172236;
-
       border-color: #358fff;
     }
 
-    .create-account-btn:active {
-      transform: scale(0.98);
-    }
-
-
-    /* ================================
-       SECURITY
-    ================================= */
-
     .security {
       display: flex;
-
       align-items: center;
       justify-content: center;
 
@@ -458,15 +355,10 @@
       background: #00d1a5;
 
       box-shadow:
-        0 0 10px rgba(0,209,165,0.7);
+        0 0 10px rgba(0,209,165,.7);
     }
 
-
-    /* ================================
-       MOBILE
-    ================================= */
-
-    @media (max-width: 420px) {
+    @media (max-width:420px) {
 
       body {
         padding: 13px;
@@ -474,16 +366,13 @@
 
       .card {
         padding: 28px 19px 24px;
-
         border-radius: 23px;
       }
 
       .logo {
         width: 64px;
         height: 64px;
-
         border-radius: 19px;
-
         font-size: 23px;
       }
 
@@ -498,26 +387,17 @@
   </style>
 </head>
 
-
 <body>
 
-  <!-- Background -->
   <div class="glow"></div>
   <div class="glow glow-two"></div>
-
 
   <main class="page">
 
     <section class="card">
 
+      <div class="logo">TS</div>
 
-      <!-- Logo -->
-      <div class="logo">
-        TS
-      </div>
-
-
-      <!-- Heading -->
       <h1 class="title">
         Welcome Back
       </h1>
@@ -526,12 +406,8 @@
         Login to continue to TELESUPAR
       </p>
 
-
-      <!-- Login Form -->
       <form id="loginForm">
 
-
-        <!-- Email -->
         <div class="input-group">
 
           <label for="email">
@@ -553,8 +429,6 @@
 
         </div>
 
-
-        <!-- Password -->
         <div class="input-group">
 
           <label for="password">
@@ -585,15 +459,11 @@
 
         </div>
 
-
-        <!-- Message -->
         <div
           id="message"
           class="message"
         ></div>
 
-
-        <!-- Login -->
         <button
           type="submit"
           id="loginBtn"
@@ -604,8 +474,6 @@
 
       </form>
 
-
-      <!-- Create Account -->
       <div class="register-section">
 
         <p>
@@ -621,8 +489,6 @@
 
       </div>
 
-
-      <!-- Security -->
       <div class="security">
 
         <span class="security-dot"></span>
@@ -631,25 +497,14 @@
 
       </div>
 
-
     </section>
 
   </main>
 
-
   <script>
-
-    /* =================================
-       API
-    ================================= */
 
     const API_URL =
       "https://telesupar.onrender.com";
-
-
-    /* =================================
-       ELEMENTS
-    ================================= */
 
     const loginForm =
       document.getElementById("loginForm");
@@ -660,6 +515,9 @@
     const message =
       document.getElementById("message");
 
+    const emailInput =
+      document.getElementById("email");
+
     const passwordInput =
       document.getElementById("password");
 
@@ -667,9 +525,9 @@
       document.getElementById("showPassword");
 
 
-    /* =================================
+    /* =========================
        SHOW / HIDE PASSWORD
-    ================================= */
+    ========================= */
 
     showPassword.addEventListener(
       "click",
@@ -686,20 +544,20 @@
 
         } else {
 
-          passwordInput.type = "password";
+          passwordInput.type =
+            "password";
 
           showPassword.textContent =
             "SHOW";
-
         }
 
       }
     );
 
 
-    /* =================================
-       MESSAGE FUNCTION
-    ================================= */
+    /* =========================
+       MESSAGE
+    ========================= */
 
     function showMessage(
       text,
@@ -710,13 +568,12 @@
 
       message.className =
         "message show " + type;
-
     }
 
 
-    /* =================================
+    /* =========================
        LOGIN
-    ================================= */
+    ========================= */
 
     loginForm.addEventListener(
       "submit",
@@ -724,18 +581,13 @@
 
         event.preventDefault();
 
-
         const email =
-          document
-            .getElementById("email")
-            .value
+          emailInput.value
             .trim()
             .toLowerCase();
 
-
         const password =
           passwordInput.value;
-
 
         if (!email || !password) {
 
@@ -747,19 +599,44 @@
           return;
         }
 
-
-        /* Loading */
-
         loginBtn.disabled = true;
 
         loginBtn.textContent =
-          "Logging in...";
+          "Connecting...";
 
         message.className =
           "message";
 
-
         try {
+
+          /*
+           * First wake/check backend.
+           * Render free services can sleep.
+           */
+
+          try {
+
+            await fetch(
+              API_URL + "/api/health",
+              {
+                method: "GET",
+                cache: "no-store"
+              }
+            );
+
+          } catch (healthError) {
+
+            console.log(
+              "Health check:",
+              healthError
+            );
+
+          }
+
+
+          loginBtn.textContent =
+            "Logging in...";
+
 
           const response =
             await fetch(
@@ -769,54 +646,64 @@
 
                 headers: {
                   "Content-Type":
+                    "application/json",
+                  "Accept":
                     "application/json"
                 },
 
                 body: JSON.stringify({
-
                   email: email,
-
                   password: password
-
                 })
               }
             );
 
 
-          const data =
-            await response.json();
+          let data = {};
 
+          try {
 
-          /* Server error */
+            data =
+              await response.json();
+
+          } catch (jsonError) {
+
+            throw new Error(
+              "Server returned an invalid response."
+            );
+          }
+
 
           if (!response.ok) {
 
             throw new Error(
-              data.error ||
               data.message ||
               "Invalid email or password."
             );
-
           }
 
 
-          /* =================================
-             SAVE LOGIN TOKEN
-          ================================= */
+          if (!data.token) {
 
-          if (data.token) {
-
-            localStorage.setItem(
-              "telesupar_token",
-              data.token
+            throw new Error(
+              "Login succeeded but server did not return a token."
             );
-
           }
 
 
-          /* =================================
-             SAVE USER
-          ================================= */
+          /*
+           * SAVE TOKEN
+           */
+
+          localStorage.setItem(
+            "telesupar_token",
+            data.token
+          );
+
+
+          /*
+           * SAVE USER
+           */
 
           if (data.user) {
 
@@ -828,15 +715,15 @@
           }
 
 
-          /* Success */
-
           showMessage(
             "Login successful. Opening TELESUPAR...",
             "success"
           );
 
 
-          /* Go Home */
+          loginBtn.textContent =
+            "Success ✓";
+
 
           setTimeout(
             function () {
@@ -845,21 +732,34 @@
                 "home.html";
 
             },
-            700
+            500
           );
 
 
         } catch (error) {
 
           console.error(
-            "Login error:",
+            "TELESUPAR LOGIN ERROR:",
             error
           );
 
 
+          let errorText =
+            "Unable to connect to TELESUPAR server.";
+
+
+          if (
+            error &&
+            error.message
+          ) {
+
+            errorText =
+              error.message;
+          }
+
+
           showMessage(
-            error.message ||
-            "Unable to connect to server.",
+            errorText,
             "error"
           );
 
@@ -868,7 +768,6 @@
 
           loginBtn.textContent =
             "Login";
-
         }
 
       }
