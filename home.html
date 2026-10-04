@@ -36,8 +36,7 @@
       overflow-x:hidden;
     }
 
-    button,
-    input{
+    button,input{
       font:inherit;
     }
 
@@ -313,6 +312,10 @@
       font-weight:bold;
     }
 
+    .chat-btn:active{
+      transform:scale(.95);
+    }
+
     /* EMPTY / LOADING */
 
     .center-message{
@@ -333,7 +336,9 @@
     }
 
     @keyframes spin{
-      to{transform:rotate(360deg)}
+      to{
+        transform:rotate(360deg);
+      }
     }
 
     /* FAB */
@@ -414,6 +419,9 @@
       font-size:12px;
       transition:.25s;
       white-space:nowrap;
+      max-width:90%;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .toast.show{
@@ -422,6 +430,7 @@
     }
 
     @media(min-width:700px){
+
       .main{
         padding-top:25px;
       }
@@ -437,6 +446,7 @@
       .fab{
         right:calc((100% - 720px)/2);
       }
+
     }
   </style>
 </head>
@@ -444,56 +454,95 @@
 <body>
 
   <!-- HEADER -->
+
   <header class="topbar">
+
     <div class="brand">
-      <div class="logo">TS</div>
+
+      <div class="logo">
+        TS
+      </div>
 
       <div class="brand-text">
         <h1>TELESUPAR</h1>
         <p id="welcomeText">Connecting...</p>
       </div>
+
     </div>
 
-    <button class="header-btn" id="refreshBtn">↻</button>
+    <button
+      class="header-btn"
+      id="refreshBtn"
+      type="button"
+    >
+      ↻
+    </button>
+
   </header>
 
+
   <!-- MAIN -->
+
   <main class="main">
 
     <!-- SEARCH -->
+
     <div class="search-box">
+
       <span>⌕</span>
+
       <input
         id="searchInput"
         type="search"
         placeholder="Search users..."
         autocomplete="off"
       >
+
     </div>
 
+
     <!-- SEARCH RESULTS -->
+
     <section id="searchResults">
+
       <div class="section-title">
+
         <h2>Users</h2>
+
         <span id="resultCount"></span>
+
       </div>
 
       <div id="usersList"></div>
+
     </section>
 
+
     <!-- RECENT CHATS -->
+
     <section id="recentSection">
 
       <div class="section-title">
+
         <h2>Recent Chats</h2>
-        <span id="chatCount">0 chats</span>
+
+        <span id="chatCount">
+          0 chats
+        </span>
+
       </div>
 
-      <div id="chatList" class="list">
+      <div
+        id="chatList"
+        class="list"
+      >
 
         <div class="center-message">
+
           <div class="loader"></div>
+
           Loading chats...
+
         </div>
 
       </div>
@@ -502,30 +551,56 @@
 
   </main>
 
-  <!-- FAB -->
-  <button class="fab" id="newChatBtn">＋</button>
+
+  <!-- NEW CHAT -->
+
+  <button
+    class="fab"
+    id="newChatBtn"
+    type="button"
+  >
+    ＋
+  </button>
+
 
   <!-- BOTTOM NAV -->
+
   <nav class="bottom-nav">
 
     <div class="nav-inner">
 
-      <button class="nav-btn active" data-page="chats">
+      <button
+        class="nav-btn active"
+        data-page="chats"
+        type="button"
+      >
         💬
         <span>Chats</span>
       </button>
 
-      <button class="nav-btn" data-page="contacts">
+      <button
+        class="nav-btn"
+        data-page="contacts"
+        type="button"
+      >
         👥
         <span>Contacts</span>
       </button>
 
-      <button class="nav-btn" data-page="profile">
+      <button
+        class="nav-btn"
+        data-page="profile"
+        type="button"
+      >
         👤
         <span>Profile</span>
       </button>
 
-      <button class="nav-btn" data-page="settings">
+      <button
+        class="nav-btn"
+        data-page="settings"
+        type="button"
+      >
         ⚙️
         <span>Settings</span>
       </button>
@@ -534,151 +609,240 @@
 
   </nav>
 
-  <div id="toast" class="toast"></div>
+
+  <div
+    id="toast"
+    class="toast"
+  ></div>
 
 
   <script>
 
-    /* ============================
-       TELESUPAR HOME
-    ============================ */
+    /* =================================
+       TELESUPAR HOME CONFIG
+    ================================= */
 
-    const API_URL = "https://telesupar.onrender.com";
+    const API_URL =
+      "https://telesupar.onrender.com";
+
+
+    /* =================================
+       AUTH
+    ================================= */
 
     const token =
-      localStorage.getItem("telesupar_token");
+      localStorage.getItem(
+        "telesupar_token"
+      );
 
-    const savedUser =
-      JSON.parse(
-        localStorage.getItem("telesupar_user") || "null"
+    if(!token){
+
+      window.location.replace(
+        "login.html"
+      );
+
+    }
+
+
+    /* =================================
+       ELEMENTS
+    ================================= */
+
+    const searchInput =
+      document.getElementById(
+        "searchInput"
+      );
+
+    const searchResults =
+      document.getElementById(
+        "searchResults"
+      );
+
+    const usersList =
+      document.getElementById(
+        "usersList"
+      );
+
+    const chatList =
+      document.getElementById(
+        "chatList"
+      );
+
+    const welcomeText =
+      document.getElementById(
+        "welcomeText"
+      );
+
+    const chatCount =
+      document.getElementById(
+        "chatCount"
+      );
+
+    const toast =
+      document.getElementById(
+        "toast"
       );
 
 
-    /* ============================
-       AUTH CHECK
-    ============================ */
-
-    if(!token){
-      window.location.href = "login.html";
-    }
-
-
-    /* ============================
-       ELEMENTS
-    ============================ */
-
-    const searchInput =
-      document.getElementById("searchInput");
-
-    const searchResults =
-      document.getElementById("searchResults");
-
-    const usersList =
-      document.getElementById("usersList");
-
-    const chatList =
-      document.getElementById("chatList");
-
-    const welcomeText =
-      document.getElementById("welcomeText");
-
-    const chatCount =
-      document.getElementById("chatCount");
-
-    const toast =
-      document.getElementById("toast");
-
-
-    /* ============================
+    /* =================================
        TOAST
-    ============================ */
+    ================================= */
 
     function showToast(message){
 
-      toast.textContent = message;
+      toast.textContent =
+        message;
 
-      toast.classList.add("show");
+      toast.classList.add(
+        "show"
+      );
 
       setTimeout(() => {
-        toast.classList.remove("show");
+
+        toast.classList.remove(
+          "show"
+        );
+
       },2500);
+
     }
 
 
-    /* ============================
+    /* =================================
        API HELPER
-    ============================ */
+    ================================= */
 
-    async function api(path,options={}){
+    async function api(
+      path,
+      options = {}
+    ){
 
       const headers = {
-        "Content-Type":"application/json",
-        ...(options.headers || {}),
-        "Authorization":"Bearer " + token
+
+        "Content-Type":
+          "application/json",
+
+        "Authorization":
+          "Bearer " + token,
+
+        ...(options.headers || {})
+
       };
 
-      const response =
-        await fetch(API_URL + path,{
-          ...options,
-          headers
-        });
 
-      let data;
+      let response;
 
       try{
-        data = await response.json();
-      }catch{
+
+        response =
+          await fetch(
+            API_URL + path,
+            {
+              ...options,
+              headers
+            }
+          );
+
+      }catch(error){
+
         throw new Error(
-          "Server returned an invalid response"
+          "Could not connect to server"
         );
+
       }
+
+
+      let data = {};
+
+      try{
+
+        data =
+          await response.json();
+
+      }catch(error){
+
+        throw new Error(
+          "Server returned invalid response"
+        );
+
+      }
+
 
       if(!response.ok){
 
         throw new Error(
-          data.message || "Request failed"
+          data.message ||
+          "Request failed"
         );
+
       }
 
+
       return data;
+
     }
 
 
-    /* ============================
+    /* =================================
        LOAD MY PROFILE
-    ============================ */
+    ================================= */
 
     async function loadMe(){
 
       try{
 
         const data =
-          await api("/api/me");
+          await api(
+            "/api/me"
+          );
+
 
         if(data.user){
 
           localStorage.setItem(
             "telesupar_user",
-            JSON.stringify(data.user)
+            JSON.stringify(
+              data.user
+            )
           );
+
 
           welcomeText.textContent =
             "Welcome, " +
-            (data.user.displayName ||
-             data.user.username);
+            (
+              data.user.displayName ||
+              data.user.username ||
+              "User"
+            );
 
         }
 
       }catch(error){
 
-        console.error(error);
+        console.error(
+          "ME ERROR:",
+          error
+        );
 
-        if(error.message.toLowerCase().includes("token")){
 
-          localStorage.removeItem("telesupar_token");
-          localStorage.removeItem("telesupar_user");
+        if(
+          error.message
+            .toLowerCase()
+            .includes("token")
+        ){
 
-          window.location.href = "login.html";
+          localStorage.removeItem(
+            "telesupar_token"
+          );
+
+          localStorage.removeItem(
+            "telesupar_user"
+          );
+
+          window.location.replace(
+            "login.html"
+          );
+
         }
 
       }
@@ -686,126 +850,228 @@
     }
 
 
-    /* ============================
+    /* =================================
        LOAD RECENT CHATS
-    ============================ */
+    ================================= */
 
     async function loadChats(){
 
       chatList.innerHTML = `
+
         <div class="center-message">
+
           <div class="loader"></div>
+
           Loading chats...
+
         </div>
+
       `;
+
 
       try{
 
         const data =
-          await api("/api/conversations");
+          await api(
+            "/api/conversations"
+          );
+
 
         const chats =
           data.conversations || [];
 
+
         chatCount.textContent =
-          chats.length + " chats";
+          chats.length +
+          (
+            chats.length === 1
+              ? " chat"
+              : " chats"
+          );
+
 
         if(!chats.length){
 
           chatList.innerHTML = `
+
             <div class="center-message">
-              💬<br><br>
-              No chats yet.<br>
-              Search for a user and start chatting.
+
+              💬
+              <br><br>
+
+              No chats yet.
+              <br>
+
+              Search for a user
+              and start chatting.
+
             </div>
+
           `;
 
           return;
+
         }
+
 
         chatList.innerHTML = "";
 
-        chats.forEach(chat => {
 
-          const other =
-            chat.otherUser || {};
+        chats.forEach(
+          chat => {
 
-          const name =
-            other.displayName ||
-            other.username ||
-            "Unknown User";
+            const other =
+              chat.otherUser || {};
 
-          const username =
-            other.username || "";
 
-          const initial =
-            name.charAt(0).toUpperCase();
+            const name =
+              other.displayName ||
+              other.username ||
+              "Unknown User";
 
-          const item =
-            document.createElement("div");
 
-          item.className = "chat";
+            const initial =
+              name
+                .charAt(0)
+                .toUpperCase();
 
-          item.innerHTML = `
-            <div class="avatar">
-              ${escapeHTML(initial)}
-              <div class="online-dot"></div>
-            </div>
 
-            <div class="chat-info">
+            const item =
+              document.createElement(
+                "div"
+              );
 
-              <div class="chat-top">
-                <div class="chat-name">
-                  ${escapeHTML(name)}
-                </div>
 
-                <div class="chat-time">
-                  ${formatTime(chat.updatedAt)}
-                </div>
+            item.className =
+              "chat";
+
+
+            item.innerHTML = `
+
+              <div class="avatar">
+
+                ${escapeHTML(
+                  initial
+                )}
+
+                <div
+                  class="online-dot"
+                ></div>
+
               </div>
 
-              <div class="chat-bottom">
 
-                <div class="chat-message">
-                  ${escapeHTML(
-                    chat.lastMessage || "Start a conversation"
-                  )}
+              <div class="chat-info">
+
+                <div class="chat-top">
+
+                  <div class="chat-name">
+
+                    ${escapeHTML(
+                      name
+                    )}
+
+                  </div>
+
+
+                  <div class="chat-time">
+
+                    ${formatTime(
+                      chat.updatedAt
+                    )}
+
+                  </div>
+
                 </div>
 
-                ${
-                  chat.unreadCount
-                  ?
-                  `<div class="badge">
-                    ${chat.unreadCount}
-                  </div>`
-                  :
-                  ""
+
+                <div class="chat-bottom">
+
+                  <div class="chat-message">
+
+                    ${escapeHTML(
+                      chat.lastMessage ||
+                      "Start a conversation"
+                    )}
+
+                  </div>
+
+
+                  ${
+                    chat.unreadCount
+                      ? `
+                        <div class="badge">
+                          ${chat.unreadCount}
+                        </div>
+                      `
+                      : ""
+                  }
+
+                </div>
+
+              </div>
+
+            `;
+
+
+            item.addEventListener(
+              "click",
+              () => {
+
+                if(!chat._id){
+
+                  showToast(
+                    "Conversation ID missing"
+                  );
+
+                  return;
+
                 }
 
-              </div>
 
-            </div>
-          `;
+                openChat(
+                  chat._id
+                );
 
-          item.addEventListener(
-            "click",
-            () => openChat(chat._id)
-          );
+              }
+            );
 
-          chatList.appendChild(item);
 
-        });
+            chatList.appendChild(
+              item
+            );
+
+          }
+        );
+
 
       }catch(error){
 
-        console.error(error);
+        console.error(
+          "CHAT ERROR:",
+          error
+        );
+
 
         chatList.innerHTML = `
+
           <div class="center-message">
-            ⚠️<br><br>
-            Could not load chats.<br>
-            <small>${escapeHTML(error.message)}</small>
+
+            ⚠️
+            <br><br>
+
+            Could not load chats.
+
+            <br><br>
+
+            <small>
+              ${escapeHTML(
+                error.message
+              )}
+            </small>
+
           </div>
+
         `;
 
       }
@@ -813,34 +1079,52 @@
     }
 
 
-    /* ============================
-       SEARCH USERS
-    ============================ */
+    /* =================================
+       SEARCH
+    ================================= */
 
-    let searchTimer;
+    let searchTimer = null;
+
 
     searchInput.addEventListener(
       "input",
       function(){
 
-        clearTimeout(searchTimer);
+        clearTimeout(
+          searchTimer
+        );
 
-        const value =
+
+        const query =
           this.value.trim();
 
-        if(!value){
 
-          searchResults.style.display = "none";
+        if(!query){
+
+          searchResults.style.display =
+            "none";
+
+
           document.getElementById(
             "recentSection"
-          ).style.display = "block";
+          ).style.display =
+            "block";
+
 
           return;
+
         }
+
 
         searchTimer =
           setTimeout(
-            () => searchUsers(value),
+            () => {
+
+              searchUsers(
+                query
+              );
+
+            },
             350
           );
 
@@ -848,117 +1132,263 @@
     );
 
 
-    async function searchUsers(query){
+    /* =================================
+       SEARCH USERS
+    ================================= */
 
-      searchResults.style.display = "block";
+    async function searchUsers(
+      query
+    ){
+
+      searchResults.style.display =
+        "block";
+
 
       document.getElementById(
         "recentSection"
-      ).style.display = "none";
+      ).style.display =
+        "none";
+
 
       usersList.innerHTML = `
+
         <div class="center-message">
+
           <div class="loader"></div>
+
           Searching...
+
         </div>
+
       `;
+
 
       try{
 
         const data =
           await api(
             "/api/users?search=" +
-            encodeURIComponent(query)
+            encodeURIComponent(
+              query
+            )
           );
+
 
         const users =
           data.users || [];
 
+
         document.getElementById(
           "resultCount"
         ).textContent =
-          users.length + " found";
+          users.length +
+          " found";
+
 
         if(!users.length){
 
           usersList.innerHTML = `
+
             <div class="center-message">
+
               No users found.
+
             </div>
+
           `;
 
           return;
+
         }
+
 
         usersList.innerHTML = "";
 
-        users.forEach(user => {
 
-          const name =
-            user.displayName ||
-            user.username ||
-            "User";
+        users.forEach(
+          user => {
 
-          const initial =
-            name.charAt(0).toUpperCase();
+            const name =
+              user.displayName ||
+              user.username ||
+              "User";
 
-          const item =
-            document.createElement("div");
 
-          item.className =
-            "user-result";
+            const initial =
+              name
+                .charAt(0)
+                .toUpperCase();
 
-          item.innerHTML = `
 
-            <div class="avatar">
-              ${escapeHTML(initial)}
-            </div>
+            /*
+              IMPORTANT:
+              Backend may return either:
+              user.id
+              OR
+              user._id
+            */
 
-            <div class="user-result-info">
+            const userId =
+              String(
+                user.id ||
+                user._id ||
+                ""
+              );
 
-              <div class="user-result-name">
-                ${escapeHTML(name)}
+
+            const item =
+              document.createElement(
+                "div"
+              );
+
+
+            item.className =
+              "user-result";
+
+
+            item.innerHTML = `
+
+              <div class="avatar">
+
+                ${escapeHTML(
+                  initial
+                )}
+
               </div>
 
-              <div class="user-result-username">
-                @${escapeHTML(user.username || "")}
+
+              <div
+                class="user-result-info"
+              >
+
+                <div
+                  class="user-result-name"
+                >
+
+                  ${escapeHTML(
+                    name
+                  )}
+
+                </div>
+
+
+                <div
+                  class="user-result-username"
+                >
+
+                  @${escapeHTML(
+                    user.username ||
+                    ""
+                  )}
+
+                </div>
+
               </div>
 
-            </div>
 
-            <button
-              class="chat-btn"
-              data-id="${user._id}"
-            >
-              Chat
-            </button>
+              <button
+                class="chat-btn"
+                type="button"
+              >
+                Chat
+              </button>
 
-          `;
+            `;
 
-          item.querySelector(
-            ".chat-btn"
-          ).addEventListener(
-            "click",
-            (event) => {
 
-              event.stopPropagation();
+            const chatButton =
+              item.querySelector(
+                ".chat-btn"
+              );
 
-              startChat(user._id);
 
-            }
-          );
+            chatButton.addEventListener(
+              "click",
+              function(event){
 
-          usersList.appendChild(item);
+                event.preventDefault();
 
-        });
+                event.stopPropagation();
+
+
+                /*
+                  Read ID directly from
+                  the original user object.
+                */
+
+                const finalUserId =
+                  String(
+                    user.id ||
+                    user._id ||
+                    ""
+                  ).trim();
+
+
+                console.log(
+                  "Selected user:",
+                  user
+                );
+
+                console.log(
+                  "Selected user ID:",
+                  finalUserId
+                );
+
+
+                if(
+                  !finalUserId ||
+                  finalUserId ===
+                    "undefined" ||
+                  finalUserId ===
+                    "null"
+                ){
+
+                  showToast(
+                    "User ID not found"
+                  );
+
+                  return;
+
+                }
+
+
+                startChat(
+                  finalUserId
+                );
+
+              }
+            );
+
+
+            usersList.appendChild(
+              item
+            );
+
+          }
+        );
+
 
       }catch(error){
 
+        console.error(
+          "SEARCH ERROR:",
+          error
+        );
+
+
         usersList.innerHTML = `
+
           <div class="center-message">
-            ⚠️<br><br>
-            ${escapeHTML(error.message)}
+
+            ⚠️
+            <br><br>
+
+            ${escapeHTML(
+              error.message
+            )}
+
           </div>
+
         `;
 
       }
@@ -966,41 +1396,96 @@
     }
 
 
-    /* ============================
+    /* =================================
        START CHAT
-    ============================ */
+    ================================= */
 
-    async function startChat(userId){
+    async function startChat(
+      userId
+    ){
+
+      const cleanUserId =
+        String(
+          userId || ""
+        ).trim();
+
+
+      console.log(
+        "START CHAT USER ID:",
+        cleanUserId
+      );
+
+
+      if(
+        !cleanUserId ||
+        cleanUserId ===
+          "undefined" ||
+        cleanUserId ===
+          "null"
+      ){
+
+        showToast(
+          "Invalid user ID"
+        );
+
+        return;
+
+      }
+
 
       try{
 
-        showToast("Opening chat...");
+        showToast(
+          "Opening chat..."
+        );
+
 
         const data =
           await api(
             "/api/conversations/" +
-            userId,
+            encodeURIComponent(
+              cleanUserId
+            ),
             {
               method:"POST"
             }
           );
 
+
+        console.log(
+          "CONVERSATION RESPONSE:",
+          data
+        );
+
+
         const conversation =
           data.conversation;
 
-        if(!conversation || !conversation._id){
+
+        if(
+          !conversation ||
+          !conversation._id
+        ){
 
           throw new Error(
-            "Conversation could not be created"
+            "Conversation ID not received"
           );
 
         }
 
-        openChat(conversation._id);
+
+        openChat(
+          conversation._id
+        );
+
 
       }catch(error){
 
-        console.error(error);
+        console.error(
+          "START CHAT ERROR:",
+          error
+        );
+
 
         showToast(
           error.message ||
@@ -1012,28 +1497,49 @@
     }
 
 
-    /* ============================
+    /* =================================
        OPEN CHAT
-    ============================ */
+    ================================= */
 
-    function openChat(conversationId){
+    function openChat(
+      conversationId
+    ){
+
+      const id =
+        String(
+          conversationId || ""
+        ).trim();
+
+
+      if(!id){
+
+        showToast(
+          "Conversation ID missing"
+        );
+
+        return;
+
+      }
+
 
       window.location.href =
         "chat.html?id=" +
-        encodeURIComponent(conversationId);
+        encodeURIComponent(
+          id
+        );
 
     }
 
 
-    /* ============================
-       NEW CHAT
-    ============================ */
+    /* =================================
+       NEW CHAT BUTTON
+    ================================= */
 
     document.getElementById(
       "newChatBtn"
     ).addEventListener(
       "click",
-      () => {
+      function(){
 
         searchInput.focus();
 
@@ -1045,96 +1551,120 @@
     );
 
 
-    /* ============================
-       REFRESH
-    ============================ */
+    /* =================================
+       REFRESH BUTTON
+    ================================= */
 
     document.getElementById(
       "refreshBtn"
     ).addEventListener(
       "click",
-      async () => {
+      async function(){
 
         await loadMe();
+
         await loadChats();
 
-        showToast("Updated");
+        showToast(
+          "Updated"
+        );
 
       }
     );
 
 
-    /* ============================
+    /* =================================
        NAVIGATION
-    ============================ */
+    ================================= */
 
     document.querySelectorAll(
       ".nav-btn"
-    ).forEach(button => {
+    ).forEach(
+      button => {
 
-      button.addEventListener(
-        "click",
-        () => {
+        button.addEventListener(
+          "click",
+          function(){
 
-          const page =
-            button.dataset.page;
+            const page =
+              button.dataset.page;
 
-          if(page === "chats"){
-            return;
+
+            if(page === "chats"){
+              return;
+            }
+
+
+            if(page === "contacts"){
+
+              searchInput.focus();
+
+              showToast(
+                "Search users from here"
+              );
+
+              return;
+
+            }
+
+
+            if(page === "profile"){
+
+              window.location.href =
+                "profile.html";
+
+              return;
+
+            }
+
+
+            if(page === "settings"){
+
+              window.location.href =
+                "settings.html";
+
+              return;
+
+            }
+
           }
+        );
 
-          if(page === "contacts"){
-
-            searchInput.focus();
-
-            showToast(
-              "Search users from here"
-            );
-
-            return;
-          }
-
-          if(page === "profile"){
-
-            window.location.href =
-              "profile.html";
-
-            return;
-          }
-
-          if(page === "settings"){
-
-            window.location.href =
-              "settings.html";
-
-            return;
-          }
-
-        }
-      );
-
-    });
+      }
+    );
 
 
-    /* ============================
-       TIME FORMAT
-    ============================ */
+    /* =================================
+       FORMAT TIME
+    ================================= */
 
-    function formatTime(date){
+    function formatTime(
+      date
+    ){
 
       if(!date){
         return "";
       }
 
+
       const d =
         new Date(date);
 
-      if(isNaN(d.getTime())){
+
+      if(
+        isNaN(
+          d.getTime()
+        )
+      ){
+
         return "";
+
       }
+
 
       const now =
         new Date();
+
 
       if(
         d.toDateString() ===
@@ -1151,6 +1681,7 @@
 
       }
 
+
       return d.toLocaleDateString(
         [],
         {
@@ -1162,25 +1693,44 @@
     }
 
 
-    /* ============================
-       HTML ESCAPE
-    ============================ */
+    /* =================================
+       ESCAPE HTML
+    ================================= */
 
-    function escapeHTML(value){
+    function escapeHTML(
+      value
+    ){
 
-      return String(value ?? "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
+      return String(
+        value ?? ""
+      )
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
 
     }
 
 
-    /* ============================
-       START
-    ============================ */
+    /* =================================
+       INITIALIZE
+    ================================= */
 
     async function init(){
 
@@ -1189,6 +1739,7 @@
       await loadChats();
 
     }
+
 
     init();
 
