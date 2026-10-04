@@ -14,10 +14,14 @@ const server = http.createServer(app);
 ========================================= */
 
 app.use(cors());
+
 app.use(express.json());
-app.use(express.urlencoded({
-    extended: true
-}));
+
+app.use(
+    express.urlencoded({
+        extended: true
+    })
+);
 
 /* =========================================
    SOCKET.IO
@@ -27,7 +31,10 @@ const io = new Server(server, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"]
-    }
+    },
+
+    pingInterval: 25000,
+    pingTimeout: 20000
 });
 
 /* =========================================
@@ -61,12 +68,22 @@ const client =
    ONLINE USERS
 ========================================= */
 
-const onlineUsers =
-    new Map();
-
 /*
     userId -> Set(socketId)
+
+    Example:
+
+    {
+        "abc123": Set(
+            ["socket1", "socket2"]
+        )
+    }
+
+    This supports multiple tabs/devices.
 */
+
+const onlineUsers =
+    new Map();
 
 /* =========================================
    DATABASE CONNECTION
@@ -161,9 +178,13 @@ function publicUser(user) {
         return null;
     }
 
+    const userId =
+        user._id.toString();
+
     return {
+
         id:
-            user._id.toString(),
+            userId,
 
         username:
             user.username,
@@ -176,7 +197,14 @@ function publicUser(user) {
             user.email,
 
         createdAt:
-            user.createdAt
+            user.createdAt,
+
+        isOnline:
+            isUserOnline(userId),
+
+        lastSeen:
+            user.lastSeen ||
+            null
     };
 }
 
@@ -202,7 +230,8 @@ function auth(
 
         return res.status(401).json({
             success: false,
-            message: "Login required"
+            message:
+                "Login required"
         });
     }
 
@@ -257,6 +286,160 @@ function isUserOnline(
     return !!(
         sockets &&
         sockets.size > 0
+    );
+}
+
+/* =========================================
+   ADD ONLINE SOCKET
+========================================= */
+
+function addOnlineSocket(
+    userId,
+    socketId
+) {
+
+    const id =
+        String(userId);
+
+    let sockets =
+        onlineUsers.get(id);
+
+    const wasOffline =
+        !sockets ||
+        sockets.size === 0;
+
+    if (!sockets) {
+
+        sockets =
+            new Set();
+
+        onlineUsers.set(
+            id,
+            sockets
+        );
+    }
+
+    sockets.add(
+        socketId
+    );
+
+    return wasOffline;
+}
+
+/* =========================================
+   REMOVE ONLINE SOCKET
+========================================= */
+
+function removeOnlineSocket(
+    userId,
+    socketId
+) {
+
+    const id =
+        String(userId);
+
+    const sockets =
+        onlineUsers.get(id);
+
+    if (!sockets) {
+        return false;
+    }
+
+    sockets.delete(
+        socketId
+    );
+
+    if (
+        sockets.size === 0
+    ) {
+
+        onlineUsers.delete(id);
+
+        return true;
+    }
+
+    return false;
+}
+
+/* =========================================
+   SAVE LAST SEEN
+========================================= */
+
+async function saveLastSeen(
+    userId
+) {
+
+    if (!users) return;
+
+    try {
+
+        const now =
+            new Date();
+
+        await users.updateOne(
+            {
+                _id:
+                    new ObjectId(
+                        userId
+                    )
+            },
+
+            {
+                $set: {
+                    lastSeen:
+                        now
+                }
+            }
+        );
+
+        return now;
+
+    } catch (error) {
+
+        console.error(
+            "LAST SEEN ERROR:",
+            error
+        );
+
+        return null;
+    }
+}
+
+/* =========================================
+   BROADCAST ONLINE
+========================================= */
+
+function broadcastUserOnline(
+    userId
+) {
+
+    io.emit(
+        "userOnline",
+        String(userId)
+    );
+}
+
+/* =========================================
+   BROADCAST OFFLINE
+========================================= */
+
+async function broadcastUserOffline(
+    userId
+) {
+
+    const lastSeen =
+        await saveLastSeen(
+            userId
+        );
+
+    io.emit(
+        "userOffline",
+        {
+            userId:
+                String(userId),
+
+            lastSeen
+        }
     );
 }
 
@@ -408,14 +591,21 @@ app.post(
                 );
 
             const user = {
+
                 username,
+
                 displayName,
+
                 email,
+
                 password:
                     hashedPassword,
 
                 createdAt:
-                    new Date()
+                    new Date(),
+
+                lastSeen:
+                    null
             };
 
             const result =
@@ -430,7 +620,9 @@ app.post(
                 makeToken(user);
 
             res.status(201).json({
+
                 success: true,
+
                 message:
                     "Account created successfully",
 
@@ -448,7 +640,9 @@ app.post(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Registration failed"
             });
@@ -526,7 +720,9 @@ app.post(
                 makeToken(user);
 
             res.json({
+
                 success: true,
+
                 message:
                     "Login successful",
 
@@ -544,7 +740,9 @@ app.post(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Login failed"
             });
@@ -582,7 +780,9 @@ app.get(
             }
 
             res.json({
+
                 success: true,
+
                 user:
                     publicUser(user)
             });
@@ -595,7 +795,9 @@ app.get(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Could not load profile"
             });
@@ -622,6 +824,7 @@ app.get(
                 ).trim();
 
             const query = {
+
                 _id: {
                     $ne:
                         new ObjectId(
@@ -633,6 +836,7 @@ app.get(
             if (search) {
 
                 query.$or = [
+
                     {
                         username: {
                             $regex:
@@ -641,6 +845,7 @@ app.get(
                                 "i"
                         }
                     },
+
                     {
                         displayName: {
                             $regex:
@@ -665,6 +870,7 @@ app.get(
                     .toArray();
 
             res.json({
+
                 success: true,
 
                 users:
@@ -681,7 +887,9 @@ app.get(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Could not load users"
             });
@@ -768,9 +976,11 @@ app.post(
                     memberKey,
 
                     members: [
+
                         new ObjectId(
                             ids[0]
                         ),
+
                         new ObjectId(
                             ids[1]
                         )
@@ -789,7 +999,9 @@ app.post(
                         new Date(),
 
                     unreadCounts: {
+
                         [ids[0]]: 0,
+
                         [ids[1]]: 0
                     }
                 };
@@ -797,10 +1009,9 @@ app.post(
                 try {
 
                     const result =
-                        await conversations
-                            .insertOne(
-                                newConversation
-                            );
+                        await conversations.insertOne(
+                            newConversation
+                        );
 
                     newConversation._id =
                         result.insertedId;
@@ -834,6 +1045,7 @@ app.post(
                 );
 
             res.json({
+
                 success: true,
 
                 conversation: {
@@ -881,7 +1093,9 @@ app.post(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Could not create conversation"
             });
@@ -1010,7 +1224,9 @@ app.get(
             }
 
             res.json({
+
                 success: true,
+
                 conversations:
                     result
             });
@@ -1023,7 +1239,9 @@ app.get(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Could not load chats"
             });
@@ -1061,6 +1279,7 @@ app.get(
 
             const conversation =
                 await conversations.findOne({
+
                     _id:
                         new ObjectId(
                             conversationId
@@ -1105,12 +1324,10 @@ app.get(
                                 message._id.toString(),
 
                             conversationId:
-                                message.conversationId
-                                    .toString(),
+                                message.conversationId.toString(),
 
                             senderId:
-                                message.senderId
-                                    .toString(),
+                                message.senderId.toString(),
 
                             text:
                                 message.text ||
@@ -1131,7 +1348,9 @@ app.get(
                 );
 
             res.json({
+
                 success: true,
+
                 messages:
                     output
             });
@@ -1144,7 +1363,9 @@ app.get(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Could not load messages"
             });
@@ -1185,6 +1406,7 @@ app.post(
 
             const conversation =
                 await conversations.findOne({
+
                     _id:
                         new ObjectId(
                             conversationId
@@ -1208,7 +1430,24 @@ app.post(
             const now =
                 new Date();
 
+            /*
+                IMPORTANT FIX:
+
+                Old code used:
+
+                seenAt: {
+                    $exists: false
+                }
+
+                But messages are created
+                with seenAt: null.
+
+                So we now explicitly
+                search for null.
+            */
+
             await messages.updateMany(
+
                 {
                     conversationId:
                         new ObjectId(
@@ -1222,19 +1461,32 @@ app.post(
                             )
                     },
 
-                    seenAt: {
-                        $exists: false
-                    }
+                    $or: [
+
+                        {
+                            seenAt:
+                                null
+                        },
+
+                        {
+                            seenAt: {
+                                $exists:
+                                    false
+                            }
+                        }
+                    ]
                 },
 
                 {
                     $set: {
-                        seenAt: now
+                        seenAt:
+                            now
                     }
                 }
             );
 
             await conversations.updateOne(
+
                 {
                     _id:
                         new ObjectId(
@@ -1244,16 +1496,12 @@ app.post(
 
                 {
                     $set: {
+
                         [`unreadCounts.${myId}`]:
                             0
                     }
                 }
             );
-
-            /*
-                Tell sender their messages
-                have been seen.
-            */
 
             const otherId =
                 conversation.members.find(
@@ -1274,16 +1522,24 @@ app.post(
                 ).emit(
                     "messagesSeen",
                     {
+
                         conversationId,
-                        seenAt: now,
-                        seenBy: myId
+
+                        seenAt:
+                            now,
+
+                        seenBy:
+                            myId
                     }
                 );
             }
 
             res.json({
+
                 success: true,
-                seenAt: now
+
+                seenAt:
+                    now
             });
 
         } catch (error) {
@@ -1294,7 +1550,9 @@ app.post(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Could not mark messages as read"
             });
@@ -1356,6 +1614,7 @@ app.post(
 
             const conversation =
                 await conversations.findOne({
+
                     _id:
                         new ObjectId(
                             conversationId
@@ -1441,10 +1700,6 @@ app.post(
                     newMessage
                 );
 
-            /*
-                Increment receiver unread
-            */
-
             const currentUnread =
                 Number(
                     conversation
@@ -1455,6 +1710,7 @@ app.post(
                 );
 
             await conversations.updateOne(
+
                 {
                     _id:
                         new ObjectId(
@@ -1476,12 +1732,6 @@ app.post(
 
                         [`unreadCounts.${receiverId}`]:
                             currentUnread + 1
-                    },
-
-                    $setOnInsert: {
-
-                        [`unreadCounts.${senderId}`]:
-                            0
                     }
                 }
             );
@@ -1512,7 +1762,7 @@ app.post(
             };
 
             /*
-                Send to conversation room
+                Send real message.
             */
 
             io.to(
@@ -1524,8 +1774,7 @@ app.post(
             );
 
             /*
-                Also notify receiver's
-                personal room.
+                Update receiver home.
             */
 
             io.to(
@@ -1535,13 +1784,14 @@ app.post(
                 "conversationUpdated",
                 {
                     conversationId,
-                    message: output
+
+                    message:
+                        output
                 }
             );
 
             /*
-                Tell sender delivered
-                if receiver online.
+                Delivered event.
             */
 
             if (receiverOnline) {
@@ -1552,6 +1802,7 @@ app.post(
                 ).emit(
                     "messageDelivered",
                     {
+
                         messageId:
                             output.id,
 
@@ -1564,7 +1815,9 @@ app.post(
             }
 
             res.status(201).json({
+
                 success: true,
+
                 message:
                     output
             });
@@ -1577,7 +1830,9 @@ app.post(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Could not send message"
             });
@@ -1599,13 +1854,13 @@ io.on(
             socket.id
         );
 
-        /* ================================
+        /* =================================
            AUTHENTICATE
         ================================= */
 
         socket.on(
             "authenticate",
-            function(token) {
+            async function(token) {
 
                 try {
 
@@ -1621,21 +1876,24 @@ io.on(
                     const userId =
                         decoded.id;
 
-                    if (
-                        !onlineUsers.has(
-                            userId
-                        )
-                    ) {
+                    /*
+                        Prevent duplicate
+                        authentication on
+                        same socket.
+                    */
 
-                        onlineUsers.set(
-                            userId,
-                            new Set()
-                        );
+                    if (
+                        socket.authenticated
+                    ) {
+                        return;
                     }
 
-                    onlineUsers
-                        .get(userId)
-                        .add(
+                    socket.authenticated =
+                        true;
+
+                    const becameOnline =
+                        addOnlineSocket(
+                            userId,
                             socket.id
                         );
 
@@ -1644,23 +1902,76 @@ io.on(
                         userId
                     );
 
-                    io.emit(
-                        "userOnline",
-                        userId
+                    /*
+                        Update last online
+                        information.
+                    */
+
+                    await users.updateOne(
+
+                        {
+                            _id:
+                                new ObjectId(
+                                    userId
+                                )
+                        },
+
+                        {
+                            $set: {
+                                lastSeen:
+                                    null
+                            }
+                        }
+                    );
+
+                    /*
+                        Only broadcast online
+                        when first connection
+                        appears.
+                    */
+
+                    if (becameOnline) {
+
+                        broadcastUserOnline(
+                            userId
+                        );
+                    }
+
+                    socket.emit(
+                        "presence",
+                        {
+
+                            userId,
+
+                            online:
+                                true,
+
+                            lastSeen:
+                                null
+                        }
                     );
 
                 } catch (error) {
 
+                    console.error(
+                        "SOCKET AUTH ERROR:",
+                        error
+                    );
+
                     socket.emit(
                         "authError",
                         "Invalid token"
+                    );
+
+                    socket.disconnect(
+                        true
                     );
                 }
 
             }
         );
 
-        /* ================================
+        /* =================================
            JOIN CONVERSATION
         ================================= */
 
@@ -1674,6 +1985,7 @@ io.on(
 
                     if (
                         !socket.user ||
+                        !socket.authenticated ||
                         !validId(
                             conversationId
                         )
@@ -1683,6 +1995,7 @@ io.on(
 
                     const conversation =
                         await conversations.findOne({
+
                             _id:
                                 new ObjectId(
                                     conversationId
@@ -1704,15 +2017,15 @@ io.on(
                     );
 
                     /*
-                        Opening chat means
-                        mark received messages
-                        as seen.
+                        Opening a chat means
+                        incoming messages are seen.
                     */
 
                     const now =
                         new Date();
 
                     await messages.updateMany(
+
                         {
                             conversationId:
                                 new ObjectId(
@@ -1726,19 +2039,32 @@ io.on(
                                     )
                             },
 
-                            seenAt: {
-                                $exists: false
-                            }
+                            $or: [
+
+                                {
+                                    seenAt:
+                                        null
+                                },
+
+                                {
+                                    seenAt: {
+                                        $exists:
+                                            false
+                                    }
+                                }
+                            ]
                         },
 
                         {
                             $set: {
-                                seenAt: now
+                                seenAt:
+                                    now
                             }
                         }
                     );
 
                     await conversations.updateOne(
+
                         {
                             _id:
                                 new ObjectId(
@@ -1748,6 +2074,7 @@ io.on(
 
                         {
                             $set: {
+
                                 [`unreadCounts.${socket.user.id}`]:
                                     0
                             }
@@ -1773,8 +2100,12 @@ io.on(
                         ).emit(
                             "messagesSeen",
                             {
+
                                 conversationId,
-                                seenAt: now,
+
+                                seenAt:
+                                    now,
+
                                 seenBy:
                                     socket.user.id
                             }
@@ -1792,8 +2123,8 @@ io.on(
             }
         );
 
-        /* ================================
-           LEAVE CONVERSATION
+        /* =================================
+           LEAVE
         ================================= */
 
         socket.on(
@@ -1802,80 +2133,48 @@ io.on(
                 conversationId
             ) {
 
-                socket.leave(
-                    "conversation:" +
-                    conversationId
-                );
-
-            }
-        );
-
-        /* ================================
-           OLD JOIN COMPATIBILITY
-        ================================= */
-
-        socket.on(
-            "join",
-            function(username) {
-
-                socket.username =
-                    username;
-
-            }
-        );
-
-        /* ================================
-           OLD SEND COMPATIBILITY
-        ================================= */
-
-        socket.on(
-            "sendMessage",
-            async function(data) {
-
-                /*
-                    Old frontend won't be
-                    used anymore.
-
-                    Kept only so old clients
-                    don't crash the server.
-                */
-
                 if (
-                    !data ||
-                    !data.conversationId ||
-                    !data.text
+                    validId(
+                        conversationId
+                    )
                 ) {
-                    return;
+
+                    socket.leave(
+                        "conversation:" +
+                        conversationId
+                    );
                 }
+
+            }
+        );
+
+        /* =================================
+           TYPING
+        ================================= */
+
+        socket.on(
+            "typing",
+            async function(data) {
 
                 try {
 
-                    if (!socket.user) {
-                        return;
-                    }
-
-                    const conversationId =
-                        data.conversationId;
-
-                    const text =
-                        String(
-                            data.text
-                        ).trim();
-
                     if (
+                        !socket.user ||
+                        !socket.authenticated ||
+                        !data ||
                         !validId(
-                            conversationId
-                        ) ||
-                        !text
+                            data.conversationId
+                        )
                     ) {
                         return;
                     }
 
                     const conversation =
                         await conversations.findOne({
+
                             _id:
                                 new ObjectId(
-                                    conversationId
+                                    data.conversationId
                                 ),
 
                             members:
@@ -1888,7 +2187,7 @@ io.on(
                         return;
                     }
 
-                    const receiverObjectId =
+                    const otherId =
                         conversation.members.find(
                             function(member) {
 
@@ -1899,189 +2198,81 @@ io.on(
                             }
                         );
 
-                    if (!receiverObjectId) {
+                    if (!otherId) {
                         return;
                     }
 
-                    const receiverId =
-                        receiverObjectId.toString();
-
-                    const now =
-                        new Date();
-
-                    const receiverOnline =
-                        isUserOnline(
-                            receiverId
-                        );
-
-                    const message = {
-
-                        conversationId:
-                            new ObjectId(
-                                conversationId
-                            ),
-
-                        senderId:
-                            new ObjectId(
-                                socket.user.id
-                            ),
-
-                        text,
-
-                        createdAt:
-                            now,
-
-                        deliveredAt:
-                            receiverOnline
-                                ? now
-                                : null,
-
-                        seenAt:
-                            null
-                    };
-
-                    const result =
-                        await messages.insertOne(
-                            message
-                        );
-
-                    const unread =
-                        Number(
-                            conversation
-                                .unreadCounts?.[
-                                    receiverId
-                                ] ||
-                            0
-                        );
-
-                    await conversations.updateOne(
-                        {
-                            _id:
-                                new ObjectId(
-                                    conversationId
-                                )
-                        },
-
-                        {
-                            $set: {
-
-                                lastMessage:
-                                    text,
-
-                                lastMessageAt:
-                                    now,
-
-                                updatedAt:
-                                    now,
-
-                                [`unreadCounts.${receiverId}`]:
-                                    unread + 1
-                            }
-                        }
-                    );
-
-                    const output = {
-
-                        id:
-                            result.insertedId.toString(),
-
-                        conversationId,
-
-                        senderId:
-                            socket.user.id,
-
-                        receiverId,
-
-                        text,
-
-                        createdAt:
-                            now,
-
-                        deliveredAt:
-                            receiverOnline
-                                ? now
-                                : null,
-
-                        seenAt:
-                            null
-                    };
-
-                    io.to(
-                        "conversation:" +
-                        conversationId
-                    ).emit(
-                        "newMessage",
-                        output
-                    );
-
                     io.to(
                         "user:" +
-                        receiverId
+                        otherId.toString()
                     ).emit(
-                        "conversationUpdated",
+                        "typing",
                         {
-                            conversationId,
-                            message: output
+
+                            conversationId:
+                                data.conversationId,
+
+                            userId:
+                                socket.user.id,
+
+                            isTyping:
+                                data.isTyping === true
                         }
                     );
 
                 } catch (error) {
 
                     console.error(
-                        "OLD SOCKET ERROR:",
+                        "TYPING ERROR:",
                         error
                     );
                 }
+
             }
         );
 
-        /* ================================
+        /* =================================
            DISCONNECT
         ================================= */
 
         socket.on(
             "disconnect",
-            function() {
+            async function(
+                reason
+            ) {
 
                 if (
                     socket.user &&
-                    socket.user.id
+                    socket.user.id &&
+                    socket.authenticated
                 ) {
 
                     const userId =
                         socket.user.id;
 
-                    const sockets =
-                        onlineUsers.get(
-                            userId
-                        );
-
-                    if (sockets) {
-
-                        sockets.delete(
+                    const becameOffline =
+                        removeOnlineSocket(
+                            userId,
                             socket.id
                         );
 
-                        if (
-                            sockets.size ===
-                            0
-                        ) {
+                    /*
+                        Only mark offline when
+                        the LAST socket closes.
+                    */
 
-                            onlineUsers.delete(
-                                userId
-                            );
+                    if (becameOffline) {
 
-                            io.emit(
-                                "userOffline",
-                                userId
-                            );
-                        }
+                        await broadcastUserOffline(
+                            userId
+                        );
                     }
                 }
 
                 console.log(
                     "Socket disconnected:",
-                    socket.id
+                    socket.id,
+                    reason
                 );
             }
         );
