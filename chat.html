@@ -7,6 +7,7 @@
 <title>TELESUPAR Chat</title>
 
 <style>
+
 *{
     margin:0;
     padding:0;
@@ -25,77 +26,136 @@
     --accent2:#6b5cff;
 }
 
+html,
+body{
+    width:100%;
+    height:100%;
+}
+
 body{
     min-height:100vh;
+
     background:
-        radial-gradient(circle at 50% -10%,rgba(79,140,255,.16),transparent 35%),
+        radial-gradient(
+            circle at 50% -10%,
+            rgba(79,140,255,.16),
+            transparent 35%
+        ),
         #070a0f;
+
     color:var(--text);
-    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
     overflow:hidden;
 }
 
-/* =========================
+/* =========================================
    APP
-========================= */
+========================================= */
 
 .chat-app{
     width:100%;
     max-width:700px;
-    height:100vh;
+    height:100dvh;
+
     margin:auto;
+
     display:flex;
     flex-direction:column;
-    background:rgba(7,10,15,.96);
+
+    background:rgba(7,10,15,.97);
+
+    overflow:hidden;
 }
 
-/* =========================
+/* =========================================
    HEADER
-========================= */
+========================================= */
 
 .chat-header{
     height:70px;
+    min-height:70px;
+
     flex-shrink:0;
+
     display:flex;
     align-items:center;
+
     gap:12px;
+
     padding:10px 14px;
-    background:rgba(13,17,24,.92);
-    border-bottom:1px solid var(--border);
+
+    background:rgba(13,17,24,.94);
+
+    border-bottom:
+        1px solid var(--border);
+
     backdrop-filter:blur(20px);
-    z-index:10;
+
+    position:relative;
+    z-index:20;
 }
 
 .back-btn{
     width:42px;
     height:42px;
+
+    flex-shrink:0;
+
     border:0;
     border-radius:14px;
+
     background:#151b25;
+
     color:white;
-    font-size:23px;
+
+    font-size:25px;
+
     display:flex;
     align-items:center;
     justify-content:center;
+
     cursor:pointer;
+
+    transition:.15s ease;
 }
 
 .back-btn:active{
-    transform:scale(.94);
+    transform:scale(.93);
 }
 
 .avatar{
     width:43px;
     height:43px;
+
+    flex-shrink:0;
+
     border-radius:50%;
+
     display:flex;
     align-items:center;
     justify-content:center;
+
     font-weight:800;
     font-size:17px;
+
     background:
-        linear-gradient(135deg,#4f8cff,#745cff);
-    box-shadow:0 5px 20px rgba(79,140,255,.22);
+        linear-gradient(
+            135deg,
+            #4f8cff,
+            #745cff
+        );
+
+    box-shadow:
+        0 5px 20px
+        rgba(79,140,255,.22);
 }
 
 .user-info{
@@ -106,6 +166,7 @@ body{
 .user-name{
     font-size:16px;
     font-weight:750;
+
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -113,37 +174,59 @@ body{
 
 .online{
     margin-top:3px;
+
     color:#7f8a99;
+
     font-size:12px;
+
+    transition:.2s ease;
 }
 
 .online.connected{
     color:#52d991;
 }
 
-/* =========================
-   MENU
-========================= */
-
 .chat-menu{
     width:40px;
     height:40px;
+
+    flex-shrink:0;
+
     border:0;
     border-radius:13px;
+
     background:transparent;
+
     color:#c8d0db;
+
     font-size:23px;
+
+    cursor:pointer;
 }
 
-/* =========================
+/* =========================================
    MESSAGES
-========================= */
+========================================= */
 
 .messages{
     flex:1;
+
+    min-height:0;
+
     overflow-y:auto;
-    padding:18px 13px 18px;
+    overflow-x:hidden;
+
+    padding:
+        18px
+        13px
+        34px;
+
     scroll-behavior:smooth;
+
+    overscroll-behavior:contain;
+
+    scrollbar-width:thin;
+    scrollbar-color:#252d39 transparent;
 }
 
 .messages::-webkit-scrollbar{
@@ -157,9 +240,27 @@ body{
 
 .message{
     max-width:78%;
+
     margin:5px 0;
+
     display:flex;
     flex-direction:column;
+
+    animation:
+        messageIn .16s ease;
+}
+
+@keyframes messageIn{
+
+    from{
+        opacity:0;
+        transform:translateY(4px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
 }
 
 .message.sent{
@@ -174,140 +275,181 @@ body{
 
 .message-bubble{
     padding:11px 14px;
+
     border-radius:17px;
+
     font-size:15px;
     line-height:1.45;
+
     word-break:break-word;
+    white-space:pre-wrap;
+
+    user-select:text;
 }
 
 .message.sent .message-bubble{
     background:
-        linear-gradient(135deg,#3979f6,#5755dc);
+        linear-gradient(
+            135deg,
+            #3979f6,
+            #5755dc
+        );
+
     border-bottom-right-radius:5px;
-    box-shadow:0 6px 18px rgba(56,102,235,.15);
+
+    box-shadow:
+        0 6px 18px
+        rgba(56,102,235,.15);
 }
 
 .message.received .message-bubble{
     background:#151b24;
-    border:1px solid rgba(255,255,255,.045);
+
+    border:
+        1px solid
+        rgba(255,255,255,.045);
+
     border-bottom-left-radius:5px;
 }
 
 .message-time{
     margin:4px 5px 0;
+
     color:#687384;
+
     font-size:10px;
+
+    min-height:13px;
 }
+
+.message-status{
+    margin-left:2px;
+
+    font-size:12px;
+
+    letter-spacing:-2px;
+
+    color:#dce6f5;
+}
+
+/* =========================================
+   EMPTY CHAT
+========================================= */
 
 .empty-chat{
     min-height:100%;
+
     display:flex;
     align-items:center;
     justify-content:center;
+
     text-align:center;
+
     color:#687384;
+
     font-size:13px;
+
     padding:30px;
 }
 
-/* =========================
-   COMPOSER AREA
-========================= */
+/* =========================================
+   COMPOSER
+========================================= */
 
 .composer-area{
     flex-shrink:0;
 
-    /* thoda upar floating feel */
-    padding:0 12px calc(18px + env(safe-area-inset-bottom));
+    position:relative;
+
+    z-index:30;
+
+    padding:
+        0
+        12px
+        calc(
+            14px +
+            env(safe-area-inset-bottom)
+        );
 
     background:
         linear-gradient(
             to top,
-            #070a0f 70%,
-            rgba(7,10,15,.88)
+            #070a0f 78%,
+            rgba(7,10,15,.92)
         );
 }
 
 .message-form{
+    width:100%;
     min-height:58px;
 
     display:flex;
     align-items:center;
-    gap:9px;
 
-    padding:7px;
+    gap:8px;
+
+    padding:6px;
 
     background:#111722;
 
-    border:1px solid rgba(255,255,255,.09);
+    border:
+        1px solid
+        rgba(255,255,255,.10);
 
-    border-radius:22px;
-
-    box-shadow:
-        0 12px 35px rgba(0,0,0,.42),
-        0 0 0 1px rgba(255,255,255,.015);
-
-    transform:translateY(-5px);
-}
-
-.messages{
-    flex:1;
-    overflow-y:auto;
-
-    /* composer se thoda extra space */
-    padding:18px 13px 32px;
-
-    scroll-behavior:smooth;
-}
-
-/* Floating message bar */
-
-.message-form{
-    min-height:58px;
-    display:flex;
-    align-items:center;
-    gap:9px;
-    padding:7px;
-    background:#111722;
-    border:1px solid rgba(255,255,255,.08);
     border-radius:21px;
-    box-shadow:
-        0 10px 35px rgba(0,0,0,.35),
-        inset 0 1px 0 rgba(255,255,255,.025);
-}
 
-/* Attachment */
+    box-shadow:
+        0 12px 35px
+        rgba(0,0,0,.45),
+
+        inset 0 1px 0
+        rgba(255,255,255,.025);
+}
 
 .attach-btn{
-    width:44px;
-    height:44px;
+    width:43px;
+    height:43px;
+
     flex-shrink:0;
+
     border:0;
-    border-radius:15px;
+    border-radius:14px;
+
     background:#1a212d;
-    color:#aeb8c7;
-    font-size:21px;
+
+    color:#b8c2d0;
+
+    font-size:22px;
+
     display:flex;
     align-items:center;
     justify-content:center;
+
     cursor:pointer;
+
+    transition:.15s ease;
 }
 
 .attach-btn:active{
-    transform:scale(.92);
+    transform:scale(.91);
 }
-
-/* Input */
 
 .message-input{
     min-width:0;
+
     flex:1;
+
     height:44px;
+
     border:0;
     outline:none;
+
     background:transparent;
-    color:white;
+
+    color:#fff;
+
     font-size:15px;
+
     padding:0 4px;
 }
 
@@ -315,32 +457,40 @@ body{
     color:#687384;
 }
 
-/* Send button */
-
 .send-btn{
-    width:46px;
-    height:46px;
+    width:45px;
+    height:45px;
+
     flex-shrink:0;
+
     border:0;
-    border-radius:16px;
+    border-radius:15px;
+
     background:
         linear-gradient(
             135deg,
             #4f8cff,
             #6358e8
         );
+
     color:white;
+
     display:flex;
     align-items:center;
     justify-content:center;
+
     cursor:pointer;
+
     box-shadow:
-        0 7px 20px rgba(79,140,255,.28);
-    transition:.18s ease;
+        0 7px 20px
+        rgba(79,140,255,.28);
+
+    transition:.15s ease;
 }
 
 .send-btn span{
     font-size:21px;
+
     transform:translateX(1px);
 }
 
@@ -348,18 +498,39 @@ body{
     transform:scale(.90);
 }
 
-/* =========================
+.send-btn:disabled{
+    opacity:.55;
+    cursor:default;
+}
+
+/* =========================================
    ATTACHMENT MENU
-========================= */
+========================================= */
 
 .attachment-menu{
     display:none;
-    margin:0 4px 9px;
+
+    margin:
+        0
+        4px
+        9px;
+
     padding:10px;
+
     background:#121823;
-    border:1px solid var(--border);
+
+    border:
+        1px solid
+        var(--border);
+
     border-radius:18px;
-    box-shadow:0 12px 35px rgba(0,0,0,.35);
+
+    box-shadow:
+        0 12px 35px
+        rgba(0,0,0,.35);
+
+    animation:
+        menuIn .15s ease;
 }
 
 .attachment-menu.show{
@@ -367,36 +538,69 @@ body{
     gap:8px;
 }
 
+@keyframes menuIn{
+
+    from{
+        opacity:0;
+        transform:translateY(5px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
 .attach-option{
     flex:1;
+
     min-height:54px;
+
     border:0;
+
     border-radius:14px;
+
     background:#1a212c;
+
     color:#dbe2ec;
+
     font-size:12px;
+
     cursor:pointer;
+}
+
+.attach-option:active{
+    transform:scale(.96);
 }
 
 .attach-option strong{
     display:block;
+
     font-size:20px;
+
     margin-bottom:3px;
 }
 
-/* =========================
+/* =========================================
    MOBILE
-========================= */
+========================================= */
 
 @media(max-width:480px){
 
     .chat-header{
         height:66px;
-        padding:9px 11px;
+        min-height:66px;
+
+        padding:
+            9px
+            11px;
     }
 
     .messages{
-        padding:14px 10px 14px;
+        padding:
+            14px
+            10px
+            34px;
     }
 
     .message{
@@ -410,9 +614,17 @@ body{
     .composer-area{
         padding-left:8px;
         padding-right:8px;
+
+        padding-bottom:
+            calc(
+                12px +
+                env(safe-area-inset-bottom)
+            );
     }
 
     .message-form{
+        min-height:57px;
+
         border-radius:19px;
     }
 
@@ -424,9 +636,35 @@ body{
     .send-btn{
         width:44px;
         height:44px;
+
         border-radius:15px;
     }
 }
+
+/* =========================================
+   VERY SMALL SCREEN
+========================================= */
+
+@media(max-height:650px){
+
+    .chat-header{
+        height:62px;
+        min-height:62px;
+    }
+
+    .messages{
+        padding-top:10px;
+    }
+
+    .composer-area{
+        padding-bottom:
+            calc(
+                8px +
+                env(safe-area-inset-bottom)
+            );
+    }
+}
+
 </style>
 </head>
 
@@ -434,7 +672,10 @@ body{
 
 <div class="chat-app">
 
-    <!-- HEADER -->
+    <!-- =====================================
+         HEADER
+    ====================================== -->
+
     <header class="chat-header">
 
         <button
@@ -470,14 +711,18 @@ body{
         <button
             id="chatMenuBtn"
             class="chat-menu"
-            type="button">
+            type="button"
+            aria-label="Chat menu">
             ⋮
         </button>
 
     </header>
 
 
-    <!-- MESSAGES -->
+    <!-- =====================================
+         MESSAGES
+    ====================================== -->
+
     <main
         id="messages"
         class="messages">
@@ -489,10 +734,13 @@ body{
     </main>
 
 
-    <!-- COMPOSER -->
+    <!-- =====================================
+         COMPOSER
+    ====================================== -->
+
     <section class="composer-area">
 
-        <!-- ATTACHMENT OPTIONS -->
+        <!-- ATTACHMENT MENU -->
 
         <div
             id="attachmentMenu"
@@ -545,7 +793,6 @@ body{
                 +
             </button>
 
-
             <input
                 id="messageInput"
                 class="message-input"
@@ -554,7 +801,6 @@ body{
                 placeholder="Write a message..."
                 maxlength="5000"
             >
-
 
             <button
                 id="sendBtn"
@@ -573,9 +819,14 @@ body{
 </div>
 
 
-<!-- ONLY ONE CHAT SCRIPT -->
+<!-- =========================================
+     SOCKET.IO
+========================================= -->
+
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script src="js/chat.js"></script>
+
+<!-- v2 = force fresh JS -->
+<script src="js/chat.js?v=2"></script>
 
 </body>
 </html>
