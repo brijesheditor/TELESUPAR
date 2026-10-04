@@ -492,10 +492,12 @@ app.post(
       }
 
       res.json({
-        success: true,
-        conversation: {
-          id: conversation._id.toString(),
-          members: conversation.members.map(
+  success: true,
+  conversation: {
+    _id: conversation._id.toString(),
+    id: conversation._id.toString(),
+
+    members: conversation.members.map(
             function (id) {
               return id.toString();
             }
