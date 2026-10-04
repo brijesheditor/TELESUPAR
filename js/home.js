@@ -1,61 +1,134 @@
 /* =========================================
-   TELESUPAR - REAL HOME / RECENT CHATS
+   TELESUPAR - REAL HOME
 ========================================= */
 
-const API_URL = "https://telesupar.onrender.com";
+const API_URL =
+    "https://telesupar.onrender.com";
 
 const token =
-    localStorage.getItem("telesupar_token");
+    localStorage.getItem(
+        "telesupar_token"
+    );
 
-let socket = null;
-let conversationCache = [];
+let homeSocket = null;
+let searchTimer = null;
 
 /* =========================================
-   AUTH CHECK
+   AUTH
 ========================================= */
 
 if (!token) {
-    window.location.href = "login.html";
+
+    window.location.replace(
+        "login.html"
+    );
 }
 
 /* =========================================
-   API HELPER
+   ELEMENTS
 ========================================= */
 
-async function api(endpoint, options = {}) {
+const searchInput =
+    document.getElementById(
+        "searchInput"
+    );
+
+const searchResults =
+    document.getElementById(
+        "searchResults"
+    );
+
+const usersList =
+    document.getElementById(
+        "usersList"
+    );
+
+const chatList =
+    document.getElementById(
+        "chatList"
+    );
+
+const recentSection =
+    document.getElementById(
+        "recentSection"
+    );
+
+const welcomeText =
+    document.getElementById(
+        "welcomeText"
+    );
+
+const chatCount =
+    document.getElementById(
+        "chatCount"
+    );
+
+const newChatBtn =
+    document.getElementById(
+        "newChatBtn"
+    );
+
+const refreshBtn =
+    document.getElementById(
+        "refreshBtn"
+    );
+
+const navButtons =
+    document.querySelectorAll(
+        ".nav-btn"
+    );
+
+/* =========================================
+   API
+========================================= */
+
+async function api(
+    path,
+    options = {}
+) {
 
     const headers = {
-        ...(options.headers || {}),
-        "Authorization": "Bearer " + token
+        "Authorization":
+            "Bearer " + token,
+
+        ...(options.headers || {})
     };
 
     if (
         options.body &&
         !headers["Content-Type"]
     ) {
+
         headers["Content-Type"] =
             "application/json";
     }
 
-    const response = await fetch(
-        API_URL + endpoint,
-        {
-            ...options,
-            headers
-        }
-    );
+    const response =
+        await fetch(
+            API_URL + path,
+            {
+                ...options,
+                headers
+            }
+        );
 
     let data = {};
 
     try {
-        data = await response.json();
+
+        data =
+            await response.json();
+
     } catch (error) {
+
         data = {};
     }
 
     if (!response.ok) {
 
-        if (response.status === 401) {
+        if (
+            response.status === 401
+        ) {
 
             localStorage.removeItem(
                 "telesupar_token"
@@ -65,15 +138,16 @@ async function api(endpoint, options = {}) {
                 "telesupar_user"
             );
 
-            window.location.href =
-                "login.html";
+            window.location.replace(
+                "login.html"
+            );
 
             return;
         }
 
         throw new Error(
             data.message ||
-            "Server request failed"
+            "Request failed"
         );
     }
 
@@ -81,449 +155,16 @@ async function api(endpoint, options = {}) {
 }
 
 /* =========================================
-   SEARCH
-========================================= */
-
-function openSearch() {
-
-    const searchBox =
-        document.getElementById(
-            "searchBox"
-        );
-
-    const input =
-        document.getElementById(
-            "searchInput"
-        );
-
-    if (!searchBox) return;
-
-    searchBox.classList.toggle(
-        "show"
-    );
-
-    if (
-        searchBox.classList.contains(
-            "show"
-        )
-    ) {
-
-        if (input) {
-            input.focus();
-        }
-    }
-}
-
-/* =========================================
-   SEARCH REAL CHATS
-========================================= */
-
-function searchChats() {
-
-    const inputElement =
-        document.getElementById(
-            "searchInput"
-        );
-
-    if (!inputElement) return;
-
-    const input =
-        inputElement.value
-            .trim()
-            .toLowerCase();
-
-    const chats =
-        document.querySelectorAll(
-            ".chat-item"
-        );
-
-    const empty =
-        document.getElementById(
-            "emptySearch"
-        );
-
-    let found = false;
-
-    chats.forEach(function(chat) {
-
-        const nameElement =
-            chat.querySelector("h3");
-
-        const messageElement =
-            chat.querySelector("p");
-
-        const name =
-            nameElement
-                ? nameElement.textContent
-                    .toLowerCase()
-                : "";
-
-        const message =
-            messageElement
-                ? messageElement.textContent
-                    .toLowerCase()
-                : "";
-
-        if (
-            name.includes(input) ||
-            message.includes(input)
-        ) {
-
-            chat.style.display =
-                "flex";
-
-            found = true;
-
-        } else {
-
-            chat.style.display =
-                "none";
-        }
-
-    });
-
-    if (empty) {
-
-        empty.style.display =
-            found || input === ""
-                ? "none"
-                : "block";
-    }
-}
-
-/* =========================================
-   LOAD REAL RECENT CHATS
-========================================= */
-
-async function loadRecentChats() {
-
-    try {
-
-        const data =
-            await api(
-                "/api/conversations"
-            );
-
-        conversationCache =
-            Array.isArray(
-                data.conversations
-            )
-                ? data.conversations
-                : [];
-
-        renderRecentChats(
-            conversationCache
-        );
-
-    } catch (error) {
-
-        console.error(
-            "RECENT CHATS ERROR:",
-            error
-        );
-
-        showChatError(
-            error.message
-        );
-    }
-}
-
-/* =========================================
-   RENDER REAL CHATS
-========================================= */
-
-function renderRecentChats(
-    conversations
-) {
-
-    const chatList =
-        document.getElementById(
-            "chatList"
-        );
-
-    if (!chatList) return;
-
-    /*
-       Empty current demo chats
-       but keep empty-search element.
-    */
-
-    chatList
-        .querySelectorAll(
-            ".chat-item"
-        )
-        .forEach(function(item) {
-            item.remove();
-        });
-
-    if (
-        !conversations ||
-        conversations.length === 0
-    ) {
-
-        const empty =
-            document.createElement(
-                "div"
-            );
-
-        empty.className =
-            "empty-search";
-
-        empty.style.display =
-            "block";
-
-        empty.innerHTML = `
-            <div style="
-                font-size:32px;
-                margin-bottom:10px;
-            ">💬</div>
-
-            <p>No chats yet</p>
-
-            <small style="
-                display:block;
-                margin-top:6px;
-                color:#687384;
-            ">
-                Start a conversation with a user
-            </small>
-        `;
-
-        chatList.appendChild(
-            empty
-        );
-
-        return;
-    }
-
-    /*
-       Backend already sorts:
-       updatedAt DESC
-    */
-
-    conversations.forEach(
-        function(conversation) {
-
-            if (
-                !conversation ||
-                !conversation.user
-            ) {
-                return;
-            }
-
-            const user =
-                conversation.user;
-
-            const name =
-                user.displayName ||
-                user.username ||
-                "User";
-
-            const username =
-                user.username ||
-                "";
-
-            const lastMessage =
-                conversation.lastMessage ||
-                "Start a conversation";
-
-            const time =
-                formatChatTime(
-                    conversation.lastMessageAt ||
-                    conversation.updatedAt
-                );
-
-            const conversationId =
-                String(
-                    conversation.id ||
-                    conversation._id ||
-                    ""
-                );
-
-            if (!conversationId) {
-                return;
-            }
-
-            const article =
-                document.createElement(
-                    "article"
-                );
-
-            article.className =
-                "chat-item";
-
-            article.dataset.name =
-                name.toLowerCase();
-
-            article.dataset.message =
-                lastMessage.toLowerCase();
-
-            article.dataset.conversationId =
-                conversationId;
-
-            article.innerHTML = `
-
-                <div class="avatar">
-
-                    ${escapeHTML(
-                        name
-                            .charAt(0)
-                            .toUpperCase()
-                    )}
-
-                </div>
-
-
-                <div class="chat-info">
-
-                    <div class="chat-top">
-
-                        <h3>
-                            ${escapeHTML(name)}
-                        </h3>
-
-                        <time>
-                            ${escapeHTML(time)}
-                        </time>
-
-                    </div>
-
-
-                    <div class="chat-bottom">
-
-                        <p>
-                            ${escapeHTML(
-                                lastMessage
-                            )}
-                        </p>
-
-                    </div>
-
-                </div>
-
-            `;
-
-            article.addEventListener(
-                "click",
-                function() {
-
-                    openConversation(
-                        conversationId
-                    );
-
-                }
-            );
-
-            chatList.insertBefore(
-                article,
-                document.getElementById(
-                    "emptySearch"
-                )
-            );
-
-        }
-    );
-
-}
-
-/* =========================================
-   OPEN REAL CONVERSATION
-========================================= */
-
-function openConversation(
-    conversationId
-) {
-
-    if (!conversationId) {
-
-        alert(
-            "Conversation ID missing"
-        );
-
-        return;
-    }
-
-    window.location.href =
-        "chat.html?id=" +
-        encodeURIComponent(
-            conversationId
-        );
-}
-
-/* =========================================
-   TIME FORMAT
-========================================= */
-
-function formatChatTime(
-    value
-) {
-
-    if (!value) {
-        return "";
-    }
-
-    const date =
-        new Date(value);
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-        return "";
-    }
-
-    const now =
-        new Date();
-
-    const sameDay =
-        date.toDateString() ===
-        now.toDateString();
-
-    if (sameDay) {
-
-        return date.toLocaleTimeString(
-            [],
-            {
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
-    }
-
-    const yesterday =
-        new Date(now);
-
-    yesterday.setDate(
-        yesterday.getDate() - 1
-    );
-
-    if (
-        date.toDateString() ===
-        yesterday.toDateString()
-    ) {
-
-        return "Yesterday";
-    }
-
-    return date.toLocaleDateString(
-        [],
-        {
-            day: "2-digit",
-            month: "short"
-        }
-    );
-}
-
-/* =========================================
-   ESCAPE HTML
+   ESCAPE
 ========================================= */
 
 function escapeHTML(
     value
 ) {
 
-    return String(value || "")
+    return String(
+        value || ""
+    )
         .replace(
             /&/g,
             "&amp;"
@@ -547,10 +188,821 @@ function escapeHTML(
 }
 
 /* =========================================
-   SOCKET REAL-TIME HOME UPDATE
+   TIME
 ========================================= */
 
-function connectHomeSocket() {
+function formatTime(
+    value
+) {
+
+    if (!value) {
+        return "";
+    }
+
+    const date =
+        new Date(value);
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return "";
+    }
+
+    const now =
+        new Date();
+
+    if (
+        date.toDateString() ===
+        now.toDateString()
+    ) {
+
+        return date.toLocaleTimeString(
+            [],
+            {
+                hour:
+                    "2-digit",
+
+                minute:
+                    "2-digit"
+            }
+        );
+    }
+
+    const yesterday =
+        new Date();
+
+    yesterday.setDate(
+        yesterday.getDate() - 1
+    );
+
+    if (
+        date.toDateString() ===
+        yesterday.toDateString()
+    ) {
+
+        return "Yesterday";
+    }
+
+    return date.toLocaleDateString(
+        [],
+        {
+            day:
+                "2-digit",
+
+            month:
+                "short"
+        }
+    );
+}
+
+/* =========================================
+   LOAD PROFILE
+========================================= */
+
+async function loadMe() {
+
+    try {
+
+        const data =
+            await api(
+                "/api/me"
+            );
+
+        if (
+            data &&
+            data.user
+        ) {
+
+            localStorage.setItem(
+                "telesupar_user",
+                JSON.stringify(
+                    data.user
+                )
+            );
+
+            if (welcomeText) {
+
+                welcomeText.textContent =
+                    "Welcome, " +
+                    (
+                        data.user.displayName ||
+                        data.user.username ||
+                        "User"
+                    );
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            "PROFILE ERROR:",
+            error
+        );
+    }
+}
+
+/* =========================================
+   LOAD RECENT CHATS
+========================================= */
+
+async function loadChats() {
+
+    try {
+
+        const data =
+            await api(
+                "/api/conversations"
+            );
+
+        const chats =
+            Array.isArray(
+                data.conversations
+            )
+                ? data.conversations
+                : [];
+
+        if (chatCount) {
+
+            chatCount.textContent =
+                chats.length +
+                (
+                    chats.length === 1
+                        ? " chat"
+                        : " chats"
+                );
+        }
+
+        renderChats(
+            chats
+        );
+
+    } catch (error) {
+
+        console.error(
+            "CHAT LOAD ERROR:",
+            error
+        );
+
+        if (chatList) {
+
+            chatList.innerHTML = `
+
+                <div class="center-message">
+
+                    ⚠️
+
+                    <br><br>
+
+                    Could not load chats.
+
+                    <br><br>
+
+                    <small>
+                        ${escapeHTML(
+                            error.message
+                        )}
+                    </small>
+
+                </div>
+
+            `;
+        }
+    }
+}
+
+/* =========================================
+   RENDER CHATS
+========================================= */
+
+function renderChats(
+    chats
+) {
+
+    if (!chatList) {
+        return;
+    }
+
+    chatList.innerHTML = "";
+
+    if (!chats.length) {
+
+        chatList.innerHTML = `
+
+            <div class="center-message">
+
+                💬
+
+                <br><br>
+
+                No chats yet.
+
+                <br>
+
+                Search for a user
+                and start chatting.
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+    chats.forEach(
+        function(chat) {
+
+            /*
+                IMPORTANT:
+                Backend now returns
+                both otherUser and user.
+            */
+
+            const other =
+                chat.otherUser ||
+                chat.user ||
+                null;
+
+            if (!other) {
+                return;
+            }
+
+            const name =
+                other.displayName ||
+                other.username ||
+                "User";
+
+            const username =
+                other.username ||
+                "";
+
+            const initial =
+                name
+                    .charAt(0)
+                    .toUpperCase();
+
+            const conversationId =
+                String(
+                    chat._id ||
+                    chat.id ||
+                    ""
+                );
+
+            if (!conversationId) {
+                return;
+            }
+
+            const unread =
+                Number(
+                    chat.unreadCount ||
+                    0
+                );
+
+            const lastMessage =
+                chat.lastMessage ||
+                "Start a conversation";
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+            /*
+                Existing home.html uses
+                class="chat"
+            */
+
+            item.className =
+                "chat";
+
+            item.style.cursor =
+                "pointer";
+
+            item.dataset.id =
+                conversationId;
+
+            item.innerHTML = `
+
+                <div class="avatar">
+
+                    ${escapeHTML(
+                        initial
+                    )}
+
+                    <div
+                        class="online-dot"
+                    ></div>
+
+                </div>
+
+
+                <div class="chat-info">
+
+                    <div class="chat-top">
+
+                        <div class="chat-name">
+
+                            ${escapeHTML(
+                                name
+                            )}
+
+                        </div>
+
+
+                        <div class="chat-time">
+
+                            ${escapeHTML(
+                                formatTime(
+                                    chat.lastMessageAt ||
+                                    chat.updatedAt
+                                )
+                            )}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="chat-bottom">
+
+                        <div
+                            class="chat-message"
+                            style="
+                                ${
+                                    unread > 0
+                                    ? "color:#f5f7fb;font-weight:600;"
+                                    : ""
+                                }
+                            "
+                        >
+
+                            ${escapeHTML(
+                                lastMessage
+                            )}
+
+                        </div>
+
+
+                        ${
+                            unread > 0
+                            ? `
+
+                                <div
+                                    class="badge"
+                                >
+
+                                    ${
+                                        unread > 99
+                                            ? "99+"
+                                            : unread
+                                    }
+
+                                </div>
+
+                            `
+                            : ""
+                        }
+
+                    </div>
+
+                </div>
+
+            `;
+
+            /*
+                CLICK
+            */
+
+            item.addEventListener(
+                "click",
+                function() {
+
+                    openChat(
+                        conversationId
+                    );
+
+                }
+            );
+
+            /*
+                Extra fallback
+                for mobile taps
+            */
+
+            item.addEventListener(
+                "touchend",
+                function() {
+
+                    openChat(
+                        conversationId
+                    );
+
+                },
+                {
+                    passive: true
+                }
+            );
+
+            chatList.appendChild(
+                item
+            );
+
+        }
+    );
+}
+
+/* =========================================
+   OPEN CHAT
+========================================= */
+
+function openChat(
+    conversationId
+) {
+
+    if (!conversationId) {
+
+        alert(
+            "Conversation ID missing"
+        );
+
+        return;
+    }
+
+    window.location.href =
+        "chat.html?id=" +
+        encodeURIComponent(
+            conversationId
+        );
+}
+
+/* =========================================
+   SEARCH USERS
+========================================= */
+
+async function searchUsers(
+    query
+) {
+
+    if (!usersList) {
+        return;
+    }
+
+    try {
+
+        const data =
+            await api(
+                "/api/users?search=" +
+                encodeURIComponent(
+                    query
+                )
+            );
+
+        const users =
+            Array.isArray(
+                data.users
+            )
+                ? data.users
+                : [];
+
+        usersList.innerHTML =
+            "";
+
+        const resultCount =
+            document.getElementById(
+                "resultCount"
+            );
+
+        if (resultCount) {
+
+            resultCount.textContent =
+                users.length +
+                (
+                    users.length === 1
+                        ? " user"
+                        : " users"
+                );
+        }
+
+        if (!users.length) {
+
+            usersList.innerHTML = `
+
+                <div
+                    class="center-message"
+                >
+
+                    No users found.
+
+                </div>
+
+            `;
+
+            return;
+        }
+
+        users.forEach(
+            function(user) {
+
+                const name =
+                    user.displayName ||
+                    user.username ||
+                    "User";
+
+                const initial =
+                    name
+                        .charAt(0)
+                        .toUpperCase();
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+                row.className =
+                    "user-result";
+
+                row.innerHTML = `
+
+                    <div class="avatar">
+
+                        ${escapeHTML(
+                            initial
+                        )}
+
+                    </div>
+
+
+                    <div
+                        class="user-result-info"
+                    >
+
+                        <div
+                            class="user-result-name"
+                        >
+
+                            ${escapeHTML(
+                                name
+                            )}
+
+                        </div>
+
+                        <div
+                            class="user-result-username"
+                        >
+
+                            @${escapeHTML(
+                                user.username
+                            )}
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="chat-btn"
+                        type="button"
+                    >
+
+                        Chat
+
+                    </button>
+
+                `;
+
+                const button =
+                    row.querySelector(
+                        ".chat-btn"
+                    );
+
+                button.addEventListener(
+                    "click",
+                    async function(
+                        event
+                    ) {
+
+                        event.stopPropagation();
+
+                        await createConversation(
+                            user.id ||
+                            user._id
+                        );
+
+                    }
+                );
+
+                row.addEventListener(
+                    "click",
+                    async function() {
+
+                        await createConversation(
+                            user.id ||
+                            user._id
+                        );
+
+                    }
+                );
+
+                usersList.appendChild(
+                    row
+                );
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "SEARCH ERROR:",
+            error
+        );
+
+        usersList.innerHTML = `
+
+            <div class="center-message">
+
+                ${escapeHTML(
+                    error.message
+                )}
+
+            </div>
+
+        `;
+    }
+}
+
+/* =========================================
+   CREATE CONVERSATION
+========================================= */
+
+async function createConversation(
+    userId
+) {
+
+    if (!userId) {
+
+        alert(
+            "User ID missing"
+        );
+
+        return;
+    }
+
+    try {
+
+        const data =
+            await api(
+                "/api/conversations/" +
+                encodeURIComponent(
+                    userId
+                ),
+                {
+                    method:
+                        "POST"
+                }
+            );
+
+        const conversation =
+            data.conversation;
+
+        const id =
+            conversation &&
+            (
+                conversation._id ||
+                conversation.id
+            );
+
+        if (!id) {
+
+            alert(
+                "Conversation ID missing"
+            );
+
+            return;
+        }
+
+        openChat(
+            id
+        );
+
+    } catch (error) {
+
+        console.error(
+            "CREATE CHAT ERROR:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Could not start chat"
+        );
+    }
+}
+
+/* =========================================
+   SEARCH INPUT
+========================================= */
+
+if (searchInput) {
+
+    searchInput.addEventListener(
+        "input",
+        function() {
+
+            clearTimeout(
+                searchTimer
+            );
+
+            const query =
+                this.value.trim();
+
+            if (!query) {
+
+                if (searchResults) {
+
+                    searchResults.style.display =
+                        "none";
+                }
+
+                if (recentSection) {
+
+                    recentSection.style.display =
+                        "block";
+                }
+
+                return;
+            }
+
+            if (searchResults) {
+
+                searchResults.style.display =
+                    "block";
+            }
+
+            if (recentSection) {
+
+                recentSection.style.display =
+                    "none";
+            }
+
+            searchTimer =
+                setTimeout(
+                    function() {
+
+                        searchUsers(
+                            query
+                        );
+
+                    },
+                    300
+                );
+
+        }
+    );
+}
+
+/* =========================================
+   REFRESH BUTTON
+========================================= */
+
+if (refreshBtn) {
+
+    refreshBtn.addEventListener(
+        "click",
+        function() {
+
+            loadChats();
+
+        }
+    );
+}
+
+/* =========================================
+   NEW CHAT
+========================================= */
+
+if (newChatBtn) {
+
+    newChatBtn.addEventListener(
+        "click",
+        function() {
+
+            if (searchInput) {
+
+                searchInput.focus();
+
+            }
+
+        }
+    );
+}
+
+/* =========================================
+   SOCKET
+========================================= */
+
+function connectSocket() {
 
     if (
         typeof io ===
@@ -558,13 +1010,13 @@ function connectHomeSocket() {
     ) {
 
         console.warn(
-            "Socket.IO library not loaded"
+            "Socket.IO not loaded"
         );
 
         return;
     }
 
-    socket =
+    homeSocket =
         io(
             API_URL,
             {
@@ -575,15 +1027,15 @@ function connectHomeSocket() {
             }
         );
 
-    socket.on(
+    homeSocket.on(
         "connect",
         function() {
 
             console.log(
-                "Home Socket connected"
+                "Home socket connected"
             );
 
-            socket.emit(
+            homeSocket.emit(
                 "authenticate",
                 token
             );
@@ -592,25 +1044,46 @@ function connectHomeSocket() {
     );
 
     /*
-       Backend sends newMessage
-       to conversation room.
-
-       Home does not need to know
-       the message contents manually.
-
-       Reloading conversations makes
-       the latest message + time appear.
+        New message / conversation update
     */
 
-    socket.on(
+    homeSocket.on(
+        "conversationUpdated",
+        function(data) {
+
+            console.log(
+                "Conversation updated:",
+                data
+            );
+
+            loadChats();
+
+        }
+    );
+
+    /*
+        New message while both
+        users are inside conversation
+    */
+
+    homeSocket.on(
         "newMessage",
-        function(message) {
+        function() {
 
-            if (!message) {
-                return;
-            }
+            loadChats();
 
-            loadRecentChats();
+        }
+    );
+
+    /*
+        Seen update
+    */
+
+    homeSocket.on(
+        "messagesSeen",
+        function() {
+
+            loadChats();
 
         }
     );
@@ -618,21 +1091,17 @@ function connectHomeSocket() {
 }
 
 /* =========================================
-   REFRESH WHEN RETURNING TO HOME
+   RETURN TO HOME
 ========================================= */
 
 window.addEventListener(
     "focus",
     function() {
 
-        loadRecentChats();
+        loadChats();
 
     }
 );
-
-/* =========================================
-   REFRESH AFTER BACK TO PAGE
-========================================= */
 
 document.addEventListener(
     "visibilitychange",
@@ -643,7 +1112,7 @@ document.addEventListener(
             "visible"
         ) {
 
-            loadRecentChats();
+            loadChats();
 
         }
 
@@ -651,114 +1120,61 @@ document.addEventListener(
 );
 
 /* =========================================
-   NEW CHAT
+   NAVIGATION
 ========================================= */
 
-function newChat() {
+navButtons.forEach(
+    function(button) {
 
-    /*
-       For now send user to search.
-       Search can be used to start chat.
-    */
+        button.addEventListener(
+            "click",
+            function() {
 
-    openSearch();
+                navButtons.forEach(
+                    function(btn) {
 
-}
+                        btn.classList.remove(
+                            "active"
+                        );
 
-/* =========================================
-   OTHER NAVIGATION
-========================================= */
+                    }
+                );
 
-function showContacts() {
+                button.classList.add(
+                    "active"
+                );
 
-    alert(
-        "Contacts will be connected next."
-    );
+                const page =
+                    button.dataset.page;
 
-}
+                if (
+                    page !== "chats"
+                ) {
 
-function showProfile() {
+                    alert(
+                        page +
+                        " section will be connected next."
+                    );
+                }
 
-    alert(
-        "Profile will be connected next."
-    );
-
-}
-
-function showSettings() {
-
-    alert(
-        "Settings will be connected next."
-    );
-
-}
-
-/* =========================================
-   ERROR UI
-========================================= */
-
-function showChatError(
-    message
-) {
-
-    const chatList =
-        document.getElementById(
-            "chatList"
+            }
         );
 
-    if (!chatList) return;
-
-    chatList.innerHTML = `
-
-        <div class="empty-search"
-             style="display:block;">
-
-            <div style="
-                font-size:30px;
-                margin-bottom:10px;
-            ">
-                ⚠
-            </div>
-
-            <p>
-                Could not load chats
-            </p>
-
-            <small style="
-                display:block;
-                margin-top:6px;
-                color:#687384;
-            ">
-                ${escapeHTML(
-                    message ||
-                    "Please try again"
-                )}
-            </small>
-
-        </div>
-
-    `;
-
-}
-
-/* =========================================
-   START HOME
-========================================= */
-
-async function startHome() {
-
-    if (!token) {
-        return;
     }
-
-    await loadRecentChats();
-
-    connectHomeSocket();
-
-}
+);
 
 /* =========================================
    START
 ========================================= */
+
+async function startHome() {
+
+    await loadMe();
+
+    await loadChats();
+
+    connectSocket();
+
+}
 
 startHome();
