@@ -3,143 +3,1196 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#070b13">
-  <title>Chats - TELESUPAR</title>
+  <title>TELESUPAR — Chats</title>
 
-  <link rel="stylesheet" href="css/style.css">
+  <style>
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    :root{
+      --bg:#080b12;
+      --panel:#10141d;
+      --panel2:#151a24;
+      --border:#252b38;
+      --text:#f5f7fb;
+      --muted:#8d96a8;
+      --accent:#4f8cff;
+      --accent2:#7c5cff;
+      --danger:#ff5364;
+      --success:#35d49a;
+    }
+
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(circle at top right,rgba(79,140,255,.12),transparent 32%),
+        radial-gradient(circle at bottom left,rgba(124,92,255,.08),transparent 30%),
+        var(--bg);
+      color:var(--text);
+      font-family:Arial,Helvetica,sans-serif;
+      overflow-x:hidden;
+    }
+
+    button,
+    input{
+      font:inherit;
+    }
+
+    button{
+      border:0;
+      cursor:pointer;
+    }
+
+    /* HEADER */
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:20;
+      height:72px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 17px;
+      background:rgba(8,11,18,.88);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:11px;
+    }
+
+    .logo{
+      width:43px;
+      height:43px;
+      border-radius:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+      font-size:17px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      box-shadow:0 8px 25px rgba(79,140,255,.25);
+    }
+
+    .brand-text h1{
+      font-size:18px;
+      letter-spacing:.5px;
+    }
+
+    .brand-text p{
+      margin-top:3px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .header-btn{
+      width:42px;
+      height:42px;
+      border-radius:13px;
+      background:var(--panel2);
+      color:white;
+      border:1px solid var(--border);
+      font-size:19px;
+    }
+
+    /* MAIN */
+
+    .main{
+      max-width:760px;
+      margin:auto;
+      padding:17px 15px 100px;
+    }
+
+    /* SEARCH */
+
+    .search-box{
+      position:relative;
+      margin-bottom:20px;
+    }
+
+    .search-box span{
+      position:absolute;
+      left:15px;
+      top:50%;
+      transform:translateY(-50%);
+      color:var(--muted);
+      font-size:18px;
+    }
+
+    #searchInput{
+      width:100%;
+      height:51px;
+      padding:0 15px 0 46px;
+      border-radius:16px;
+      border:1px solid var(--border);
+      outline:none;
+      color:white;
+      background:rgba(18,23,33,.9);
+    }
+
+    #searchInput:focus{
+      border-color:rgba(79,140,255,.7);
+      box-shadow:0 0 0 3px rgba(79,140,255,.08);
+    }
+
+    /* SECTION */
+
+    .section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin:4px 3px 11px;
+    }
+
+    .section-title h2{
+      font-size:15px;
+    }
+
+    .section-title span{
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    /* CHAT LIST */
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+    }
+
+    .chat{
+      display:flex;
+      align-items:center;
+      gap:13px;
+      padding:12px;
+      min-height:72px;
+      border:1px solid transparent;
+      border-radius:17px;
+      background:rgba(16,20,29,.82);
+      transition:.2s;
+    }
+
+    .chat:active{
+      transform:scale(.985);
+    }
+
+    .chat:hover{
+      background:var(--panel2);
+      border-color:var(--border);
+    }
+
+    .avatar{
+      position:relative;
+      flex-shrink:0;
+      width:50px;
+      height:50px;
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:800;
+      color:white;
+      background:linear-gradient(135deg,#304f9c,#7449b9);
+    }
+
+    .online-dot{
+      position:absolute;
+      right:-2px;
+      bottom:-2px;
+      width:13px;
+      height:13px;
+      border-radius:50%;
+      background:var(--success);
+      border:3px solid var(--panel);
+    }
+
+    .chat-info{
+      min-width:0;
+      flex:1;
+    }
+
+    .chat-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+
+    .chat-name{
+      font-size:14px;
+      font-weight:700;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .chat-time{
+      color:var(--muted);
+      font-size:10px;
+      white-space:nowrap;
+    }
+
+    .chat-bottom{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-top:7px;
+    }
+
+    .chat-message{
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .badge{
+      min-width:20px;
+      height:20px;
+      padding:0 6px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:10px;
+      background:var(--accent);
+      color:white;
+      font-size:10px;
+      font-weight:bold;
+    }
+
+    /* SEARCH RESULTS */
+
+    #searchResults{
+      display:none;
+      margin-bottom:20px;
+    }
+
+    .user-result{
+      display:flex;
+      align-items:center;
+      gap:13px;
+      padding:13px;
+      border-radius:17px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      margin-bottom:8px;
+    }
+
+    .user-result-info{
+      flex:1;
+      min-width:0;
+    }
+
+    .user-result-name{
+      font-weight:bold;
+      font-size:14px;
+    }
+
+    .user-result-username{
+      margin-top:4px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .chat-btn{
+      padding:9px 13px;
+      border-radius:11px;
+      background:var(--accent);
+      color:white;
+      font-size:11px;
+      font-weight:bold;
+    }
+
+    /* EMPTY / LOADING */
+
+    .center-message{
+      text-align:center;
+      padding:45px 20px;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .loader{
+      width:27px;
+      height:27px;
+      margin:0 auto 12px;
+      border:3px solid rgba(255,255,255,.1);
+      border-top-color:var(--accent);
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+    }
+
+    @keyframes spin{
+      to{transform:rotate(360deg)}
+    }
+
+    /* FAB */
+
+    .fab{
+      position:fixed;
+      right:19px;
+      bottom:82px;
+      z-index:30;
+      width:57px;
+      height:57px;
+      border-radius:18px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:white;
+      font-size:25px;
+      box-shadow:0 12px 35px rgba(79,140,255,.3);
+    }
+
+    /* BOTTOM NAV */
+
+    .bottom-nav{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:25;
+      height:67px;
+      display:flex;
+      justify-content:center;
+      background:rgba(10,13,20,.94);
+      backdrop-filter:blur(20px);
+      border-top:1px solid rgba(255,255,255,.07);
+    }
+
+    .nav-inner{
+      width:100%;
+      max-width:760px;
+      display:flex;
+      justify-content:space-around;
+    }
+
+    .nav-btn{
+      width:25%;
+      background:transparent;
+      color:var(--muted);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+      font-size:20px;
+    }
+
+    .nav-btn span{
+      font-size:9px;
+      font-weight:600;
+    }
+
+    .nav-btn.active{
+      color:var(--accent);
+    }
+
+    /* TOAST */
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:83px;
+      z-index:100;
+      transform:translate(-50%,20px);
+      opacity:0;
+      pointer-events:none;
+      padding:11px 16px;
+      border-radius:12px;
+      background:#202735;
+      border:1px solid var(--border);
+      color:white;
+      font-size:12px;
+      transition:.25s;
+      white-space:nowrap;
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translate(-50%,0);
+    }
+
+    @media(min-width:700px){
+      .main{
+        padding-top:25px;
+      }
+
+      .bottom-nav{
+        left:50%;
+        right:auto;
+        transform:translateX(-50%);
+        width:min(760px,100%);
+        border-radius:18px 18px 0 0;
+      }
+
+      .fab{
+        right:calc((100% - 720px)/2);
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-  <div class="app">
+  <!-- HEADER -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">TS</div>
 
-    <!-- HEADER -->
-    <header class="topbar">
-
-      <div class="brand">
-        <div class="mini-logo">TS</div>
-
-        <div>
-          <h2>TELESUPAR</h2>
-          <span>Messages</span>
-        </div>
+      <div class="brand-text">
+        <h1>TELESUPAR</h1>
+        <p id="welcomeText">Connecting...</p>
       </div>
+    </div>
 
-      <button class="icon-btn" onclick="openSearch()">
-        🔍
-      </button>
+    <button class="header-btn" id="refreshBtn">↻</button>
+  </header>
 
-    </header>
-
+  <!-- MAIN -->
+  <main class="main">
 
     <!-- SEARCH -->
-    <div class="search-box" id="searchBox">
-
+    <div class="search-box">
+      <span>⌕</span>
       <input
-        type="search"
         id="searchInput"
-        placeholder="Search chats..."
-        oninput="searchChats()"
+        type="search"
+        placeholder="Search users..."
+        autocomplete="off"
       >
+    </div>
+
+    <!-- SEARCH RESULTS -->
+    <section id="searchResults">
+      <div class="section-title">
+        <h2>Users</h2>
+        <span id="resultCount"></span>
+      </div>
+
+      <div id="usersList"></div>
+    </section>
+
+    <!-- RECENT CHATS -->
+    <section id="recentSection">
+
+      <div class="section-title">
+        <h2>Recent Chats</h2>
+        <span id="chatCount">0 chats</span>
+      </div>
+
+      <div id="chatList" class="list">
+
+        <div class="center-message">
+          <div class="loader"></div>
+          Loading chats...
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FAB -->
+  <button class="fab" id="newChatBtn">＋</button>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+
+    <div class="nav-inner">
+
+      <button class="nav-btn active" data-page="chats">
+        💬
+        <span>Chats</span>
+      </button>
+
+      <button class="nav-btn" data-page="contacts">
+        👥
+        <span>Contacts</span>
+      </button>
+
+      <button class="nav-btn" data-page="profile">
+        👤
+        <span>Profile</span>
+      </button>
+
+      <button class="nav-btn" data-page="settings">
+        ⚙️
+        <span>Settings</span>
+      </button>
 
     </div>
 
+  </nav>
 
-    <!-- CONTENT -->
-    <main class="chat-list" id="chatList">
+  <div id="toast" class="toast"></div>
 
-      <!-- CHAT 1 -->
-      <article class="chat-item" onclick="openChat('Brijesh')">
 
-        <div class="avatar">
-          B
-          <span class="online-dot"></span>
+  <script>
+
+    /* ============================
+       TELESUPAR HOME
+    ============================ */
+
+    const API_URL = "https://telesupar.onrender.com";
+
+    const token =
+      localStorage.getItem("telesupar_token");
+
+    const savedUser =
+      JSON.parse(
+        localStorage.getItem("telesupar_user") || "null"
+      );
+
+
+    /* ============================
+       AUTH CHECK
+    ============================ */
+
+    if(!token){
+      window.location.href = "login.html";
+    }
+
+
+    /* ============================
+       ELEMENTS
+    ============================ */
+
+    const searchInput =
+      document.getElementById("searchInput");
+
+    const searchResults =
+      document.getElementById("searchResults");
+
+    const usersList =
+      document.getElementById("usersList");
+
+    const chatList =
+      document.getElementById("chatList");
+
+    const welcomeText =
+      document.getElementById("welcomeText");
+
+    const chatCount =
+      document.getElementById("chatCount");
+
+    const toast =
+      document.getElementById("toast");
+
+
+    /* ============================
+       TOAST
+    ============================ */
+
+    function showToast(message){
+
+      toast.textContent = message;
+
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+      },2500);
+    }
+
+
+    /* ============================
+       API HELPER
+    ============================ */
+
+    async function api(path,options={}){
+
+      const headers = {
+        "Content-Type":"application/json",
+        ...(options.headers || {}),
+        "Authorization":"Bearer " + token
+      };
+
+      const response =
+        await fetch(API_URL + path,{
+          ...options,
+          headers
+        });
+
+      let data;
+
+      try{
+        data = await response.json();
+      }catch{
+        throw new Error(
+          "Server returned an invalid response"
+        );
+      }
+
+      if(!response.ok){
+
+        throw new Error(
+          data.message || "Request failed"
+        );
+      }
+
+      return data;
+    }
+
+
+    /* ============================
+       LOAD MY PROFILE
+    ============================ */
+
+    async function loadMe(){
+
+      try{
+
+        const data =
+          await api("/api/me");
+
+        if(data.user){
+
+          localStorage.setItem(
+            "telesupar_user",
+            JSON.stringify(data.user)
+          );
+
+          welcomeText.textContent =
+            "Welcome, " +
+            (data.user.displayName ||
+             data.user.username);
+
+        }
+
+      }catch(error){
+
+        console.error(error);
+
+        if(error.message.toLowerCase().includes("token")){
+
+          localStorage.removeItem("telesupar_token");
+          localStorage.removeItem("telesupar_user");
+
+          window.location.href = "login.html";
+        }
+
+      }
+
+    }
+
+
+    /* ============================
+       LOAD RECENT CHATS
+    ============================ */
+
+    async function loadChats(){
+
+      chatList.innerHTML = `
+        <div class="center-message">
+          <div class="loader"></div>
+          Loading chats...
         </div>
+      `;
 
-        <div class="chat-info">
+      try{
 
-          <div class="chat-top">
-            <h3>Brijesh</h3>
-            <time>10:42 AM</time>
+        const data =
+          await api("/api/conversations");
+
+        const chats =
+          data.conversations || [];
+
+        chatCount.textContent =
+          chats.length + " chats";
+
+        if(!chats.length){
+
+          chatList.innerHTML = `
+            <div class="center-message">
+              💬<br><br>
+              No chats yet.<br>
+              Search for a user and start chatting.
+            </div>
+          `;
+
+          return;
+        }
+
+        chatList.innerHTML = "";
+
+        chats.forEach(chat => {
+
+          const other =
+            chat.otherUser || {};
+
+          const name =
+            other.displayName ||
+            other.username ||
+            "Unknown User";
+
+          const username =
+            other.username || "";
+
+          const initial =
+            name.charAt(0).toUpperCase();
+
+          const item =
+            document.createElement("div");
+
+          item.className = "chat";
+
+          item.innerHTML = `
+            <div class="avatar">
+              ${escapeHTML(initial)}
+              <div class="online-dot"></div>
+            </div>
+
+            <div class="chat-info">
+
+              <div class="chat-top">
+                <div class="chat-name">
+                  ${escapeHTML(name)}
+                </div>
+
+                <div class="chat-time">
+                  ${formatTime(chat.updatedAt)}
+                </div>
+              </div>
+
+              <div class="chat-bottom">
+
+                <div class="chat-message">
+                  ${escapeHTML(
+                    chat.lastMessage || "Start a conversation"
+                  )}
+                </div>
+
+                ${
+                  chat.unreadCount
+                  ?
+                  `<div class="badge">
+                    ${chat.unreadCount}
+                  </div>`
+                  :
+                  ""
+                }
+
+              </div>
+
+            </div>
+          `;
+
+          item.addEventListener(
+            "click",
+            () => openChat(chat._id)
+          );
+
+          chatList.appendChild(item);
+
+        });
+
+      }catch(error){
+
+        console.error(error);
+
+        chatList.innerHTML = `
+          <div class="center-message">
+            ⚠️<br><br>
+            Could not load chats.<br>
+            <small>${escapeHTML(error.message)}</small>
           </div>
+        `;
 
-          <div class="chat-bottom">
-            <p>Welcome to TELESUPAR 👋</p>
-            <span class="unread">2</span>
-          </div>
+      }
 
+    }
+
+
+    /* ============================
+       SEARCH USERS
+    ============================ */
+
+    let searchTimer;
+
+    searchInput.addEventListener(
+      "input",
+      function(){
+
+        clearTimeout(searchTimer);
+
+        const value =
+          this.value.trim();
+
+        if(!value){
+
+          searchResults.style.display = "none";
+          document.getElementById(
+            "recentSection"
+          ).style.display = "block";
+
+          return;
+        }
+
+        searchTimer =
+          setTimeout(
+            () => searchUsers(value),
+            350
+          );
+
+      }
+    );
+
+
+    async function searchUsers(query){
+
+      searchResults.style.display = "block";
+
+      document.getElementById(
+        "recentSection"
+      ).style.display = "none";
+
+      usersList.innerHTML = `
+        <div class="center-message">
+          <div class="loader"></div>
+          Searching...
         </div>
+      `;
 
-      </article>
+      try{
 
+        const data =
+          await api(
+            "/api/users?search=" +
+            encodeURIComponent(query)
+          );
 
-      <!-- CHAT 2 -->
-      <article class="chat-item" onclick="openChat('Rahul')">
+        const users =
+          data.users || [];
 
-        <div class="avatar avatar-2">
-          R
-        </div>
+        document.getElementById(
+          "resultCount"
+        ).textContent =
+          users.length + " found";
 
-        <div class="chat-info">
+        if(!users.length){
 
-          <div class="chat-top">
-            <h3>Rahul</h3>
-            <time>Yesterday</time>
+          usersList.innerHTML = `
+            <div class="center-message">
+              No users found.
+            </div>
+          `;
+
+          return;
+        }
+
+        usersList.innerHTML = "";
+
+        users.forEach(user => {
+
+          const name =
+            user.displayName ||
+            user.username ||
+            "User";
+
+          const initial =
+            name.charAt(0).toUpperCase();
+
+          const item =
+            document.createElement("div");
+
+          item.className =
+            "user-result";
+
+          item.innerHTML = `
+
+            <div class="avatar">
+              ${escapeHTML(initial)}
+            </div>
+
+            <div class="user-result-info">
+
+              <div class="user-result-name">
+                ${escapeHTML(name)}
+              </div>
+
+              <div class="user-result-username">
+                @${escapeHTML(user.username || "")}
+              </div>
+
+            </div>
+
+            <button
+              class="chat-btn"
+              data-id="${user._id}"
+            >
+              Chat
+            </button>
+
+          `;
+
+          item.querySelector(
+            ".chat-btn"
+          ).addEventListener(
+            "click",
+            (event) => {
+
+              event.stopPropagation();
+
+              startChat(user._id);
+
+            }
+          );
+
+          usersList.appendChild(item);
+
+        });
+
+      }catch(error){
+
+        usersList.innerHTML = `
+          <div class="center-message">
+            ⚠️<br><br>
+            ${escapeHTML(error.message)}
           </div>
+        `;
 
-          <div class="chat-bottom">
-            <p>Let's build something 🚀</p>
-          </div>
+      }
 
-        </div>
-
-      </article>
+    }
 
 
-      <!-- EMPTY SEARCH -->
-      <div class="empty-search" id="emptySearch">
-        <div>🔎</div>
-        <p>No chats found</p>
-      </div>
+    /* ============================
+       START CHAT
+    ============================ */
 
-    </main>
+    async function startChat(userId){
+
+      try{
+
+        showToast("Opening chat...");
+
+        const data =
+          await api(
+            "/api/conversations/" +
+            userId,
+            {
+              method:"POST"
+            }
+          );
+
+        const conversation =
+          data.conversation;
+
+        if(!conversation || !conversation._id){
+
+          throw new Error(
+            "Conversation could not be created"
+          );
+
+        }
+
+        openChat(conversation._id);
+
+      }catch(error){
+
+        console.error(error);
+
+        showToast(
+          error.message ||
+          "Could not start chat"
+        );
+
+      }
+
+    }
 
 
-    <!-- BOTTOM NAV -->
-    <nav class="bottom-nav">
+    /* ============================
+       OPEN CHAT
+    ============================ */
 
-      <button class="nav-item active">
-        <span>💬</span>
-        <small>Chats</small>
-      </button>
+    function openChat(conversationId){
 
-      <button class="nav-item" onclick="showContacts()">
-        <span>👥</span>
-        <small>Contacts</small>
-      </button>
+      window.location.href =
+        "chat.html?id=" +
+        encodeURIComponent(conversationId);
 
-      <button class="nav-item" onclick="showProfile()">
-        <span>👤</span>
-        <small>Profile</small>
-      </button>
-
-      <button class="nav-item" onclick="showSettings()">
-        <span>⚙️</span>
-        <small>Settings</small>
-      </button>
-
-    </nav>
+    }
 
 
-    <!-- NEW CHAT -->
-    <button class="new-chat" onclick="newChat()">
-      +
-    </button>
+    /* ============================
+       NEW CHAT
+    ============================ */
 
-  </div>
+    document.getElementById(
+      "newChatBtn"
+    ).addEventListener(
+      "click",
+      () => {
+
+        searchInput.focus();
+
+        showToast(
+          "Search a username to start chatting"
+        );
+
+      }
+    );
 
 
-  <script src="js/home.js"></script>
+    /* ============================
+       REFRESH
+    ============================ */
+
+    document.getElementById(
+      "refreshBtn"
+    ).addEventListener(
+      "click",
+      async () => {
+
+        await loadMe();
+        await loadChats();
+
+        showToast("Updated");
+
+      }
+    );
+
+
+    /* ============================
+       NAVIGATION
+    ============================ */
+
+    document.querySelectorAll(
+      ".nav-btn"
+    ).forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          const page =
+            button.dataset.page;
+
+          if(page === "chats"){
+            return;
+          }
+
+          if(page === "contacts"){
+
+            searchInput.focus();
+
+            showToast(
+              "Search users from here"
+            );
+
+            return;
+          }
+
+          if(page === "profile"){
+
+            window.location.href =
+              "profile.html";
+
+            return;
+          }
+
+          if(page === "settings"){
+
+            window.location.href =
+              "settings.html";
+
+            return;
+          }
+
+        }
+      );
+
+    });
+
+
+    /* ============================
+       TIME FORMAT
+    ============================ */
+
+    function formatTime(date){
+
+      if(!date){
+        return "";
+      }
+
+      const d =
+        new Date(date);
+
+      if(isNaN(d.getTime())){
+        return "";
+      }
+
+      const now =
+        new Date();
+
+      if(
+        d.toDateString() ===
+        now.toDateString()
+      ){
+
+        return d.toLocaleTimeString(
+          [],
+          {
+            hour:"2-digit",
+            minute:"2-digit"
+          }
+        );
+
+      }
+
+      return d.toLocaleDateString(
+        [],
+        {
+          day:"2-digit",
+          month:"short"
+        }
+      );
+
+    }
+
+
+    /* ============================
+       HTML ESCAPE
+    ============================ */
+
+    function escapeHTML(value){
+
+      return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+    }
+
+
+    /* ============================
+       START
+    ============================ */
+
+    async function init(){
+
+      await loadMe();
+
+      await loadChats();
+
+    }
+
+    init();
+
+  </script>
 
 </body>
 </html>
