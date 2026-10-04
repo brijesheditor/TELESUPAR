@@ -3,158 +3,740 @@
 <head>
   <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta
-    name="theme-color"
-    content="#070b13"
-  >
+  <meta name="theme-color" content="#070b14">
 
   <title>TELESUPAR — Create Account</title>
 
-  <!-- Main CSS -->
-  <link
-    rel="stylesheet"
-    href="css/style.css"
-  >
+  <style>
+    /* =================================
+       RESET
+    ================================= */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      color: #ffffff;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 18px;
+
+      background:
+        radial-gradient(
+          circle at 10% 0%,
+          rgba(30, 115, 255, 0.22),
+          transparent 34%
+        ),
+        radial-gradient(
+          circle at 90% 100%,
+          rgba(0, 210, 170, 0.16),
+          transparent 35%
+        ),
+        #070b14;
+
+      overflow-x: hidden;
+    }
+
+
+    /* =================================
+       BACKGROUND GLOW
+    ================================= */
+
+    .glow {
+      position: fixed;
+
+      width: 260px;
+      height: 260px;
+
+      border-radius: 50%;
+
+      background: #1683ff;
+
+      filter: blur(120px);
+
+      opacity: 0.14;
+
+      top: -100px;
+      left: -100px;
+
+      pointer-events: none;
+    }
+
+    .glow-two {
+      background: #00d4a8;
+
+      top: auto;
+      left: auto;
+
+      right: -110px;
+      bottom: -110px;
+    }
+
+
+    /* =================================
+       PAGE
+    ================================= */
+
+    .page {
+      width: 100%;
+      max-width: 440px;
+
+      position: relative;
+      z-index: 2;
+    }
+
+
+    /* =================================
+       CARD
+    ================================= */
+
+    .card {
+      width: 100%;
+
+      padding: 31px 24px 27px;
+
+      background:
+        rgba(13, 19, 31, 0.94);
+
+      border:
+        1px solid rgba(255,255,255,0.08);
+
+      border-radius: 27px;
+
+      box-shadow:
+        0 25px 70px rgba(0,0,0,0.48),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+
+    /* =================================
+       LOGO
+    ================================= */
+
+    .logo {
+      width: 70px;
+      height: 70px;
+
+      margin:
+        0 auto 18px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 21px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #1685ff,
+          #006be8
+        );
+
+      color: #ffffff;
+
+      font-size: 24px;
+
+      font-weight: 900;
+
+      letter-spacing: 1px;
+
+      box-shadow:
+        0 15px 35px
+        rgba(22,133,255,0.30);
+    }
+
+
+    /* =================================
+       TITLE
+    ================================= */
+
+    .title {
+      text-align: center;
+
+      font-size: 29px;
+
+      font-weight: 800;
+
+      letter-spacing: -0.7px;
+    }
+
+    .subtitle {
+      text-align: center;
+
+      color: #8d99ad;
+
+      font-size: 13px;
+
+      line-height: 1.5;
+
+      margin-top: 8px;
+
+      margin-bottom: 25px;
+    }
+
+
+    /* =================================
+       INPUT GROUP
+    ================================= */
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+
+      margin-bottom: 7px;
+
+      color: #cbd4e4;
+
+      font-size: 13px;
+
+      font-weight: 700;
+    }
+
+
+    /* =================================
+       INPUT
+    ================================= */
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      height: 52px;
+
+      padding:
+        0 15px;
+
+      border-radius: 14px;
+
+      border:
+        1px solid #273248;
+
+      outline: none;
+
+      background: #090f1a;
+
+      color: #ffffff;
+
+      font-size: 14px;
+
+      transition: 0.2s ease;
+    }
+
+    .input-wrapper input::placeholder {
+      color: #59667b;
+    }
+
+    .input-wrapper input:focus {
+      border-color: #2586ff;
+
+      box-shadow:
+        0 0 0 3px
+        rgba(37,134,255,0.12);
+    }
+
+
+    /* =================================
+       PASSWORD
+    ================================= */
+
+    .password-input {
+      padding-right: 72px !important;
+    }
+
+    .show-password {
+      position: absolute;
+
+      right: 9px;
+      top: 50%;
+
+      transform:
+        translateY(-50%);
+
+      padding: 8px;
+
+      border: none;
+
+      background: transparent;
+
+      color: #6f91bd;
+
+      font-size: 11px;
+
+      font-weight: 800;
+
+      cursor: pointer;
+    }
+
+    .show-password:hover {
+      color: #ffffff;
+    }
+
+
+    /* =================================
+       MESSAGE
+    ================================= */
+
+    .message {
+      display: none;
+
+      margin:
+        4px 0 14px;
+
+      padding:
+        12px 14px;
+
+      border-radius: 12px;
+
+      font-size: 13px;
+
+      line-height: 1.4;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      color: #ffb9c0;
+
+      background:
+        rgba(255,65,85,0.10);
+
+      border:
+        1px solid
+        rgba(255,65,85,0.18);
+    }
+
+    .message.success {
+      color: #a2f1d9;
+
+      background:
+        rgba(0,210,168,0.09);
+
+      border:
+        1px solid
+        rgba(0,210,168,0.18);
+    }
+
+
+    /* =================================
+       REGISTER BUTTON
+    ================================= */
+
+    .register-btn {
+      width: 100%;
+      height: 53px;
+
+      margin-top: 3px;
+
+      border: none;
+
+      border-radius: 15px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #1685ff,
+          #006be7
+        );
+
+      color: #ffffff;
+
+      font-size: 15px;
+
+      font-weight: 800;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 13px 30px
+        rgba(22,133,255,0.23);
+
+      transition: 0.2s ease;
+    }
+
+    .register-btn:hover {
+      transform:
+        translateY(-1px);
+    }
+
+    .register-btn:active {
+      transform:
+        scale(0.98);
+    }
+
+    .register-btn:disabled {
+      opacity: 0.65;
+
+      cursor: not-allowed;
+
+      transform: none;
+    }
+
+
+    /* =================================
+       LOGIN SECTION
+    ================================= */
+
+    .login-section {
+      margin-top: 24px;
+
+      padding-top: 22px;
+
+      border-top:
+        1px solid
+        rgba(255,255,255,0.07);
+
+      text-align: center;
+    }
+
+    .login-section p {
+      color: #7f8ca1;
+
+      font-size: 13px;
+
+      margin-bottom: 11px;
+    }
+
+    .login-btn {
+      width: 100%;
+      height: 51px;
+
+      display: flex;
+
+      align-items: center;
+      justify-content: center;
+
+      border:
+        1px solid #29354c;
+
+      border-radius: 14px;
+
+      background: #101725;
+
+      color: #ffffff;
+
+      text-decoration: none;
+
+      font-size: 14px;
+
+      font-weight: 800;
+
+      transition: 0.2s ease;
+    }
+
+    .login-btn:hover {
+      background: #172236;
+
+      border-color: #358fff;
+    }
+
+    .login-btn:active {
+      transform:
+        scale(0.98);
+    }
+
+
+    /* =================================
+       SECURITY
+    ================================= */
+
+    .security {
+      display: flex;
+
+      align-items: center;
+      justify-content: center;
+
+      gap: 7px;
+
+      margin-top: 18px;
+
+      color: #566278;
+
+      font-size: 11px;
+    }
+
+    .security-dot {
+      width: 7px;
+      height: 7px;
+
+      border-radius: 50%;
+
+      background: #00d1a5;
+
+      box-shadow:
+        0 0 10px
+        rgba(0,209,165,0.7);
+    }
+
+
+    /* =================================
+       MOBILE
+    ================================= */
+
+    @media (max-width: 420px) {
+
+      body {
+        padding: 12px;
+      }
+
+      .card {
+        padding:
+          27px 18px 23px;
+
+        border-radius: 23px;
+      }
+
+      .logo {
+        width: 64px;
+        height: 64px;
+
+        border-radius: 19px;
+
+        font-size: 22px;
+      }
+
+      .title {
+        font-size: 27px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+
+        margin-bottom: 22px;
+      }
+
+      .input-group {
+        margin-bottom: 13px;
+      }
+    }
+  </style>
 </head>
+
 
 <body>
 
-  <div class="auth-page">
+  <!-- Background -->
+  <div class="glow"></div>
 
-    <div class="auth-card">
+  <div class="glow glow-two"></div>
+
+
+  <main class="page">
+
+    <section class="card">
+
 
       <!-- Logo -->
-      <div class="auth-logo">
+
+      <div class="logo">
         TS
       </div>
 
-      <h1>Create Account</h1>
 
-      <p class="auth-subtitle">
+      <!-- Heading -->
+
+      <h1 class="title">
+        Create Account
+      </h1>
+
+      <p class="subtitle">
         Join TELESUPAR and start chatting
       </p>
 
 
-      <!-- REGISTER FORM -->
+      <!-- Register Form -->
+
       <form id="registerForm">
 
+
         <!-- Username -->
+
         <div class="input-group">
 
           <label for="username">
             Username
           </label>
 
-          <input
-            type="text"
-            id="username"
-            name="username"
-            placeholder="Enter username"
-            minlength="3"
-            maxlength="30"
-            autocomplete="username"
-            required
-          >
+          <div class="input-wrapper">
+
+            <input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Choose a username"
+              minlength="3"
+              maxlength="30"
+              autocomplete="username"
+              required
+            >
+
+          </div>
 
         </div>
 
 
         <!-- Display Name -->
+
         <div class="input-group">
 
           <label for="displayName">
             Display Name
           </label>
 
-          <input
-            type="text"
-            id="displayName"
-            name="displayName"
-            placeholder="Your name"
-            maxlength="50"
-            autocomplete="name"
-            required
-          >
+          <div class="input-wrapper">
+
+            <input
+              type="text"
+              id="displayName"
+              name="displayName"
+              placeholder="Enter your name"
+              maxlength="50"
+              autocomplete="name"
+              required
+            >
+
+          </div>
 
         </div>
 
 
         <!-- Email -->
+
         <div class="input-group">
 
           <label for="email">
             Email
           </label>
 
-          <input
-            type="email"
-            id="email"
-            name="email"
-            placeholder="you@example.com"
-            autocomplete="email"
-            required
-          >
+          <div class="input-wrapper">
+
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter your email"
+              autocomplete="email"
+              required
+            >
+
+          </div>
 
         </div>
 
 
         <!-- Password -->
+
         <div class="input-group">
 
           <label for="password">
             Password
           </label>
 
-          <input
-            type="password"
-            id="password"
-            name="password"
-            placeholder="Create a password"
-            minlength="6"
-            autocomplete="new-password"
-            required
-          >
+          <div class="input-wrapper">
+
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="password-input"
+              placeholder="Create a password"
+              minlength="6"
+              autocomplete="new-password"
+              required
+            >
+
+            <button
+              type="button"
+              class="show-password"
+              id="showPassword"
+            >
+              SHOW
+            </button>
+
+          </div>
 
         </div>
 
 
         <!-- Confirm Password -->
+
         <div class="input-group">
 
           <label for="confirmPassword">
             Confirm Password
           </label>
 
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            placeholder="Confirm your password"
-            minlength="6"
-            autocomplete="new-password"
-            required
-          >
+          <div class="input-wrapper">
+
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              class="password-input"
+              placeholder="Confirm your password"
+              minlength="6"
+              autocomplete="new-password"
+              required
+            >
+
+            <button
+              type="button"
+              class="show-password"
+              id="showConfirmPassword"
+            >
+              SHOW
+            </button>
+
+          </div>
 
         </div>
 
 
         <!-- Message -->
+
         <div
           id="message"
-          class="auth-message"
+          class="message"
         ></div>
 
 
-        <!-- Button -->
+        <!-- Register -->
+
         <button
           type="submit"
           id="registerBtn"
-          class="auth-btn"
+          class="register-btn"
         >
           Create Account
         </button>
@@ -163,97 +745,231 @@
 
 
       <!-- Login -->
-      <div class="auth-switch">
 
-        Already have an account?
+      <div class="login-section">
 
-        <a href="login.html">
+        <p>
+          Already have an account?
+        </p>
+
+        <a
+          href="login.html"
+          class="login-btn"
+        >
           Login
         </a>
 
       </div>
 
-    </div>
 
-  </div>
+      <!-- Security -->
+
+      <div class="security">
+
+        <span class="security-dot"></span>
+
+        Secure TELESUPAR registration
+
+      </div>
 
 
-  <!-- ========================= -->
-  <!-- REGISTER JAVASCRIPT -->
-  <!-- ========================= -->
+    </section>
+
+  </main>
+
 
   <script>
+
+    /* =================================
+       API
+    ================================= */
 
     const API_URL =
       "https://telesupar.onrender.com";
 
 
+    /* =================================
+       ELEMENTS
+    ================================= */
+
     const registerForm =
-      document.getElementById("registerForm");
+      document.getElementById(
+        "registerForm"
+      );
 
     const registerBtn =
-      document.getElementById("registerBtn");
+      document.getElementById(
+        "registerBtn"
+      );
 
     const message =
-      document.getElementById("message");
+      document.getElementById(
+        "message"
+      );
+
+    const passwordInput =
+      document.getElementById(
+        "password"
+      );
+
+    const confirmPasswordInput =
+      document.getElementById(
+        "confirmPassword"
+      );
+
+    const showPassword =
+      document.getElementById(
+        "showPassword"
+      );
+
+    const showConfirmPassword =
+      document.getElementById(
+        "showConfirmPassword"
+      );
 
 
-    function showMessage(text, type) {
+    /* =================================
+       SHOW PASSWORD
+    ================================= */
 
-      message.textContent = text;
+    showPassword.addEventListener(
+      "click",
+      function () {
+
+        if (
+          passwordInput.type ===
+          "password"
+        ) {
+
+          passwordInput.type =
+            "text";
+
+          showPassword.textContent =
+            "HIDE";
+
+        } else {
+
+          passwordInput.type =
+            "password";
+
+          showPassword.textContent =
+            "SHOW";
+
+        }
+
+      }
+    );
+
+
+    /* =================================
+       SHOW CONFIRM PASSWORD
+    ================================= */
+
+    showConfirmPassword.addEventListener(
+      "click",
+      function () {
+
+        if (
+          confirmPasswordInput.type ===
+          "password"
+        ) {
+
+          confirmPasswordInput.type =
+            "text";
+
+          showConfirmPassword.textContent =
+            "HIDE";
+
+        } else {
+
+          confirmPasswordInput.type =
+            "password";
+
+          showConfirmPassword.textContent =
+            "SHOW";
+
+        }
+
+      }
+    );
+
+
+    /* =================================
+       MESSAGE
+    ================================= */
+
+    function showMessage(
+      text,
+      type
+    ) {
+
+      message.textContent =
+        text;
 
       message.className =
-        "auth-message " + type;
+        "message show " + type;
 
     }
 
 
+    /* =================================
+       REGISTER
+    ================================= */
+
     registerForm.addEventListener(
       "submit",
-      async function(event) {
+      async function (event) {
 
         event.preventDefault();
 
 
         const username =
           document
-            .getElementById("username")
+            .getElementById(
+              "username"
+            )
             .value
-            .trim();
+            .trim()
+            .toLowerCase();
 
 
         const displayName =
           document
-            .getElementById("displayName")
+            .getElementById(
+              "displayName"
+            )
             .value
             .trim();
 
 
         const email =
           document
-            .getElementById("email")
+            .getElementById(
+              "email"
+            )
             .value
-            .trim();
+            .trim()
+            .toLowerCase();
 
 
         const password =
-          document
-            .getElementById("password")
-            .value;
+          passwordInput.value;
 
 
         const confirmPassword =
-          document
-            .getElementById("confirmPassword")
-            .value;
+          confirmPasswordInput.value;
 
 
-        /* Password match check */
+        /* =================================
+           VALIDATION
+        ================================= */
 
-        if (password !== confirmPassword) {
+        if (
+          username.length < 3
+        ) {
 
           showMessage(
-            "Passwords do not match.",
+            "Username must be at least 3 characters.",
             "error"
           );
 
@@ -261,9 +977,9 @@
         }
 
 
-        /* Password length */
-
-        if (password.length < 6) {
+        if (
+          password.length < 6
+        ) {
 
           showMessage(
             "Password must be at least 6 characters.",
@@ -274,21 +990,44 @@
         }
 
 
-        /* Loading */
+        if (
+          password !==
+          confirmPassword
+        ) {
 
-        registerBtn.disabled = true;
+          showMessage(
+            "Passwords do not match.",
+            "error"
+          );
+
+          return;
+        }
+
+
+        /* =================================
+           LOADING
+        ================================= */
+
+        registerBtn.disabled =
+          true;
 
         registerBtn.textContent =
           "Creating Account...";
 
-        showMessage("", "");
+        message.className =
+          "message";
 
 
         try {
 
+          /* =================================
+             API REQUEST
+          ================================= */
+
           const response =
             await fetch(
-              API_URL + "/api/register",
+              API_URL +
+              "/api/register",
               {
                 method: "POST",
 
@@ -320,7 +1059,9 @@
             await response.json();
 
 
-          /* Server error */
+          /* =================================
+             ERROR
+          ================================= */
 
           if (!response.ok) {
 
@@ -333,9 +1074,13 @@
           }
 
 
-          /* Save JWT */
+          /* =================================
+             SAVE TOKEN
+          ================================= */
 
-          if (data.token) {
+          if (
+            data.token
+          ) {
 
             localStorage.setItem(
               "telesupar_token",
@@ -345,30 +1090,40 @@
           }
 
 
-          /* Save user */
+          /* =================================
+             SAVE USER
+          ================================= */
 
-          if (data.user) {
+          if (
+            data.user
+          ) {
 
             localStorage.setItem(
               "telesupar_user",
-              JSON.stringify(data.user)
+              JSON.stringify(
+                data.user
+              )
             );
 
           }
 
 
-          /* Success */
+          /* =================================
+             SUCCESS
+          ================================= */
 
           showMessage(
-            "Account created successfully! Redirecting...",
+            "Account created successfully! Opening TELESUPAR...",
             "success"
           );
 
 
-          /* Go Home */
+          /* =================================
+             REDIRECT
+          ================================= */
 
           setTimeout(
-            function() {
+            function () {
 
               window.location.href =
                 "home.html";
@@ -393,7 +1148,8 @@
           );
 
 
-          registerBtn.disabled = false;
+          registerBtn.disabled =
+            false;
 
           registerBtn.textContent =
             "Create Account";
