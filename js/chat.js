@@ -711,7 +711,7 @@ function createMessageElement(
         "reply-message-btn";
 
     replyBtn.textContent =
-        "↩ Reply";
+        "";
 
     replyBtn.addEventListener(
         "click",
