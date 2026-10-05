@@ -1,6 +1,6 @@
 /* =========================================
    TELESUPAR CHAT
-   Reply + Realtime + Seen + Delivered
+   Realtime + Seen + Delivered
 ========================================= */
 
 const API =
@@ -66,13 +66,6 @@ let typingTimer =
 
 let isOtherTyping =
     false;
-
-/*
-    Currently selected message
-    for reply.
-*/
-let replyToMessage =
-    null;
 
 /*
     messageId -> message
@@ -162,28 +155,6 @@ const fileInput =
 const cameraInput =
     document.getElementById(
         "cameraInput"
-    );
-
-/* Reply DOM */
-
-const replyPreview =
-    document.getElementById(
-        "replyPreview"
-    );
-
-const replyPreviewTitle =
-    document.getElementById(
-        "replyPreviewTitle"
-    );
-
-const replyPreviewText =
-    document.getElementById(
-        "replyPreviewText"
-    );
-
-const cancelReplyBtn =
-    document.getElementById(
-        "cancelReplyBtn"
     );
 
 /* =========================================
@@ -334,12 +305,6 @@ async function loadConversationInfo() {
 
     if (!conversation) {
 
-        /*
-            If recent chat is not available,
-            try extracting other user from
-            conversation URL flow.
-        */
-
         throw new Error(
             "Conversation not found"
         );
@@ -394,13 +359,6 @@ function setAvatar(
     if (!element) {
         return;
     }
-
-    /*
-        Current backend does not yet
-        provide avatar URLs.
-
-        Therefore show initials.
-    */
 
     const name =
         user?.displayName ||
@@ -587,27 +545,9 @@ function createMessageElement(
     bubble.className =
         "message-bubble";
 
-    /*
-        REPLY QUOTE
-    */
-
-    if (
-        message.replyTo
-    ) {
-
-        const quote =
-            createReplyQuote(
-                message.replyTo
-            );
-
-        bubble.appendChild(
-            quote
-        );
-    }
-
-    /*
-        TEXT
-    */
+    /* =====================================
+       TEXT
+    ===================================== */
 
     const text =
         document.createElement(
@@ -625,9 +565,9 @@ function createMessageElement(
         text
     );
 
-    /*
-        META
-    */
+    /* =====================================
+       META
+    ===================================== */
 
     const meta =
         document.createElement(
@@ -654,9 +594,9 @@ function createMessageElement(
         time
     );
 
-    /*
-        STATUS
-    */
+    /* =====================================
+       STATUS
+    ===================================== */
 
     if (mine) {
 
@@ -687,54 +627,8 @@ function createMessageElement(
         meta
     );
 
-    /*
-        REPLY BUTTON
-    */
-
-    const actions =
-        document.createElement(
-            "div"
-        );
-
-    actions.className =
-        "message-actions";
-
-    const replyBtn =
-        document.createElement(
-            "button"
-        );
-
-    replyBtn.type =
-        "button";
-
-    replyBtn.className =
-        "reply-message-btn";
-
-    replyBtn.textContent =
-        "";
-
-    replyBtn.addEventListener(
-        "click",
-        function(event) {
-
-            event.stopPropagation();
-
-            startReply(
-                message
-            );
-        }
-    );
-
-    actions.appendChild(
-        replyBtn
-    );
-
     content.appendChild(
         bubble
-    );
-
-    content.appendChild(
-        actions
     );
 
     wrapper.appendChild(
@@ -742,272 +636,6 @@ function createMessageElement(
     );
 
     return wrapper;
-}
-
-/* =========================================
-   CREATE REPLY QUOTE
-========================================= */
-
-function createReplyQuote(
-    reply
-) {
-
-    const quote =
-        document.createElement(
-            "div"
-        );
-
-    quote.className =
-        "reply-quote";
-
-    /*
-        Support both:
-
-        reply.messageId
-
-        and older possible
-        formats.
-    */
-
-    const originalId =
-        reply.messageId ||
-        reply.id ||
-        reply._id ||
-        null;
-
-    const original =
-        originalId
-            ? messagesCache.get(
-                String(
-                    originalId
-                )
-            )
-            : null;
-
-    const quoteContent =
-        document.createElement(
-            "div"
-        );
-
-    quoteContent.className =
-        "reply-quote-content";
-
-    const name =
-        document.createElement(
-            "div"
-        );
-
-    name.className =
-        "reply-quote-name";
-
-    if (
-        reply.senderId &&
-        String(
-            reply.senderId
-        ) ===
-        String(
-            currentUser.id
-        )
-    ) {
-
-        name.textContent =
-            "You";
-
-    } else {
-
-        name.textContent =
-            otherUser?.displayName ||
-            otherUser?.username ||
-            "User";
-    }
-
-    const quoteText =
-        document.createElement(
-            "div"
-        );
-
-    quoteText.className =
-        "reply-quote-text";
-
-    quoteText.textContent =
-        original?.text ||
-        reply.text ||
-        "Original message";
-
-    quoteContent.appendChild(
-        name
-    );
-
-    quoteContent.appendChild(
-        quoteText
-    );
-
-    quote.appendChild(
-        quoteContent
-    );
-
-    /*
-        Tap reply quote →
-        original message.
-    */
-
-    quote.addEventListener(
-        "click",
-        function(event) {
-
-            event.stopPropagation();
-
-            if (originalId) {
-
-                scrollToMessage(
-                    originalId
-                );
-            }
-        }
-    );
-
-    return quote;
-}
-
-/* =========================================
-   START REPLY
-========================================= */
-
-function startReply(
-    message
-) {
-
-    if (!message) {
-        return;
-    }
-
-    replyToMessage =
-        message;
-
-    updateReplyPreview();
-
-    messageInput.focus();
-}
-
-/* =========================================
-   UPDATE REPLY PREVIEW
-========================================= */
-
-function updateReplyPreview() {
-
-    if (
-        !replyPreview
-    ) {
-        return;
-    }
-
-    if (
-        !replyToMessage
-    ) {
-
-        replyPreview.classList.remove(
-            "show"
-        );
-
-        return;
-    }
-
-    replyPreview.classList.add(
-        "show"
-    );
-
-    const mine =
-        String(
-            replyToMessage.senderId
-        ) ===
-        String(
-            currentUser.id
-        );
-
-    replyPreviewTitle.textContent =
-        mine
-            ? "Replying to yourself"
-            : "Replying to " +
-              (
-                  otherUser?.displayName ||
-                  otherUser?.username ||
-                  "User"
-              );
-
-    replyPreviewText.textContent =
-        replyToMessage.text ||
-        "Message";
-}
-
-/* =========================================
-   CANCEL REPLY
-========================================= */
-
-function cancelReply() {
-
-    replyToMessage =
-        null;
-
-    updateReplyPreview();
-
-    messageInput.focus();
-}
-
-if (cancelReplyBtn) {
-
-    cancelReplyBtn.addEventListener(
-        "click",
-        cancelReply
-    );
-}
-
-/* =========================================
-   SCROLL TO ORIGINAL MESSAGE
-========================================= */
-
-function scrollToMessage(
-    messageId
-) {
-
-    const element =
-        messagesEl.querySelector(
-            '[data-message-id="' +
-            CSS.escape(
-                String(messageId)
-            ) +
-            '"]'
-        );
-
-    if (!element) {
-
-        return;
-    }
-
-    element.scrollIntoView({
-        behavior: "smooth",
-        block: "center"
-    });
-
-    element.classList.remove(
-        "highlight-message"
-    );
-
-    void element.offsetWidth;
-
-    element.classList.add(
-        "highlight-message"
-    );
-
-    setTimeout(
-        function() {
-
-            element.classList.remove(
-                "highlight-message"
-            );
-
-        },
-        1300
-    );
 }
 
 /* =========================================
@@ -1186,6 +814,10 @@ function connectSocket() {
         }
     );
 
+    /* =====================================
+       NEW MESSAGE
+    ===================================== */
+
     socket.on(
         "newMessage",
         function(message) {
@@ -1224,8 +856,9 @@ function connectSocket() {
 
             /*
                 If receiver is currently
-                viewing this chat, mark
-                incoming message as seen.
+                viewing this chat,
+                mark incoming message
+                as seen.
             */
 
             if (
@@ -1241,6 +874,10 @@ function connectSocket() {
             }
         }
     );
+
+    /* =====================================
+       DELIVERED
+    ===================================== */
 
     socket.on(
         "messageDelivered",
@@ -1269,6 +906,10 @@ function connectSocket() {
             }
         }
     );
+
+    /* =====================================
+       SEEN
+    ===================================== */
 
     socket.on(
         "messagesSeen",
@@ -1311,6 +952,10 @@ function connectSocket() {
         }
     );
 
+    /* =====================================
+       TYPING
+    ===================================== */
+
     socket.on(
         "typing",
         function(data) {
@@ -1344,6 +989,10 @@ function connectSocket() {
         }
     );
 
+    /* =====================================
+       SOCKET AUTH ERROR
+    ===================================== */
+
     socket.on(
         "authError",
         function(error) {
@@ -1354,6 +1003,10 @@ function connectSocket() {
             );
         }
     );
+
+    /* =====================================
+       DISCONNECT
+    ===================================== */
 
     socket.on(
         "disconnect",
@@ -1371,7 +1024,7 @@ function connectSocket() {
 }
 
 /* =========================================
-   JOIN
+   JOIN CONVERSATION
 ========================================= */
 
 function joinConversation() {
@@ -1441,45 +1094,6 @@ async function sendMessage() {
     sendBtn.disabled =
         true;
 
-    /*
-        Build reply payload.
-    */
-
-    let replyTo =
-        null;
-
-    if (
-        replyToMessage &&
-        (
-            replyToMessage.id ||
-            replyToMessage._id
-        )
-    ) {
-
-        replyTo = {
-
-            messageId:
-                String(
-                    replyToMessage.id ||
-                    replyToMessage._id
-                ),
-
-            senderId:
-                String(
-                    replyToMessage.senderId
-                ),
-
-            text:
-                String(
-                    replyToMessage.text ||
-                    ""
-                ).substring(
-                    0,
-                    1000
-                )
-        };
-    }
-
     try {
 
         const data =
@@ -1495,9 +1109,7 @@ async function sendMessage() {
                     body:
                         JSON.stringify({
 
-                            text,
-
-                            replyTo
+                            text
                         })
                 }
             );
@@ -1517,8 +1129,6 @@ async function sendMessage() {
 
         messageInput.value =
             "";
-
-        cancelReply();
 
         renderMessages();
 
@@ -1596,7 +1206,7 @@ if (messageInput) {
 }
 
 /* =========================================
-   TYPING
+   TYPING INPUT
 ========================================= */
 
 if (messageInput) {
@@ -2005,7 +1615,7 @@ if (cameraBtn) {
 }
 
 /* =========================================
-   FILE SELECTION
+   PHOTO SELECTION
 ========================================= */
 
 if (photoInput) {
@@ -2028,6 +1638,10 @@ if (photoInput) {
     );
 }
 
+/* =========================================
+   FILE SELECTION
+========================================= */
+
 if (fileInput) {
 
     fileInput.addEventListener(
@@ -2047,6 +1661,10 @@ if (fileInput) {
         }
     );
 }
+
+/* =========================================
+   CAMERA SELECTION
+========================================= */
 
 if (cameraInput) {
 
@@ -2107,11 +1725,6 @@ if (chatMenuBtn) {
     chatMenuBtn.addEventListener(
         "click",
         function() {
-
-            /*
-                Reserved for future
-                chat settings/menu.
-            */
 
             console.log(
                 "Chat menu"
