@@ -1669,31 +1669,32 @@ app.post(
                     receiverId
                 );
 
-            const newMessage = {
+            const replyTo =
+    req.body.replyTo || null;
 
-                conversationId:
-                    new ObjectId(
-                        conversationId
-                    ),
+const newMessage = {
 
-                senderId:
-                    new ObjectId(
-                        senderId
-                    ),
+    conversationId:
+        new ObjectId(conversationId),
 
-                text,
+    senderId:
+        new ObjectId(senderId),
 
-                createdAt:
-                    now,
+    text,
 
-                deliveredAt:
-                    receiverOnline
-                        ? now
-                        : null,
+    replyTo,
 
-                seenAt:
-                    null
-            };
+    createdAt:
+        now,
+
+    deliveredAt:
+        receiverOnline
+            ? now
+            : null,
+
+    seenAt:
+        null
+};
 
             const result =
                 await messages.insertOne(
@@ -1738,28 +1739,30 @@ app.post(
 
             const output = {
 
-                id:
-                    result.insertedId.toString(),
+    id:
+        result.insertedId.toString(),
 
-                conversationId,
+    conversationId,
 
-                senderId,
+    senderId,
 
-                receiverId,
+    receiverId,
 
-                text,
+    text,
 
-                createdAt:
-                    now,
+    replyTo,
 
-                deliveredAt:
-                    receiverOnline
-                        ? now
-                        : null,
+    createdAt:
+        now,
 
-                seenAt:
-                    null
-            };
+    deliveredAt:
+        receiverOnline
+            ? now
+            : null,
+
+    seenAt:
+        null
+};
 
             /*
                 Send real message.
