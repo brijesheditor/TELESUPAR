@@ -185,48 +185,45 @@ conversationId =
    API HELPER
 ========================================= */
 
-async function api(
-    path,
-    options = {}
-) {
 
+async function api(url, options = {}) {
     const headers = {
-
         ...(options.headers || {}),
-
-        Authorization:
-            "Bearer " + token,
-
-        "Content-Type":
-            "application/json"
+        Authorization: "Bearer " + token
     };
 
-    const response =
-        await fetch(
-            API + path,
-            {
-                ...options,
-                headers
-            }
-        );
+    let body = options.body;
+
+    if (body instanceof FormData) {
+        // File upload: browser sets multipart boundary.
+        delete headers["Content-Type"];
+    } else if (
+        body &&
+        typeof body === "object"
+    ) {
+        headers["Content-Type"] = "application/json";
+        body = JSON.stringify(body);
+    } else if (typeof body === "string") {
+        headers["Content-Type"] = "application/json";
+    }
+
+    const response = await fetch(API + url, {
+        ...options,
+        body,
+        headers
+    });
 
     let data = null;
 
     try {
-
-        data =
-            await response.json();
-
+        data = await response.json();
     } catch (error) {
-
         data = null;
     }
 
     if (!response.ok) {
-
         throw new Error(
-            data?.message ||
-            "Request failed"
+            data?.message || "Request failed"
         );
     }
 
