@@ -646,8 +646,7 @@ if (attachment && attachment.url) {
         bubble.appendChild(link);
     }
 }
-
-
+   
     /* =====================================
        TEXT
     ===================================== */
