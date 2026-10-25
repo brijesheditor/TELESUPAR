@@ -600,6 +600,7 @@ if (attachment && attachment.url) {
 ===================================== */
 
 const attachment = message.attachment;
+const attachment = message.attachment;
 
 if (attachment && attachment.url) {
     const url = attachment.url;
@@ -645,6 +646,7 @@ if (attachment && attachment.url) {
 
         bubble.appendChild(link);
     }
+}
 }
    
     /* =====================================
