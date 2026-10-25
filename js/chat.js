@@ -542,6 +542,59 @@ function createMessageElement(
     bubble.className =
         "message-bubble";
    
+   // PHOTO / FILE DISPLAY AND OPEN FIX
+const attachment = message.attachment;
+
+if (attachment && attachment.url) {
+    const url = attachment.url;
+
+    if (url.startsWith("https://")) {
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.style.display = "block";
+        link.style.color = "inherit";
+        link.style.overflowWrap = "anywhere";
+
+        if (
+            attachment.mimeType &&
+            attachment.mimeType.startsWith("image/")
+        ) {
+            const image = document.createElement("img");
+
+            image.src = url;
+            image.alt = attachment.fileName || "Photo";
+            image.loading = "lazy";
+            image.style.display = "block";
+            image.style.width = "240px";
+            image.style.maxWidth = "100%";
+            image.style.maxHeight = "300px";
+            image.style.objectFit = "contain";
+            image.style.borderRadius = "10px";
+
+            // Image par tap karne se photo khulegi
+            link.appendChild(image);
+
+            const openText = document.createElement("div");
+            openText.textContent = "📷 Photo kholo";
+            openText.style.padding = "6px 0";
+            link.appendChild(openText);
+
+            // Image load fail ho tab bhi open link dikhe
+            image.onerror = function () {
+                image.style.display = "none";
+                openText.textContent = "📷 Photo open karo";
+            };
+        } else {
+            link.textContent =
+                "📎 " + (attachment.fileName || "File kholo");
+        }
+
+        bubble.appendChild(link);
+    }
+}
+   
 /* =====================================
    PHOTO / FILE ATTACHMENT
 ===================================== */
