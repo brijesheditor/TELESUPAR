@@ -602,43 +602,48 @@ if (attachment && attachment.url) {
 const attachment = message.attachment;
 
 if (attachment && attachment.url) {
-    const safeUrl = attachment.url;
+    const url = attachment.url;
 
-    if (safeUrl.startsWith("https://")) {
+    if (url.startsWith("https://")) {
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.style.display = "block";
+        link.style.position = "relative";
+        link.style.zIndex = "5";
+        link.style.cursor = "pointer";
+        link.style.color = "white";
+        link.style.textDecoration = "underline";
+        link.style.padding = "8px";
+        link.style.overflowWrap = "anywhere";
+
         if (
             attachment.mimeType &&
             attachment.mimeType.startsWith("image/")
         ) {
             const image = document.createElement("img");
 
-            image.src = safeUrl;
-            image.alt = attachment.fileName || "Shared photo";
-            image.loading = "lazy";
-            image.style.maxWidth = "100%";
+            image.src = url;
+            image.alt = attachment.fileName || "Photo";
+            image.style.display = "block";
             image.style.width = "240px";
+            image.style.maxWidth = "100%";
             image.style.maxHeight = "300px";
             image.style.objectFit = "contain";
-            image.style.display = "block";
-            image.style.borderRadius = "10px";
-            image.style.marginBottom = "8px";
+            image.style.pointerEvents = "none";
 
-            bubble.appendChild(image);
+            link.appendChild(image);
+            link.appendChild(
+                document.createTextNode("📷 Photo kholo")
+            );
         } else {
-            const link = document.createElement("a");
-
-            link.href = safeUrl;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
             link.textContent =
-                "📎 " + (attachment.fileName || "Open file");
-
-            link.style.display = "block";
-            link.style.padding = "10px";
-            link.style.overflowWrap = "anywhere";
-            link.style.color = "inherit";
-
-            bubble.appendChild(link);
+                "📎 " + (attachment.fileName || "File kholo");
         }
+
+        bubble.appendChild(link);
     }
 }
 
