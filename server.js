@@ -1896,6 +1896,157 @@ app.post(
     }
 );
 
+
+/* =========================================
+   TELESUPAR PHOTO / FILE UPLOAD
+========================================= */
+
+app.post(
+  "/api/conversations/:conversationId/attachments",
+  auth,
+  upload.single("file"),
+  async function(req, res) {
+    try {
+      const conversationId = req.params.conversationId;
+      const senderId = req.user.id;
+
+      if (!validId(conversationId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid conversation ID"
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a file"
+        });
+      }
+
+      const conversation = await conversations.findOne({
+        _id: new ObjectId(conversationId),
+        members: new ObjectId(senderId)
+      });
+
+      if (!conversation) {
+        return res.status(404).json({
+          success: false,
+          message: "Conversation not found"
+        });
+      }
+
+      const receiverObjectId = conversation.members.find(
+        member => member.toString() !== senderId
+      );
+
+      if (!receiverObjectId) {
+        return res.status(400).json({
+          success: false,
+          message: "Receiver not found"
+        });
+      }
+
+      const receiverId = receiverObjectId.toString();
+
+      const uploaded = await uploadToCloudinary(req.file);
+      const now = new Date();
+      const receiverOnline = isUserOnline(receiverId);
+
+      const attachment = {
+        url: uploaded.secure_url,
+        publicId: uploaded.public_id,
+        resourceType: uploaded.resource_type,
+        fileName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size
+      };
+
+      const newMessage = {
+        conversationId: new ObjectId(conversationId),
+        senderId: new ObjectId(senderId),
+        text: "",
+        attachment,
+        createdAt: now,
+        deliveredAt: receiverOnline ? now : null,
+        seenAt: null
+      };
+
+      const result = await messages.insertOne(newMessage);
+
+      const lastMessage = req.file.mimetype.startsWith("image/")
+        ? "📷 Photo"
+        : "📎 " + req.file.originalname;
+
+      const currentUnread = Number(
+        conversation.unreadCounts?.[receiverId] || 0
+      );
+
+      await conversations.updateOne(
+        { _id: new ObjectId(conversationId) },
+        {
+          $set: {
+            lastMessage,
+            lastMessageAt: now,
+            updatedAt: now,
+            [`unreadCounts.${receiverId}`]: currentUnread + 1
+          }
+        }
+      );
+
+      const output = {
+        id: result.insertedId.toString(),
+        conversationId,
+        senderId,
+        receiverId,
+        text: "",
+        attachment,
+        createdAt: now,
+        deliveredAt: receiverOnline ? now : null,
+        seenAt: null
+      };
+
+      io.to("conversation:" + conversationId).emit(
+        "newMessage",
+        output
+      );
+
+      io.to("user:" + receiverId).emit(
+        "conversationUpdated",
+        {
+          conversationId,
+          message: output
+        }
+      );
+
+      if (receiverOnline) {
+        io.to("user:" + senderId).emit(
+          "messageDelivered",
+          {
+            messageId: output.id,
+            conversationId,
+            deliveredAt: now
+          }
+        );
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: output
+      });
+
+    } catch (error) {
+      console.error("ATTACHMENT UPLOAD ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Attachment upload failed"
+      });
+    }
+  }
+);
+
+
 /* =========================================
    SOCKET.IO
 ========================================= */
