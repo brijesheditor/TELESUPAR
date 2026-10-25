@@ -5,6 +5,61 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ObjectId } = require("mongodb");
 const { Server } = require("socket.io");
+const cloudinary = require("cloudinary").v2;
+const multer = require("multer");
+const { Readable } = require("stream");
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  },
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "application/pdf",
+      "text/plain",
+      "application/zip",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
+
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("This file type is not allowed"));
+    }
+  }
+});
+
+function uploadToCloudinary(file) {
+  return new Promise((resolve, reject) => {
+    const isImage = file.mimetype.startsWith("image/");
+
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "telesupar",
+        resource_type: isImage ? "image" : "raw",
+        type: "upload"
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+
+    Readable.from(file.buffer).pipe(stream);
+  });
+}
 
 const app = express();
 const server = http.createServer(app);
