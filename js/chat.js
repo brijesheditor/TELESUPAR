@@ -541,6 +541,54 @@ function createMessageElement(
 
     bubble.className =
         "message-bubble";
+   
+/* =====================================
+   PHOTO / FILE ATTACHMENT
+===================================== */
+
+const attachment = message.attachment;
+
+if (attachment && attachment.url) {
+    const safeUrl = attachment.url;
+
+    if (safeUrl.startsWith("https://")) {
+        if (
+            attachment.mimeType &&
+            attachment.mimeType.startsWith("image/")
+        ) {
+            const image = document.createElement("img");
+
+            image.src = safeUrl;
+            image.alt = attachment.fileName || "Shared photo";
+            image.loading = "lazy";
+            image.style.maxWidth = "100%";
+            image.style.width = "240px";
+            image.style.maxHeight = "300px";
+            image.style.objectFit = "contain";
+            image.style.display = "block";
+            image.style.borderRadius = "10px";
+            image.style.marginBottom = "8px";
+
+            bubble.appendChild(image);
+        } else {
+            const link = document.createElement("a");
+
+            link.href = safeUrl;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent =
+                "📎 " + (attachment.fileName || "Open file");
+
+            link.style.display = "block";
+            link.style.padding = "10px";
+            link.style.overflowWrap = "anywhere";
+            link.style.color = "inherit";
+
+            bubble.appendChild(link);
+        }
+    }
+}
+
 
     /* =====================================
        TEXT
