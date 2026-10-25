@@ -1387,6 +1387,9 @@ app.get(
                             text:
                                 message.text ||
                                 "",
+                          attachment:
+                               message.attachment ||
+                               null,
 
                             createdAt:
                                 message.createdAt,
