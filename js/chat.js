@@ -1615,72 +1615,78 @@ if (cameraBtn) {
    PHOTO SELECTION
 ========================================= */
 
-if (photoInput) {
+/* =========================================
+   UPLOAD PHOTO / FILE / CAMERA IMAGE
+========================================= */
 
-    photoInput.addEventListener(
-        "change",
-        function() {
+async function uploadAttachment(file) {
+    if (!file || !conversationId) return;
 
-            if (
-                this.files &&
-                this.files.length
-            ) {
+    if (file.size > 10 * 1024 * 1024) {
+        alert("File 10 MB se chhoti honi chahiye.");
+        return;
+    }
 
-                console.log(
-                    "Photo selected:",
-                    this.files[0].name
-                );
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        if (sendBtn) sendBtn.disabled = true;
+
+        const data = await api(
+            "/api/conversations/" +
+            encodeURIComponent(conversationId) +
+            "/attachments",
+            {
+                method: "POST",
+                body: formData
             }
+        );
+
+        if (data.message && data.message.id) {
+            messagesCache.set(
+                String(data.message.id),
+                data.message
+            );
+
+            renderMessages();
+            scrollToBottom(true);
         }
-    );
+
+        alert("File successfully send ho gayi!");
+    } catch (error) {
+        console.error("UPLOAD ERROR:", error);
+        alert("Upload nahi hua: " + error.message);
+    } finally {
+        if (sendBtn) sendBtn.disabled = false;
+    }
 }
 
-/* =========================================
-   FILE SELECTION
-========================================= */
+if (photoInput) {
+    photoInput.addEventListener("change", function() {
+        if (this.files && this.files[0]) {
+            uploadAttachment(this.files[0]);
+        }
+        this.value = "";
+    });
+}
 
 if (fileInput) {
-
-    fileInput.addEventListener(
-        "change",
-        function() {
-
-            if (
-                this.files &&
-                this.files.length
-            ) {
-
-                console.log(
-                    "File selected:",
-                    this.files[0].name
-                );
-            }
+    fileInput.addEventListener("change", function() {
+        if (this.files && this.files[0]) {
+            uploadAttachment(this.files[0]);
         }
-    );
+        this.value = "";
+    });
 }
 
-/* =========================================
-   CAMERA SELECTION
-========================================= */
-
 if (cameraInput) {
-
-    cameraInput.addEventListener(
-        "change",
-        function() {
-
-            if (
-                this.files &&
-                this.files.length
-            ) {
-
-                console.log(
-                    "Camera image selected:",
-                    this.files[0].name
-                );
-            }
+    cameraInput.addEventListener("change", function() {
+        if (this.files && this.files[0]) {
+            uploadAttachment(this.files[0]);
         }
-    );
+        this.value = "";
+    });
 }
 
 /* =========================================
