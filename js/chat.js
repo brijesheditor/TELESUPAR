@@ -587,67 +587,101 @@ if (attachment && attachment.url) {
                 openText.textContent = "📷 Photo open karo";
             };
         } else {
-            link.textContent =
-                "📎 " + (attachment.fileName || "File kholo");
-        }
+function createMessageElement(message) {
+    const wrapper = document.createElement("div");
 
-        bubble.appendChild(link);
-    }
-}
-   
-/* =====================================
-   PHOTO / FILE ATTACHMENT
-===================================== */
+    const mine =
+        String(message.senderId) === String(currentUser.id);
 
-const attachment = message.attachment;
+    wrapper.className = "message " + (mine ? "outgoing" : "incoming");
+    wrapper.dataset.messageId = String(message.id);
 
-/* =====================================
-   PHOTO / FILE ATTACHMENT
-===================================== */
+    const content = document.createElement("div");
+    content.className = "message-content";
 
-const attachment = message.attachment;
+    const bubble = document.createElement("div");
+    bubble.className = "message-bubble";
 
-if (attachment && attachment.url) {
-    const safeUrl = attachment.url;
+    // PHOTO / FILE — only one attachment block
+    const attachment = message.attachment;
 
-    if (safeUrl.startsWith("https://")) {
-        if (
-            attachment.mimeType &&
-            attachment.mimeType.startsWith("image/")
-        ) {
-            const image = document.createElement("img");
+    if (attachment && attachment.url) {
+        const url = attachment.url;
 
-            image.src = safeUrl;
-            image.alt = attachment.fileName || "Shared photo";
-            image.loading = "lazy";
-            image.style.maxWidth = "100%";
-            image.style.width = "240px";
-            image.style.maxHeight = "300px";
-            image.style.objectFit = "contain";
-            image.style.display = "block";
-            image.style.borderRadius = "10px";
-            image.style.marginBottom = "8px";
-
-            bubble.appendChild(image);
-        } else {
+        if (url.startsWith("https://")) {
             const link = document.createElement("a");
-
-            link.href = safeUrl;
+            link.href = url;
             link.target = "_blank";
             link.rel = "noopener noreferrer";
-            link.textContent =
-                "📎 " + (attachment.fileName || "Open file");
-
             link.style.display = "block";
-            link.style.padding = "10px";
-            link.style.overflowWrap = "anywhere";
             link.style.color = "inherit";
+            link.style.overflowWrap = "anywhere";
+
+            if (
+                attachment.mimeType &&
+                attachment.mimeType.startsWith("image/")
+            ) {
+                const image = document.createElement("img");
+                image.src = url;
+                image.alt = attachment.fileName || "Shared photo";
+                image.loading = "lazy";
+                image.style.display = "block";
+                image.style.width = "240px";
+                image.style.maxWidth = "100%";
+                image.style.maxHeight = "300px";
+                image.style.objectFit = "contain";
+                image.style.borderRadius = "10px";
+
+                const openText = document.createElement("div");
+                openText.textContent = "📷 Photo kholo";
+                openText.style.padding = "6px 0";
+
+                image.onerror = function () {
+                    image.style.display = "none";
+                    openText.textContent = "📷 Photo open karo";
+                };
+
+                link.appendChild(image);
+                link.appendChild(openText);
+            } else {
+                link.textContent =
+                    "📎 " + (attachment.fileName || "File kholo");
+            }
 
             bubble.appendChild(link);
         }
     }
-}
 
+    // MESSAGE TEXT
+    const text = document.createElement("div");
+    text.className = "message-text";
+    text.textContent = message.text || "";
+    bubble.appendChild(text);
+
+    // MESSAGE META
+    const meta = document.createElement("div");
+    meta.className = "message-meta";
+
+    const time = document.createElement("span");
+    time.className = "message-time";
+    time.textContent = formatTime(message.createdAt);
+    meta.appendChild(time);
+
+    // DELIVERY / SEEN STATUS
+    if (mine) {
+        const status = document.createElement("span");
+        status.className = "message-status";
+        status.dataset.statusFor = String(message.id);
+        status.textContent = getStatus(message);
+        meta.appendChild(status);
+    }
+
+    bubble.appendChild(meta);
+    content.appendChild(bubble);
+    wrapper.appendChild(content);
+
+    return wrapper;
+}
    
     /* =====================================
        TEXT
