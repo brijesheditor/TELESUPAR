@@ -3,6 +3,8 @@
    Realtime + Seen + Delivered
 ========================================= */
 
+alert("TELESUPAR chat.js loaded!");
+
 const API =
     "https://telesupar.onrender.com";
 
