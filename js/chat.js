@@ -235,37 +235,28 @@ async function api(url, options = {}) {
 ========================================= */
 
 async function initChat() {
-
     if (!conversationId) {
-
-        showError(
-            "Conversation not found"
-        );
-
+        showError("Conversation ID nahi mila. Chat home se dobara kholo.");
         return;
     }
 
-    try {
+    showError("Step 1/4: Conversation info load ho raha hai...");
 
+    try {
         await loadConversationInfo();
 
+        showError("Step 2/4: Messages load ho rahe hain...");
         await loadMessages();
 
+        showError("Step 3/4: Socket connect ho raha hai...");
         connectSocket();
 
+        showError("Step 4/4: Chat ready. Messages check karo.");
+
         await markConversationRead();
-
     } catch (error) {
-
-        console.error(
-            "CHAT INIT ERROR:",
-            error
-        );
-
-        showError(
-            error.message ||
-            "Could not load chat"
-        );
+        console.error("CHAT INIT ERROR:", error);
+        showError("Chat error: " + (error.message || "Unknown error"));
     }
 }
 
