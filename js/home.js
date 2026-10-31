@@ -757,9 +757,7 @@ async function searchUsers(
 
                     <div class="avatar">
 
-                        ${escapeHTML(
-                            initial
-                        )}
+                        ${getAvatarHTML(user)}
 
                     </div>
 
