@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile | TELESUPAR</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#090d18;
+  color:#f4f6ff;
+  font-family:Arial,sans-serif;
+  min-height:100vh;
+  padding:20px 15px 40px;
+}
+.container{max-width:500px;margin:auto}
+.header{
+  display:flex;align-items:center;gap:15px;
+  margin:10px 0 28px;
+}
+.back{
+  width:42px;height:42px;border:1px solid #29334a;
+  background:#151d30;color:white;border-radius:13px;
+  font-size:22px;cursor:pointer;
+}
+.header h2{font-size:21px}
+.header p{font-size:12px;color:#8c98b5;margin-top:5px}
+.card{
+  background:#121a2b;border:1px solid #26334d;
+  border-radius:22px;padding:24px 18px;margin-bottom:18px;
+}
+.photo-area{text-align:center;padding:10px 0 25px}
+.avatar{
+  width:112px;height:112px;border-radius:50%;
+  object-fit:cover;background:#263b67;
+  border:4px solid #526ff0;
+}
+.change-photo{
+  display:block;margin:14px auto 0;
+  color:#91a9ff;font-size:13px;cursor:pointer;
+}
+input[type=file]{display:none}
+.field{margin-top:20px}
+.field label{
+  display:block;color:#aab5ce;font-size:13px;
+  margin-bottom:9px;
+}
+.field input,.field textarea{
+  width:100%;padding:14px;
+  border:1px solid #303d59;border-radius:12px;
+  background:#0b1220;color:white;font-size:15px;
+  outline:none;
+}
+.field input:focus,.field textarea:focus{border-color:#6683ff}
+.field textarea{resize:vertical;min-height:95px}
+.field input[readonly]{opacity:.65}
+.hint{font-size:11px;color:#8794b0;margin-top:7px}
+.save{
+  width:100%;padding:15px;margin-top:23px;
+  background:linear-gradient(120deg,#526ff0,#7959e9);
+  color:white;border:0;border-radius:13px;
+  font-weight:bold;font-size:15px;cursor:pointer;
+}
+.logout{
+  width:100%;padding:14px;border-radius:13px;
+  border:1px solid #713b4a;background:#251522;
+  color:#ff8799;font-weight:bold;font-size:15px;
+  cursor:pointer;
+}
+.status{text-align:center;color:#a8b7d8;font-size:13px;margin-top:15px}
+.footer{text-align:center;color:#687692;font-size:12px;margin-top:25px}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <header class="header">
+    <button class="back" id="backBtn">‹</button>
+    <div>
+      <h2>My Profile</h2>
+      <p>Manage your TELESUPAR account</p>
+    </div>
+  </header>
+
+  <section class="card">
+
+    <div class="photo-area">
+      <img id="avatar" class="avatar" alt="Profile photo">
+      <label class="change-photo" for="photoInput">
+        📷 Change profile photo
+      </label>
+      <input id="photoInput" type="file" accept="image/*">
+    </div>
+
+    <form id="profileForm">
+
+      <div class="field">
+        <label>Display Name</label>
+        <input id="displayName" maxlength="40"
+          placeholder="Your name" required>
+      </div>
+
+      <div class="field">
+        <label>Username</label>
+        <input id="username" readonly>
+        <p class="hint">Username cannot be changed here.</p>
+      </div>
+
+      <div class="field">
+        <label>Email Address</label>
+        <input id="email" readonly>
+      </div>
+
+      <div class="field">
+        <label>About Me</label>
+        <textarea id="bio" maxlength="160"
+          placeholder="Write something about yourself..."></textarea>
+        <p class="hint">Maximum 160 characters.</p>
+      </div>
+
+      <button class="save" id="saveBtn" type="submit">
+        Save Changes
+      </button>
+
+    </form>
+
+    <p class="status" id="status"></p>
+  </section>
+
+  <section class="card">
+    <h3 style="margin-bottom:18px">Account</h3>
+    <button class="logout" id="logoutBtn">Log Out</button>
+  </section>
+
+  <div class="footer">TELESUPAR • Your conversations, your space</div>
+
+</div>
+
+<script>
+const API_URL = "https://telesupar.onrender.com";
+const token = localStorage.getItem("telesupar_token");
+
+if (!token) {
+  location.replace("login.html");
+}
+
+const $ = id => document.getElementById(id);
+
+function showStatus(message) {
+  $("status").textContent = message;
+}
+
+function saveLocalUser(user) {
+  localStorage.setItem("telesupar_user", JSON.stringify(user));
+}
+
+function setAvatar(user) {
+  const name = user.displayName || user.username || "U";
+
+  if (user.avatar) {
+    $("avatar").src = user.avatar;
+  } else {
+    $("avatar").src =
+      "https://ui-avatars.com/api/?name=" +
+      encodeURIComponent(name) +
+      "&background=263b67&color=ffffff&size=200";
+  }
+}
+
+async function api(path, options = {}) {
+  const response = await fetch(API_URL + path, {
+    ...options,
+    headers: {
+      Authorization: "Bearer " + token,
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Request failed");
+  }
+
+  return data;
+}
+
+function displayUser(user) {
+  $("displayName").value = user.displayName || "";
+  $("username").value = user.username || "";
+  $("email").value = user.email || "";
+  $("bio").value = user.bio || "";
+  setAvatar(user);
+  saveLocalUser(user);
+}
+
+async function loadProfile() {
+  try {
+    showStatus("Loading profile...");
+
+    const data = await api("/api/me");
+
+    displayUser(data.user);
+    showStatus("");
+
+  } catch (error) {
+    showStatus(error.message);
+
+    if (error.message.toLowerCase().includes("token")) {
+      logout();
+    }
+  }
+}
+
+$("profileForm").addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const displayName = $("displayName").value.trim();
+  const bio = $("bio").value.trim();
+
+  $("saveBtn").disabled = true;
+  $("saveBtn").textContent = "Saving...";
+
+  try {
+    const data = await api("/api/me", {
+      method: "PATCH",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({displayName, bio})
+    });
+
+    displayUser(data.user);
+    showStatus("✓ Profile saved successfully");
+
+  } catch (error) {
+    showStatus(error.message);
+  } finally {
+    $("saveBtn").disabled = false;
+    $("saveBtn").textContent = "Save Changes";
+  }
+});
+
+$("photoInput").addEventListener("change", async function() {
+  const file = this.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    showStatus("Please select an image.");
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    showStatus("Image must be under 10 MB.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  showStatus("Uploading photo...");
+
+  try {
+    const data = await api("/api/me/avatar", {
+      method: "POST",
+      body: formData
+    });
+
+    displayUser(data.user);
+    showStatus("✓ Profile photo updated");
+
+  } catch (error) {
+    showStatus(error.message);
+  }
+
+  this.value = "";
+});
+
+function logout() {
+  localStorage.removeItem("telesupar_token");
+  localStorage.removeItem("telesupar_user");
+  location.replace("login.html");
+}
+
+$("logoutBtn").addEventListener("click", function() {
+  if (confirm("Are you sure you want to log out?")) {
+    logout();
+  }
+});
+
+$("backBtn").addEventListener("click", function() {
+  location.href = "home.html";
+});
+
+loadProfile();
+</script>
+</body>
+</html>
