@@ -251,6 +251,11 @@ function publicUser(user) {
         email:
             user.email,
 
+      bio:
+        user.bio || "",
+avatar:
+  user.avatar || "",
+
         createdAt:
             user.createdAt,
 
