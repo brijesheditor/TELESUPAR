@@ -866,6 +866,107 @@ app.get(
     }
 );
 
+/* =================================
+   UPDATE MY PROFILE
+================================= */
+
+app.patch("/api/me", auth, async function(req, res) {
+  try {
+    const displayName = String(req.body.displayName || "").trim();
+    const bio = String(req.body.bio || "").trim();
+
+    if (displayName.length < 2 || displayName.length > 40) {
+      return res.status(400).json({
+        success: false,
+        message: "Name must be 2-40 characters"
+      });
+    }
+
+    if (bio.length > 160) {
+      return res.status(400).json({
+        success: false,
+        message: "Bio must be under 160 characters"
+      });
+    }
+
+    await users.updateOne(
+      { _id: new ObjectId(req.user.id) },
+      {
+        $set: {
+          displayName,
+          bio
+        }
+      }
+    );
+
+    const user = await users.findOne({
+      _id: new ObjectId(req.user.id)
+    });
+
+    res.json({
+      success: true,
+      message: "Profile updated",
+      user: publicUser(user)
+    });
+
+  } catch (error) {
+    console.error("PROFILE UPDATE ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Could not update profile"
+    });
+  }
+});
+
+
+/* =================================
+   PROFILE PHOTO UPLOAD
+================================= */
+
+app.post(
+  "/api/me/avatar",
+  auth,
+  upload.single("file"),
+  async function(req, res) {
+    try {
+      if (!req.file || !req.file.mimetype.startsWith("image/")) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select an image"
+        });
+      }
+
+      const uploaded = await uploadToCloudinary(req.file);
+
+      await users.updateOne(
+        { _id: new ObjectId(req.user.id) },
+        {
+          $set: {
+            avatar: uploaded.secure_url
+          }
+        }
+      );
+
+      const user = await users.findOne({
+        _id: new ObjectId(req.user.id)
+      });
+
+      res.json({
+        success: true,
+        message: "Profile photo updated",
+        user: publicUser(user)
+      });
+
+    } catch (error) {
+      console.error("AVATAR ERROR:", error);
+      res.status(500).json({
+        success: false,
+        message: "Photo upload failed"
+      });
+    }
+  }
+);
+
 /* =========================================
    USER SEARCH
 ========================================= */
