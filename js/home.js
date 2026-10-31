@@ -188,6 +188,45 @@ function escapeHTML(
 }
 
 /* =========================================
+   AVATAR IMAGE
+========================================= */
+
+function getAvatarHTML(user, className = "avatar") {
+    const name =
+        user.displayName ||
+        user.username ||
+        "User";
+
+    const initial =
+        name.charAt(0).toUpperCase();
+
+    const avatar = user.avatar || "";
+
+    const imageHTML =
+        avatar.startsWith("https://")
+        ? `
+            <img
+                src="${escapeHTML(avatar)}"
+                alt="${escapeHTML(name)}"
+                style="
+                    width:100%;
+                    height:100%;
+                    object-fit:cover;
+                    border-radius:50%;
+                    display:block;
+                "
+                onerror="this.style.display='none'"
+            >
+        `
+        : escapeHTML(initial);
+
+    return `
+        <div class="${className}">
+            ${imageHTML}
+        </div>
+    `;
+}
+/* =========================================
    TIME
 ========================================= */
 
