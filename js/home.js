@@ -523,17 +523,9 @@ function renderChats(
 
             item.innerHTML = `
 
-                <div class="avatar">
+                ${getAvatarHTML(other)}
 
-                    ${escapeHTML(
-                        initial
-                    )}
-
-                    <div
-                        class="online-dot"
-                    ></div>
-
-                </div>
+<div class="online-dot"></div>
 
 
                 <div class="chat-info">
