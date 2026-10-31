@@ -1,203 +1,98 @@
-/* =========================================
-   TELESUPAR CHAT
-   Realtime + Seen + Delivered
-========================================= */
+/* ==========================================
+   TELESUPAR CHAT V2
+   MongoDB + Socket.IO + Attachments
+========================================== */
 
-alert("TELESUPAR chat.js loaded!");
+"use strict";
 
-const API =
-    "https://telesupar.onrender.com";
+const API = "https://telesupar.onrender.com";
 
-/* =========================================
-   AUTH
-========================================= */
+/* ==========================================
+   AUTHENTICATION
+========================================== */
 
-const token =
-    localStorage.getItem(
-        "telesupar_token"
-    );
+const token = localStorage.getItem("telesupar_token");
 
-const storedUser =
-    localStorage.getItem(
-        "telesupar_user"
-    );
-
-if (!token || !storedUser) {
-
-    window.location.href =
-        "login.html";
-}
-
-let currentUser;
+let currentUser = null;
 
 try {
-
-    currentUser =
-        JSON.parse(
-            storedUser
-        );
-
-} catch (error) {
-
-    localStorage.removeItem(
-        "telesupar_user"
+    currentUser = JSON.parse(
+        localStorage.getItem("telesupar_user") || "null"
     );
-
-    window.location.href =
-        "login.html";
+} catch (e) {
+    currentUser = null;
 }
-
-/* =========================================
-   STATE
-========================================= */
-
-let conversationId =
-    null;
-
-let otherUser =
-    null;
-
-let socket =
-    null;
-
-let isSending =
-    false;
-
-let typingTimer =
-    null;
-
-let isOtherTyping =
-    false;
-
-/*
-    messageId -> message
-*/
-const messagesCache =
-    new Map();
-
-/* =========================================
-   DOM
-========================================= */
-
-const messagesEl =
-    document.getElementById(
-        "messages"
-    );
-
-const messageForm =
-    document.getElementById(
-        "messageForm"
-    );
-
-const messageInput =
-    document.getElementById(
-        "messageInput"
-    );
-
-const sendBtn =
-    document.getElementById(
-        "sendBtn"
-    );
-
-const backBtn =
-    document.getElementById(
-        "backBtn"
-    );
-
-const headerAvatar =
-    document.getElementById(
-        "headerAvatar"
-    );
-
-const chatUserName =
-    document.getElementById(
-        "chatUserName"
-    );
-
-const onlineStatus =
-    document.getElementById(
-        "onlineStatus"
-    );
-
-const attachmentBtn =
-    document.getElementById(
-        "attachmentBtn"
-    );
-
-const attachmentMenu =
-    document.getElementById(
-        "attachmentMenu"
-    );
-
-const photoBtn =
-    document.getElementById(
-        "photoBtn"
-    );
-
-const fileBtn =
-    document.getElementById(
-        "fileBtn"
-    );
-
-const cameraBtn =
-    document.getElementById(
-        "cameraBtn"
-    );
-
-const photoInput =
-    document.getElementById(
-        "photoInput"
-    );
-
-const fileInput =
-    document.getElementById(
-        "fileInput"
-    );
-
-const cameraInput =
-    document.getElementById(
-        "cameraInput"
-    );
-
-/* =========================================
-   AUTH REDIRECT
-========================================= */
 
 if (!token || !currentUser) {
-
-    throw new Error(
-        "Authentication required"
-    );
+    window.location.href = "login.html";
 }
 
-/* =========================================
-   GET CONVERSATION ID
-========================================= */
+const myId = String(
+    currentUser?.id || currentUser?._id || ""
+);
 
-const params =
-    new URLSearchParams(
-        window.location.search
-    );
+if (!myId) {
+    localStorage.removeItem("telesupar_user");
+    window.location.href = "login.html";
+}
 
-conversationId =
-    params.get("id") ||
-    params.get("conversationId");
+/* ==========================================
+   DOM
+========================================== */
 
-/* =========================================
+const $ = id => document.getElementById(id);
+
+const messagesEl = $("messages");
+const messageInput = $("messageInput");
+const messageForm = $("messageForm");
+const sendBtn = $("sendBtn");
+
+const chatUserName = $("chatUserName");
+const headerAvatar = $("headerAvatar");
+const onlineStatus = $("onlineStatus");
+
+const backBtn = $("backBtn");
+const chatMenuBtn = $("chatMenuBtn");
+
+const attachmentBtn = $("attachmentBtn");
+const attachmentMenu = $("attachmentMenu");
+
+const photoBtn = $("photoBtn");
+const fileBtn = $("fileBtn");
+const cameraBtn = $("cameraBtn");
+
+const photoInput = $("photoInput");
+const fileInput = $("fileInput");
+const cameraInput = $("cameraInput");
+
+/* ==========================================
+   STATE
+========================================== */
+
+let conversationId = null;
+let otherUser = null;
+let socket = null;
+
+let isSending = false;
+let isOtherTyping = false;
+let typingTimer = null;
+
+const messagesCache = new Map();
+
+/* ==========================================
    API HELPER
-========================================= */
-
+========================================== */
 
 async function api(url, options = {}) {
+
     const headers = {
-        ...(options.headers || {}),
-        Authorization: "Bearer " + token
+        Authorization: "Bearer " + token,
+        ...(options.headers || {})
     };
 
     let body = options.body;
 
     if (body instanceof FormData) {
-        // File upload: browser sets multipart boundary.
         delete headers["Content-Type"];
     } else if (
         body &&
@@ -205,131 +100,229 @@ async function api(url, options = {}) {
     ) {
         headers["Content-Type"] = "application/json";
         body = JSON.stringify(body);
-    } else if (typeof body === "string") {
-        headers["Content-Type"] = "application/json";
     }
 
     const response = await fetch(API + url, {
         ...options,
-        body,
-        headers
+        headers,
+        body
     });
 
-    let data = null;
+    let data;
 
     try {
         data = await response.json();
-    } catch (error) {
-        data = null;
+    } catch {
+        data = {};
     }
 
     if (!response.ok) {
         throw new Error(
-            data?.message || "Request failed"
+            data.message || "Server request failed"
         );
     }
 
     return data;
 }
 
-/* =========================================
-   INIT
-========================================= */
+/* ==========================================
+   URL PARAMETERS
+========================================== */
+
+function getURLParams() {
+
+    const params = new URLSearchParams(
+        window.location.search
+    );
+
+    return {
+        id: params.get("id"),
+        conversationId:
+            params.get("conversationId"),
+        userId:
+            params.get("userId") ||
+            params.get("uid")
+    };
+}
+
+/* ==========================================
+   START CHAT
+========================================== */
 
 async function initChat() {
-    if (!conversationId) {
-        showError("Conversation ID nahi mila. Chat home se dobara kholo.");
-        return;
-    }
-
-    showError("Step 1/4: Conversation info load ho raha hai...");
 
     try {
-        await loadConversationInfo();
 
-        showError("Step 2/4: Messages load ho rahe hain...");
+        showMessage("Connecting to TELESUPAR...");
+
+        const params = getURLParams();
+
+        let requestedId =
+            params.conversationId ||
+            params.id;
+
+        const requestedUserId =
+            params.userId;
+
+        if (!requestedId && !requestedUserId) {
+            throw new Error(
+                "Chat ID nahi mila. Home se chat dobara kholo."
+            );
+        }
+
+        // Recent conversations load
+        const data = await api("/api/conversations");
+
+        const list = data.conversations || [];
+
+        let conversation = null;
+
+        if (requestedId) {
+
+            conversation = list.find(item =>
+                String(item.id || item._id) ===
+                String(requestedId)
+            );
+        }
+
+        // If direct user ID was passed,
+        // create/get the conversation.
+        if (!conversation && requestedUserId) {
+
+            const created = await api(
+                "/api/conversations/" +
+                encodeURIComponent(requestedUserId),
+                {
+                    method: "POST"
+                }
+            );
+
+            conversation =
+                created.conversation;
+        }
+
+        // Support old links that passed user ID in ?id=
+        if (!conversation && requestedId) {
+
+            const created = await api(
+                "/api/conversations/" +
+                encodeURIComponent(requestedId),
+                {
+                    method: "POST"
+                }
+            );
+
+            conversation =
+                created.conversation;
+        }
+
+        if (!conversation) {
+            throw new Error(
+                "Conversation nahi mil paya."
+            );
+        }
+
+        conversationId = String(
+            conversation.id ||
+            conversation._id ||
+            ""
+        );
+
+        if (!conversationId) {
+            throw new Error(
+                "Server ne Conversation ID return nahi ki."
+            );
+        }
+
+        otherUser =
+            conversation.otherUser ||
+            conversation.user ||
+            null;
+
+        if (!otherUser) {
+            throw new Error(
+                "Chat user information missing."
+            );
+        }
+
+        // Normalize URL
+        const newURL =
+            "chat.html?id=" +
+            encodeURIComponent(conversationId);
+
+        window.history.replaceState(
+            {},
+            "",
+            newURL
+        );
+
+        updateHeader();
+
+        showMessage("Loading messages...");
+
         await loadMessages();
 
-        showError("Step 3/4: Socket connect ho raha hai...");
         connectSocket();
 
-        showError("Step 4/4: Chat ready. Messages check karo.");
-
         await markConversationRead();
+
+        console.log(
+            "TELESUPAR CHAT READY",
+            conversationId
+        );
+
+        messageInput.focus();
+
     } catch (error) {
-        console.error("CHAT INIT ERROR:", error);
-        showError("Chat error: " + (error.message || "Unknown error"));
+
+        console.error(
+            "CHAT INIT ERROR:",
+            error
+        );
+
+        showMessage(
+            "Chat error: " + error.message
+        );
     }
 }
 
-/* =========================================
-   LOAD CONVERSATION
-========================================= */
-
-async function loadConversationInfo() {
-
-    const data =
-        await api(
-            "/api/conversations"
-        );
-
-    const list =
-        data.conversations ||
-        [];
-
-    const conversation =
-        list.find(
-            function(item) {
-
-                return (
-                    String(
-                        item.id ||
-                        item._id
-                    ) ===
-                    String(
-                        conversationId
-                    )
-                );
-            }
-        );
-
-    if (!conversation) {
-
-        throw new Error(
-            "Conversation not found"
-        );
-    }
-
-    otherUser =
-        conversation.otherUser ||
-        conversation.user ||
-        null;
-
-    updateHeader();
-}
-
-/* =========================================
+/* ==========================================
    HEADER
-========================================= */
+========================================== */
 
 function updateHeader() {
-
-    if (!otherUser) {
-        return;
-    }
 
     const name =
         otherUser.displayName ||
         otherUser.username ||
-        "User";
+        "TELESUPAR User";
 
-    chatUserName.textContent =
-        name;
+    chatUserName.textContent = name;
 
-    setAvatar(
-        headerAvatar,
-        otherUser
-    );
+    const initials = name
+        .trim()
+        .split(/\s+/)
+        .map(word => word[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+
+    headerAvatar.innerHTML = "";
+
+    if (otherUser.avatar) {
+
+        const image = document.createElement("img");
+
+        image.src = otherUser.avatar;
+        image.alt = name;
+
+        headerAvatar.appendChild(image);
+
+    } else {
+
+        headerAvatar.textContent =
+            initials || "U";
+    }
 
     updateOnlineStatus(
         !!otherUser.isOnline,
@@ -337,826 +330,451 @@ function updateHeader() {
     );
 }
 
-/* =========================================
-   AVATAR
-========================================= */
+/* ==========================================
+   ONLINE STATUS
+========================================== */
 
-function setAvatar(
-    element,
-    user
-) {
+function updateOnlineStatus(online, lastSeen) {
 
-    if (!element) {
-        return;
+    if (isOtherTyping) return;
+
+    if (online) {
+
+        onlineStatus.textContent = "online";
+
+        onlineStatus.classList.add("online");
+
+    } else {
+
+        onlineStatus.classList.remove("online");
+
+        if (lastSeen) {
+
+            onlineStatus.textContent =
+                "last seen " + formatLastSeen(lastSeen);
+
+        } else {
+
+            onlineStatus.textContent = "offline";
+        }
     }
-
-    const name =
-        user?.displayName ||
-        user?.username ||
-        "U";
-
-    const parts =
-        name
-            .trim()
-            .split(/\s+/)
-            .filter(Boolean);
-
-    let initials =
-        parts[0]?.charAt(0) ||
-        "U";
-
-    if (parts.length > 1) {
-
-        initials +=
-            parts[
-                parts.length - 1
-            ].charAt(0);
-    }
-
-    element.textContent =
-        initials
-            .substring(0, 2)
-            .toUpperCase();
 }
 
-/* =========================================
+/* ==========================================
    LOAD MESSAGES
-========================================= */
+========================================== */
 
 async function loadMessages() {
 
-    const data =
-        await api(
-            "/api/conversations/" +
-            encodeURIComponent(
-                conversationId
-            ) +
-            "/messages"
-        );
+    const data = await api(
+        "/api/conversations/" +
+        encodeURIComponent(conversationId) +
+        "/messages"
+    );
 
-    const list =
-        data.messages ||
-        [];
+    const list = data.messages || [];
 
     messagesCache.clear();
 
-    list.forEach(
-        function(message) {
+    list.forEach(message => {
 
-            if (message.id) {
+        const id = String(
+            message.id || message._id || ""
+        );
 
-                messagesCache.set(
-                    String(message.id),
-                    message
-                );
-            }
+        if (id) {
+            messagesCache.set(id, message);
         }
-    );
+    });
 
     renderMessages();
 
-    scrollToBottom(
-        true
-    );
+    scrollToBottom(true);
 }
 
-/* =========================================
+/* ==========================================
    RENDER MESSAGES
-========================================= */
+========================================== */
 
 function renderMessages() {
 
-    if (!messagesEl) {
-        return;
-    }
-
     messagesEl.innerHTML = "";
 
-    if (
-        messagesCache.size === 0
-    ) {
+    const list = Array.from(
+        messagesCache.values()
+    );
 
-        const empty =
-            document.createElement(
-                "div"
-            );
+    list.sort((a, b) => {
+        return (
+            new Date(a.createdAt) -
+            new Date(b.createdAt)
+        );
+    });
 
-        empty.className =
-            "empty-chat";
+    if (list.length === 0) {
 
-        empty.textContent =
-            "No messages yet. Say hello 👋";
-
-        messagesEl.appendChild(
-            empty
+        showMessage(
+            "No messages yet. Say hello 👋"
         );
 
         return;
     }
 
-    const list =
-        Array.from(
-            messagesCache.values()
+    list.forEach(message => {
+
+        messagesEl.appendChild(
+            createMessageElement(message)
         );
-
-    list.sort(
-        function(a, b) {
-
-            return (
-                new Date(
-                    a.createdAt
-                ) -
-                new Date(
-                    b.createdAt
-                )
-            );
-        }
-    );
-
-    list.forEach(
-        function(message) {
-
-            messagesEl.appendChild(
-                createMessageElement(
-                    message
-                )
-            );
-        }
-    );
+    });
 }
 
-/* =========================================
-   CREATE MESSAGE
-========================================= */
+/* ==========================================
+   CREATE MESSAGE ELEMENT
+========================================== */
 
-function createMessageElement(
-    message
-) {
+function createMessageElement(message) {
 
-    const wrapper =
-        document.createElement(
-            "div"
-        );
+    const wrapper = document.createElement("div");
 
-    const mine =
-        String(
-            message.senderId
-        ) ===
-        String(
-            currentUser.id
-        );
+    const senderId = String(message.senderId || "");
+
+    const mine = senderId === myId;
 
     wrapper.className =
         "message " +
-        (
-            mine
-                ? "outgoing"
-                : "incoming"
-        );
+        (mine ? "outgoing" : "incoming");
 
     wrapper.dataset.messageId =
-        String(
-            message.id
-        );
+        String(message.id);
 
-    const content =
-        document.createElement(
-            "div"
-        );
+    const content = document.createElement("div");
 
-    content.className =
-        "message-content";
+    content.className = "message-content";
 
-    const bubble =
-        document.createElement(
-            "div"
-        );
+    const bubble = document.createElement("div");
 
-    bubble.className =
-        "message-bubble";
-   
-   // PHOTO / FILE DISPLAY AND OPEN FIX
-const attachment = message.attachment;
+    bubble.className = "message-bubble";
 
-if (attachment && attachment.url) {
-    const url = attachment.url;
+    // Attachment
+    const attachment = message.attachment;
 
-    if (url.startsWith("https://")) {
+    if (attachment && attachment.url) {
+
         const link = document.createElement("a");
-        link.href = url;
+
+        link.href = attachment.url;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
+
         link.style.display = "block";
         link.style.color = "inherit";
+        link.style.textDecoration = "none";
         link.style.overflowWrap = "anywhere";
 
         if (
             attachment.mimeType &&
             attachment.mimeType.startsWith("image/")
         ) {
-            const image = document.createElement("img");
 
-            image.src = url;
-            image.alt = attachment.fileName || "Photo";
-            image.loading = "lazy";
-            image.style.display = "block";
-            image.style.width = "240px";
-            image.style.maxWidth = "100%";
-            image.style.maxHeight = "300px";
-            image.style.objectFit = "contain";
-            image.style.borderRadius = "10px";
+            const img = document.createElement("img");
 
-            // Image par tap karne se photo khulegi
-            link.appendChild(image);
+            img.src = attachment.url;
 
-            const openText = document.createElement("div");
-            openText.textContent = "📷 Photo kholo";
-            openText.style.padding = "6px 0";
-            link.appendChild(openText);
+            img.alt =
+                attachment.fileName || "Shared photo";
 
-            // Image load fail ho tab bhi open link dikhe
-            image.onerror = function () {
-                image.style.display = "none";
-                openText.textContent = "📷 Photo open karo";
-            };
+            img.loading = "lazy";
+
+            img.style.width = "240px";
+            img.style.maxWidth = "100%";
+            img.style.maxHeight = "300px";
+            img.style.objectFit = "contain";
+            img.style.borderRadius = "10px";
+            img.style.display = "block";
+
+            link.appendChild(img);
+
         } else {
-function createMessageElement(message) {
-    const wrapper = document.createElement("div");
 
-    const mine =
-        String(message.senderId) === String(currentUser.id);
-
-    wrapper.className = "message " + (mine ? "outgoing" : "incoming");
-    wrapper.dataset.messageId = String(message.id);
-
-    const content = document.createElement("div");
-    content.className = "message-content";
-
-    const bubble = document.createElement("div");
-    bubble.className = "message-bubble";
-
-    // PHOTO / FILE — only one attachment block
-    const attachment = message.attachment;
-
-    if (attachment && attachment.url) {
-        const url = attachment.url;
-
-        if (url.startsWith("https://")) {
-            const link = document.createElement("a");
-            link.href = url;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.style.display = "block";
-            link.style.color = "inherit";
-            link.style.overflowWrap = "anywhere";
-
-            if (
-                attachment.mimeType &&
-                attachment.mimeType.startsWith("image/")
-            ) {
-                const image = document.createElement("img");
-                image.src = url;
-                image.alt = attachment.fileName || "Shared photo";
-                image.loading = "lazy";
-                image.style.display = "block";
-                image.style.width = "240px";
-                image.style.maxWidth = "100%";
-                image.style.maxHeight = "300px";
-                image.style.objectFit = "contain";
-                image.style.borderRadius = "10px";
-
-                const openText = document.createElement("div");
-                openText.textContent = "📷 Photo kholo";
-                openText.style.padding = "6px 0";
-
-                image.onerror = function () {
-                    image.style.display = "none";
-                    openText.textContent = "📷 Photo open karo";
-                };
-
-                link.appendChild(image);
-                link.appendChild(openText);
-            } else {
-                link.textContent =
-                    "📎 " + (attachment.fileName || "File kholo");
-            }
-
-            bubble.appendChild(link);
+            link.textContent =
+                "📎 " +
+                (attachment.fileName || "Open file");
         }
+
+        bubble.appendChild(link);
     }
 
-    // MESSAGE TEXT
-    const text = document.createElement("div");
-    text.className = "message-text";
-    text.textContent = message.text || "";
-    bubble.appendChild(text);
+    // Message text
+    if (message.text) {
 
-    // MESSAGE META
+        const text = document.createElement("div");
+
+        text.className = "message-text";
+
+        text.textContent = message.text;
+
+        bubble.appendChild(text);
+    }
+
+    // Meta
     const meta = document.createElement("div");
+
     meta.className = "message-meta";
 
     const time = document.createElement("span");
+
     time.className = "message-time";
+
     time.textContent = formatTime(message.createdAt);
+
     meta.appendChild(time);
 
-    // DELIVERY / SEEN STATUS
+    // Delivery status
     if (mine) {
+
         const status = document.createElement("span");
+
         status.className = "message-status";
-        status.dataset.statusFor = String(message.id);
+
+        status.dataset.statusFor =
+            String(message.id);
+
         status.textContent = getStatus(message);
+
         meta.appendChild(status);
     }
 
     bubble.appendChild(meta);
+
     content.appendChild(bubble);
+
     wrapper.appendChild(content);
 
     return wrapper;
 }
-   
-    /* =====================================
-       TEXT
-    ===================================== */
 
-    const text =
-        document.createElement(
-            "div"
-        );
+/* ==========================================
+   MESSAGE STATUS
+========================================== */
 
-    text.className =
-        "message-text";
-
-    text.textContent =
-        message.text ||
-        "";
-
-    bubble.appendChild(
-        text
-    );
-
-    /* =====================================
-       META
-    ===================================== */
-
-    const meta =
-        document.createElement(
-            "div"
-        );
-
-    meta.className =
-        "message-meta";
-
-    const time =
-        document.createElement(
-            "span"
-        );
-
-    time.className =
-        "message-time";
-
-    time.textContent =
-        formatTime(
-            message.createdAt
-        );
-
-    meta.appendChild(
-        time
-    );
-
-    /* =====================================
-       STATUS
-    ===================================== */
-
-    if (mine) {
-
-        const status =
-            document.createElement(
-                "span"
-            );
-
-        status.className =
-            "message-status";
-
-        status.dataset.statusFor =
-            String(
-                message.id
-            );
-
-        status.textContent =
-            getStatus(
-                message
-            );
-
-        meta.appendChild(
-            status
-        );
-    }
-
-    bubble.appendChild(
-        meta
-    );
-
-    content.appendChild(
-        bubble
-    );
-
-    wrapper.appendChild(
-        content
-    );
-
-    return wrapper;
-}
-
-/* =========================================
-   STATUS
-========================================= */
-
-function getStatus(
-    message
-) {
+function getStatus(message) {
 
     if (message.seenAt) {
-
         return "✓✓";
-
     }
 
     if (message.deliveredAt) {
-
         return "✓✓";
-
     }
 
     return "✓";
 }
 
-/* =========================================
-   UPDATE STATUS
-========================================= */
+function updateMessageStatus(messageId) {
 
-function updateMessageStatus(
-    messageId
-) {
+    const message = messagesCache.get(
+        String(messageId)
+    );
 
-    const message =
-        messagesCache.get(
+    if (!message) return;
+
+    const element = messagesEl.querySelector(
+        '[data-status-for="' + CSS.escape(
             String(messageId)
-        );
+        ) + '"]'
+    );
 
-    if (!message) {
-        return;
+    if (element) {
+        element.textContent = getStatus(message);
     }
-
-    const element =
-        messagesEl.querySelector(
-            '[data-status-for="' +
-            CSS.escape(
-                String(messageId)
-            ) +
-            '"]'
-        );
-
-    if (!element) {
-        return;
-    }
-
-    element.textContent =
-        getStatus(
-            message
-        );
 }
 
-/* =========================================
-   SOCKET.IO
-========================================= */
+/* ==========================================
+   SOCKET CONNECTION
+========================================== */
 
 function connectSocket() {
 
-    if (
-        typeof io ===
-        "undefined"
-    ) {
+    if (typeof io === "undefined") {
 
-        console.error(
-            "Socket.IO not loaded"
-        );
+        console.error("Socket.IO not loaded");
 
         return;
     }
 
-    socket =
-        io(
-            API,
-            {
-                transports: [
-                    "websocket",
-                    "polling"
-                ],
-                reconnection: true,
-                reconnectionAttempts:
-                    Infinity
-            }
-        );
+    socket = io(API, {
+        transports: ["websocket", "polling"],
+        reconnection: true,
+        reconnectionAttempts: Infinity
+    });
 
-    socket.on(
-        "connect",
-        function() {
+    socket.on("connect", () => {
 
-            console.log(
-                "Socket connected"
-            );
+        console.log("Socket connected");
 
-            socket.emit(
-                "authenticate",
-                token
-            );
-        }
-    );
+        socket.emit("authenticate", token);
+    });
 
-    socket.on(
-        "authenticated",
-        function() {
+    socket.on("authenticated", () => {
 
+        console.log("Socket authenticated");
+
+        joinConversation();
+    });
+
+    // Your server currently does not emit
+    // "authenticated"; join after presence.
+    socket.on("presence", data => {
+
+        if (
+            data &&
+            String(data.userId) === myId
+        ) {
             joinConversation();
         }
-    );
+    });
 
-    socket.on(
-        "presence",
-        function(data) {
+    socket.on("userOnline", userId => {
 
-            if (
-                data &&
-                String(
-                    data.userId
-                ) ===
-                String(
-                    otherUser?.id
-                )
-            ) {
-
-                updateOnlineStatus(
-                    data.online === true,
-                    data.lastSeen
-                );
-            }
+        if (
+            String(userId) ===
+            String(otherUser?.id)
+        ) {
+            updateOnlineStatus(true);
         }
-    );
+    });
 
-    socket.on(
-        "userOnline",
-        function(userId) {
+    socket.on("userOffline", data => {
 
-            if (
-                String(userId) ===
-                String(
-                    otherUser?.id
-                )
-            ) {
-
-                updateOnlineStatus(
-                    true,
-                    null
-                );
-            }
-        }
-    );
-
-    socket.on(
-        "userOffline",
-        function(data) {
-
-            if (
-                String(
-                    data?.userId
-                ) ===
-                String(
-                    otherUser?.id
-                )
-            ) {
-
-                updateOnlineStatus(
-                    false,
-                    data?.lastSeen
-                );
-            }
-        }
-    );
-
-    /* =====================================
-       NEW MESSAGE
-    ===================================== */
-
-    socket.on(
-        "newMessage",
-        function(message) {
-
-            if (
-                !message ||
-                String(
-                    message.conversationId
-                ) !==
-                String(
-                    conversationId
-                )
-            ) {
-                return;
-            }
-
-            if (
-                message.id &&
-                messagesCache.has(
-                    String(message.id)
-                )
-            ) {
-                return;
-            }
-
-            messagesCache.set(
-                String(message.id),
-                message
-            );
-
-            renderMessages();
-
-            scrollToBottom(
-                true
-            );
-
-            /*
-                If receiver is currently
-                viewing this chat,
-                mark incoming message
-                as seen.
-            */
-
-            if (
-                String(
-                    message.senderId
-                ) !==
-                String(
-                    currentUser.id
-                )
-            ) {
-
-                markConversationRead();
-            }
-        }
-    );
-
-    /* =====================================
-       DELIVERED
-    ===================================== */
-
-    socket.on(
-        "messageDelivered",
-        function(data) {
-
-            if (!data?.messageId) {
-                return;
-            }
-
-            const message =
-                messagesCache.get(
-                    String(
-                        data.messageId
-                    )
-                );
-
-            if (message) {
-
-                message.deliveredAt =
-                    data.deliveredAt ||
-                    new Date().toISOString();
-
-                updateMessageStatus(
-                    data.messageId
-                );
-            }
-        }
-    );
-
-    /* =====================================
-       SEEN
-    ===================================== */
-
-    socket.on(
-        "messagesSeen",
-        function(data) {
-
-            if (
-                !data ||
-                String(
-                    data.conversationId
-                ) !==
-                String(
-                    conversationId
-                )
-            ) {
-                return;
-            }
-
-            messagesCache.forEach(
-                function(message) {
-
-                    if (
-                        String(
-                            message.senderId
-                        ) ===
-                        String(
-                            currentUser.id
-                        )
-                    ) {
-
-                        message.seenAt =
-                            data.seenAt ||
-                            new Date().toISOString();
-
-                        updateMessageStatus(
-                            message.id
-                        );
-                    }
-                }
+        if (
+            String(data?.userId) ===
+            String(otherUser?.id)
+        ) {
+            updateOnlineStatus(
+                false,
+                data.lastSeen
             );
         }
-    );
+    });
 
-    /* =====================================
-       TYPING
-    ===================================== */
+    // New messages
+    socket.on("newMessage", message => {
 
-    socket.on(
-        "typing",
-        function(data) {
+        if (
+            !message ||
+            String(message.conversationId) !==
+            String(conversationId)
+        ) {
+            return;
+        }
+
+        const id = String(
+            message.id || message._id || ""
+        );
+
+        if (!id) return;
+
+        if (messagesCache.has(id)) return;
+
+        messagesCache.set(id, message);
+
+        renderMessages();
+
+        scrollToBottom(true);
+
+        if (String(message.senderId) !== myId) {
+            markConversationRead();
+        }
+    });
+
+    // Delivered
+    socket.on("messageDelivered", data => {
+
+        if (!data?.messageId) return;
+
+        const message = messagesCache.get(
+            String(data.messageId)
+        );
+
+        if (message) {
+
+            message.deliveredAt =
+                data.deliveredAt || new Date();
+
+            updateMessageStatus(data.messageId);
+        }
+    });
+
+    // Seen
+    socket.on("messagesSeen", data => {
+
+        if (
+            !data ||
+            String(data.conversationId) !==
+            String(conversationId)
+        ) {
+            return;
+        }
+
+        messagesCache.forEach(message => {
 
             if (
-                !data ||
-                String(
-                    data.conversationId
-                ) !==
-                String(
-                    conversationId
-                )
+                String(message.senderId) === myId
             ) {
-                return;
+
+                message.seenAt =
+                    data.seenAt || new Date();
+
+                updateMessageStatus(message.id);
             }
+        });
+    });
 
-            if (
-                String(
-                    data.userId
-                ) !==
-                String(
-                    otherUser?.id
-                )
-            ) {
-                return;
-            }
+    // Typing
+    socket.on("typing", data => {
 
-            setTypingStatus(
-                data.isTyping === true
-            );
+        if (
+            !data ||
+            String(data.conversationId) !==
+            String(conversationId)
+        ) {
+            return;
         }
-    );
 
-    /* =====================================
-       SOCKET AUTH ERROR
-    ===================================== */
-
-    socket.on(
-        "authError",
-        function(error) {
-
-            console.error(
-                "Socket auth error:",
-                error
-            );
+        if (
+            String(data.userId) !==
+            String(otherUser?.id)
+        ) {
+            return;
         }
-    );
 
-    /* =====================================
-       DISCONNECT
-    ===================================== */
+        setTypingStatus(data.isTyping === true);
+    });
 
-    socket.on(
-        "disconnect",
-        function() {
+    socket.on("authError", error => {
 
-            if (!isOtherTyping) {
+        console.error("Socket authentication error:", error);
+    });
 
-                updateOnlineStatus(
-                    false,
-                    null
-                );
-            }
+    socket.on("connect_error", error => {
+
+        console.error("Socket connection error:", error.message);
+    });
+
+    socket.on("disconnect", reason => {
+
+        console.log("Socket disconnected:", reason);
+
+        if (!isOtherTyping) {
+            onlineStatus.textContent = "Reconnecting...";
+            onlineStatus.classList.remove("online");
         }
-    );
+    });
 }
 
-/* =========================================
+/* ==========================================
    JOIN CONVERSATION
-========================================= */
+========================================== */
 
 function joinConversation() {
 
@@ -1170,26 +788,30 @@ function joinConversation() {
             "joinConversation",
             conversationId
         );
+
+        console.log(
+            "Joined conversation:",
+            conversationId
+        );
     }
 }
 
-/* =========================================
+/* ==========================================
    MARK READ
-========================================= */
+========================================== */
 
 async function markConversationRead() {
+
+    if (!conversationId) return;
 
     try {
 
         await api(
             "/api/conversations/" +
-            encodeURIComponent(
-                conversationId
-            ) +
+            encodeURIComponent(conversationId) +
             "/read",
             {
-                method: "POST",
-                body: "{}"
+                method: "POST"
             }
         );
 
@@ -1202,220 +824,132 @@ async function markConversationRead() {
     }
 }
 
-/* =========================================
+/* ==========================================
    SEND MESSAGE
-========================================= */
+========================================== */
 
 async function sendMessage() {
 
-    if (isSending) {
-        return;
-    }
+    if (isSending || !conversationId) return;
 
-    const text =
-        messageInput.value.trim();
+    const text = messageInput.value.trim();
 
-    if (!text) {
-        return;
-    }
+    if (!text) return;
 
-    isSending =
-        true;
+    isSending = true;
 
-    sendBtn.disabled =
-        true;
+    sendBtn.disabled = true;
 
     try {
 
-        const data =
-            await api(
-                "/api/conversations/" +
-                encodeURIComponent(
-                    conversationId
-                ) +
-                "/messages",
-                {
-                    method: "POST",
+        const data = await api(
+            "/api/conversations/" +
+            encodeURIComponent(conversationId) +
+            "/messages",
+            {
+                method: "POST",
+                body: { text }
+            }
+        );
 
-                    body:
-                        JSON.stringify({
-
-                            text
-                        })
-                }
-            );
-
-        const message =
-            data.message;
+        const message = data.message;
 
         if (message?.id) {
 
             messagesCache.set(
-                String(
-                    message.id
-                ),
+                String(message.id),
                 message
             );
+
+            renderMessages();
+
+            scrollToBottom(true);
         }
 
-        messageInput.value =
-            "";
+        messageInput.value = "";
 
-        renderMessages();
-
-        scrollToBottom(
-            true
-        );
-
-        sendTyping(
-            false
-        );
+        sendTyping(false);
 
     } catch (error) {
 
-        console.error(
-            "SEND ERROR:",
-            error
-        );
+        console.error("SEND ERROR:", error);
 
-        alert(
-            error.message ||
-            "Could not send message"
-        );
+        alert(error.message);
 
     } finally {
 
-        isSending =
-            false;
+        isSending = false;
 
-        sendBtn.disabled =
-            false;
+        sendBtn.disabled = false;
 
         messageInput.focus();
     }
 }
 
-/* =========================================
-   FORM SUBMIT
-========================================= */
+/* ==========================================
+   FORM EVENTS
+========================================== */
 
-if (messageForm) {
+messageForm.addEventListener("submit", event => {
 
-    messageForm.addEventListener(
-        "submit",
-        function(event) {
+    event.preventDefault();
 
-            event.preventDefault();
+    sendMessage();
+});
 
-            sendMessage();
-        }
-    );
-}
+messageInput.addEventListener("keydown", event => {
 
-/* =========================================
-   ENTER TO SEND
-========================================= */
+    if (
+        event.key === "Enter" &&
+        !event.shiftKey
+    ) {
 
-if (messageInput) {
+        event.preventDefault();
 
-    messageInput.addEventListener(
-        "keydown",
-        function(event) {
+        sendMessage();
+    }
+});
 
-            if (
-                event.key ===
-                "Enter" &&
-                !event.shiftKey
-            ) {
+/* ==========================================
+   TYPING
+========================================== */
 
-                event.preventDefault();
+messageInput.addEventListener("input", () => {
 
-                sendMessage();
-            }
-        }
-    );
-}
+    sendTyping(true);
 
-/* =========================================
-   TYPING INPUT
-========================================= */
+    clearTimeout(typingTimer);
 
-if (messageInput) {
+    typingTimer = setTimeout(() => {
 
-    messageInput.addEventListener(
-        "input",
-        function() {
+        sendTyping(false);
 
-            sendTyping(
-                true
-            );
+    }, 900);
+});
 
-            clearTimeout(
-                typingTimer
-            );
-
-            typingTimer =
-                setTimeout(
-                    function() {
-
-                        sendTyping(
-                            false
-                        );
-
-                    },
-                    900
-                );
-        }
-    );
-}
-
-/* =========================================
-   SEND TYPING
-========================================= */
-
-function sendTyping(
-    isTyping
-) {
+function sendTyping(isTyping) {
 
     if (
         !socket ||
         !socket.connected ||
         !conversationId
-    ) {
-        return;
-    }
+    ) return;
 
-    socket.emit(
-        "typing",
-        {
-
-            conversationId,
-
-            isTyping:
-                isTyping === true
-        }
-    );
+    socket.emit("typing", {
+        conversationId,
+        isTyping
+    });
 }
 
-/* =========================================
-   TYPING STATUS
-========================================= */
+function setTypingStatus(typing) {
 
-function setTypingStatus(
-    typing
-) {
-
-    isOtherTyping =
-        typing;
+    isOtherTyping = typing;
 
     if (typing) {
 
-        onlineStatus.textContent =
-            "typing...";
+        onlineStatus.textContent = "typing...";
 
-        onlineStatus.classList.add(
-            "online"
-        );
+        onlineStatus.classList.add("online");
 
     } else {
 
@@ -1426,346 +960,72 @@ function setTypingStatus(
     }
 }
 
-/* =========================================
-   ONLINE STATUS
-========================================= */
-
-function updateOnlineStatus(
-    online,
-    lastSeen
-) {
-
-    if (!onlineStatus) {
-        return;
-    }
-
-    if (online) {
-
-        onlineStatus.textContent =
-            "online";
-
-        onlineStatus.classList.add(
-            "online"
-        );
-
-    } else {
-
-        onlineStatus.classList.remove(
-            "online"
-        );
-
-        if (lastSeen) {
-
-            onlineStatus.textContent =
-                "last seen " +
-                formatLastSeen(
-                    lastSeen
-                );
-
-        } else {
-
-            onlineStatus.textContent =
-                "offline";
-        }
-    }
-}
-
-/* =========================================
-   FORMAT TIME
-========================================= */
-
-function formatTime(
-    value
-) {
-
-    if (!value) {
-        return "";
-    }
-
-    const date =
-        new Date(value);
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-        return "";
-    }
-
-    return date.toLocaleTimeString(
-        [],
-        {
-            hour: "2-digit",
-            minute: "2-digit"
-        }
-    );
-}
-
-/* =========================================
-   LAST SEEN
-========================================= */
-
-function formatLastSeen(
-    value
-) {
-
-    if (!value) {
-        return "";
-    }
-
-    const date =
-        new Date(value);
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-        return "";
-    }
-
-    const diff =
-        Date.now() -
-        date.getTime();
-
-    const minute =
-        Math.floor(
-            diff / 60000
-        );
-
-    if (
-        minute < 1
-    ) {
-
-        return "just now";
-    }
-
-    if (
-        minute < 60
-    ) {
-
-        return minute +
-            "m ago";
-    }
-
-    const hour =
-        Math.floor(
-            minute / 60
-        );
-
-    if (
-        hour < 24
-    ) {
-
-        return hour +
-            "h ago";
-    }
-
-    return date.toLocaleDateString();
-}
-
-/* =========================================
-   SCROLL
-========================================= */
-
-function scrollToBottom(
-    force = false
-) {
-
-    if (!messagesEl) {
-        return;
-    }
-
-    if (
-        force ||
-        isNearBottom()
-    ) {
-
-        requestAnimationFrame(
-            function() {
-
-                messagesEl.scrollTop =
-                    messagesEl.scrollHeight;
-            }
-        );
-    }
-}
-
-/* =========================================
-   NEAR BOTTOM
-========================================= */
-
-function isNearBottom() {
-
-    if (!messagesEl) {
-        return true;
-    }
-
-    const distance =
-        messagesEl.scrollHeight -
-        messagesEl.scrollTop -
-        messagesEl.clientHeight;
-
-    return distance < 120;
-}
-
-/* =========================================
-   ERROR
-========================================= */
-
-function showError(
-    message
-) {
-
-    if (!messagesEl) {
-        return;
-    }
-
-    messagesEl.innerHTML = "";
-
-    const error =
-        document.createElement(
-            "div"
-        );
-
-    error.className =
-        "empty-chat";
-
-    error.textContent =
-        message;
-
-    messagesEl.appendChild(
-        error
-    );
-}
-
-/* =========================================
+/* ==========================================
    ATTACHMENT MENU
-========================================= */
+========================================== */
 
-if (attachmentBtn) {
+attachmentBtn.addEventListener("click", event => {
 
-    attachmentBtn.addEventListener(
-        "click",
-        function(event) {
+    event.stopPropagation();
 
-            event.stopPropagation();
+    attachmentMenu.classList.toggle("show");
+});
 
-            attachmentMenu.classList.toggle(
-                "show"
-            );
-        }
-    );
-}
+document.addEventListener("click", event => {
 
-document.addEventListener(
-    "click",
-    function(event) {
+    if (
+        attachmentMenu &&
+        !attachmentMenu.contains(event.target) &&
+        event.target !== attachmentBtn
+    ) {
 
-        if (
-            attachmentMenu &&
-            !attachmentMenu.contains(
-                event.target
-            ) &&
-            event.target !==
-            attachmentBtn
-        ) {
-
-            attachmentMenu.classList.remove(
-                "show"
-            );
-        }
+        attachmentMenu.classList.remove("show");
     }
-);
+});
 
-/* =========================================
-   PHOTO
-========================================= */
+photoBtn.addEventListener("click", () => {
 
-if (photoBtn) {
+    attachmentMenu.classList.remove("show");
 
-    photoBtn.addEventListener(
-        "click",
-        function() {
+    photoInput.click();
+});
 
-            attachmentMenu.classList.remove(
-                "show"
-            );
+fileBtn.addEventListener("click", () => {
 
-            if (photoInput) {
+    attachmentMenu.classList.remove("show");
 
-                photoInput.click();
-            }
-        }
-    );
-}
+    fileInput.click();
+});
 
-/* =========================================
-   FILE
-========================================= */
+cameraBtn.addEventListener("click", () => {
 
-if (fileBtn) {
+    attachmentMenu.classList.remove("show");
 
-    fileBtn.addEventListener(
-        "click",
-        function() {
+    cameraInput.click();
+});
 
-            attachmentMenu.classList.remove(
-                "show"
-            );
-
-            if (fileInput) {
-
-                fileInput.click();
-            }
-        }
-    );
-}
-
-/* =========================================
-   CAMERA
-========================================= */
-
-if (cameraBtn) {
-
-    cameraBtn.addEventListener(
-        "click",
-        function() {
-
-            attachmentMenu.classList.remove(
-                "show"
-            );
-
-            if (cameraInput) {
-
-                cameraInput.click();
-            }
-        }
-    );
-}
-
-/* =========================================
-   PHOTO SELECTION
-========================================= */
-
-/* =========================================
-   UPLOAD PHOTO / FILE / CAMERA IMAGE
-========================================= */
+/* ==========================================
+   UPLOAD ATTACHMENT
+========================================== */
 
 async function uploadAttachment(file) {
+
     if (!file || !conversationId) return;
 
     if (file.size > 10 * 1024 * 1024) {
-        alert("File 10 MB se chhoti honi chahiye.");
+
+        alert("Maximum file size is 10 MB");
+
         return;
     }
 
     const formData = new FormData();
+
     formData.append("file", file);
 
+    sendBtn.disabled = true;
+
     try {
-        if (sendBtn) sendBtn.disabled = true;
 
         const data = await api(
             "/api/conversations/" +
@@ -1777,101 +1037,151 @@ async function uploadAttachment(file) {
             }
         );
 
-        if (data.message && data.message.id) {
+        if (data.message?.id) {
+
             messagesCache.set(
                 String(data.message.id),
                 data.message
             );
 
             renderMessages();
+
             scrollToBottom(true);
         }
 
-        alert("File successfully send ho gayi!");
+        alert("Attachment sent successfully!");
+
     } catch (error) {
+
         console.error("UPLOAD ERROR:", error);
-        alert("Upload nahi hua: " + error.message);
+
+        alert("Upload failed: " + error.message);
+
     } finally {
-        if (sendBtn) sendBtn.disabled = false;
+
+        sendBtn.disabled = false;
     }
 }
 
-if (photoInput) {
-    photoInput.addEventListener("change", function() {
-        if (this.files && this.files[0]) {
-            uploadAttachment(this.files[0]);
-        }
-        this.value = "";
-    });
-}
+[photoInput, fileInput, cameraInput].forEach(input => {
 
-if (fileInput) {
-    fileInput.addEventListener("change", function() {
-        if (this.files && this.files[0]) {
-            uploadAttachment(this.files[0]);
-        }
-        this.value = "";
-    });
-}
+    if (!input) return;
 
-if (cameraInput) {
-    cameraInput.addEventListener("change", function() {
-        if (this.files && this.files[0]) {
-            uploadAttachment(this.files[0]);
-        }
-        this.value = "";
-    });
-}
+    input.addEventListener("change", () => {
 
-/* =========================================
+        if (input.files?.[0]) {
+            uploadAttachment(input.files[0]);
+        }
+
+        input.value = "";
+    });
+});
+
+/* ==========================================
    BACK BUTTON
-========================================= */
+========================================== */
 
-if (backBtn) {
+backBtn.addEventListener("click", () => {
 
-    backBtn.addEventListener(
-        "click",
-        function() {
+    window.location.href = "home.html";
+});
 
-            if (
-                document.referrer
-            ) {
+/* ==========================================
+   CHAT MENU
+========================================== */
 
-                window.history.back();
+chatMenuBtn.addEventListener("click", () => {
 
-            } else {
+    console.log("TELESUPAR chat menu");
+});
 
-                window.location.href =
-                    "home.html";
-            }
-        }
-    );
+/* ==========================================
+   HELPERS
+========================================== */
+
+function showMessage(message) {
+
+    messagesEl.innerHTML = "";
+
+    const element = document.createElement("div");
+
+    element.className = "empty-chat";
+
+    element.textContent = message;
+
+    messagesEl.appendChild(element);
 }
 
-/* =========================================
-   HEADER MENU
-========================================= */
+function formatTime(value) {
 
-const chatMenuBtn =
-    document.getElementById(
-        "chatMenuBtn"
-    );
+    if (!value) return "";
 
-if (chatMenuBtn) {
+    const date = new Date(value);
 
-    chatMenuBtn.addEventListener(
-        "click",
-        function() {
+    if (Number.isNaN(date.getTime())) return "";
 
-            console.log(
-                "Chat menu"
-            );
-        }
-    );
+    return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
 }
 
-/* =========================================
+function formatLastSeen(value) {
+
+    if (!value) return "";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "";
+
+    const minutes = Math.floor(
+        (Date.now() - date.getTime()) / 60000
+    );
+
+    if (minutes < 1) return "just now";
+
+    if (minutes < 60) return minutes + "m ago";
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) return hours + "h ago";
+
+    return date.toLocaleDateString();
+}
+
+function scrollToBottom(force = false) {
+
+    if (!messagesEl) return;
+
+    if (force) {
+
+        requestAnimationFrame(() => {
+
+            messagesEl.scrollTop =
+                messagesEl.scrollHeight;
+        });
+    }
+}
+
+/* ==========================================
+   CLEANUP
+========================================== */
+
+window.addEventListener("beforeunload", () => {
+
+    if (socket) {
+
+        socket.emit(
+            "leaveConversation",
+            conversationId
+        );
+
+        socket.disconnect();
+    }
+});
+
+/* ==========================================
    START
-========================================= */
+========================================== */
 
 initChat();
