@@ -1078,6 +1078,41 @@ async function uploadAttachment(file) {
 });
 
 /* ==========================================
+   OPEN USER PROFILE
+========================================== */
+
+headerAvatar.style.cursor = "pointer";
+chatUserName.style.cursor = "pointer";
+
+function openUserProfile() {
+
+    const userId = String(
+        otherUser?.id ||
+        otherUser?._id ||
+        ""
+    );
+
+    if (!userId) {
+        alert("User ID not found");
+        return;
+    }
+
+    window.location.href =
+        "user-profile.html?id=" +
+        encodeURIComponent(userId);
+}
+
+headerAvatar.addEventListener(
+    "click",
+    openUserProfile
+);
+
+chatUserName.addEventListener(
+    "click",
+    openUserProfile
+);
+
+/* ==========================================
    BACK BUTTON
 ========================================== */
 
