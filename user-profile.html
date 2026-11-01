@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TELESUPAR Profile</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080b12;color:white;font-family:Arial,sans-serif}
+.page{max-width:600px;margin:auto;min-height:100vh;background:#0d121d}
+header{height:60px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #252b38;gap:15px}
+button{border:0;color:white;background:transparent;font-size:25px}
+.profile{text-align:center;padding:30px 18px}
+.avatar{width:110px;height:110px;border-radius:50%;object-fit:cover;background:#536dfe;margin-bottom:15px}
+h2{font-size:21px}
+.username{color:#8d9aaf;margin-top:6px}
+.bio{color:#d0d6e2;margin:15px auto;max-width:400px;line-height:1.5}
+.status{color:#36d399;font-size:13px;margin-top:10px}
+.tabs{display:flex;border-bottom:1px solid #252b38}
+.tabs div{flex:1;text-align:center;padding:15px;color:#9ca8ba}
+.section{padding:20px}
+.placeholder{color:#8792a5;text-align:center;padding:35px 10px;background:#151c29;border-radius:14px}
+.error{color:#ff8585;padding:20px;text-align:center}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+<button onclick="history.back()">‹</button>
+<strong>Profile</strong>
+</header>
+
+<section class="profile">
+<img id="avatar" class="avatar" src="" alt="Profile photo">
+<h2 id="name">Loading...</h2>
+<div id="username" class="username"></div>
+<p id="bio" class="bio"></p>
+<div id="status" class="status"></div>
+</section>
+
+<div class="tabs">
+<div>Posts</div>
+<div>Stories</div>
+<div>Media</div>
+</div>
+
+<section class="section">
+<div class="placeholder" id="content">
+Posts and Stories will appear here.
+</div>
+<div id="error" class="error"></div>
+</section>
+</div>
+
+<script src="js/user-profile.js"></script>
+</body>
+</html>
