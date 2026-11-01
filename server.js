@@ -1077,6 +1077,61 @@ app.get(
 );
 
 /* =========================================
+   PUBLIC USER PROFILE
+========================================= */
+
+app.get(
+    "/api/users/:userId/profile",
+    auth,
+    async function(req, res) {
+
+        try {
+
+            const userId = String(
+                req.params.userId || ""
+            );
+
+            if (!ObjectId.isValid(userId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid user ID"
+                });
+            }
+
+            const user = await users.findOne({
+                _id: new ObjectId(userId)
+            });
+
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found"
+                });
+            }
+
+            const profile = publicProfileUser(user);
+
+            return res.json({
+                success: true,
+                profile: profile
+            });
+
+        } catch (error) {
+
+            console.error(
+                "PUBLIC PROFILE ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message: "Could not load profile"
+            });
+        }
+    }
+);
+
+/* =========================================
    CREATE / GET CONVERSATION
 ========================================= */
 
