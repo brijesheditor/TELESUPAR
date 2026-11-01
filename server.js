@@ -1052,9 +1052,9 @@ app.get(
                 success: true,
 
                 users:
-                    list.map(
-                        publicUser
-                    )
+    list.map(
+        publicProfileUser
+    )
             });
 
         } catch (error) {
