@@ -2228,6 +2228,130 @@ app.post(
 );
 
 
+
+/* =========================================
+   PRIVATE PROFILE CONTENT
+   Only shared chat members can access
+========================================= */
+
+app.get(
+  "/api/users/:userId/private-content",
+  auth,
+  async function(req, res) {
+    try {
+      const myId = req.user.id;
+      const otherId = req.params.userId;
+
+      if (!validId(otherId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid user ID"
+        });
+      }
+
+      if (myId === otherId) {
+        return res.json({
+          success: true,
+          media: [],
+          files: [],
+          links: []
+        });
+      }
+
+      // Only conversations shared by both users
+      const sharedChats = await conversations.find({
+        members: {
+          $all: [
+            new ObjectId(myId),
+            new ObjectId(otherId)
+          ]
+        }
+      }).toArray();
+
+      if (!sharedChats.length) {
+        return res.json({
+          success: true,
+          media: [],
+          files: [],
+          links: []
+        });
+      }
+
+      const chatIds = sharedChats.map(chat => chat._id);
+
+      const chatMessages = await messages.find({
+        conversationId: { $in: chatIds }
+      })
+      .sort({ createdAt: -1 })
+      .limit(500)
+      .toArray();
+
+      const media = [];
+      const files = [];
+      const links = [];
+
+      for (const message of chatMessages) {
+        const attachment = message.attachment;
+
+        if (attachment && attachment.url) {
+          const mime = String(
+            attachment.mimeType || ""
+          ).toLowerCase();
+
+          const item = {
+            url: attachment.url,
+            fileName: attachment.fileName || "Attachment",
+            mimeType: mime,
+            createdAt: message.createdAt,
+            senderId: message.senderId.toString()
+          };
+
+          if (
+            mime.startsWith("image/") ||
+            mime.startsWith("video/")
+          ) {
+            media.push(item);
+          } else {
+            files.push(item);
+          }
+        }
+
+        const text = String(message.text || "");
+        const foundLinks = text.match(
+          /https?:\/\/[^\s<>"']+/gi
+        ) || [];
+
+        for (const url of foundLinks) {
+          links.push({
+            url,
+            createdAt: message.createdAt,
+            senderId: message.senderId.toString()
+          });
+        }
+      }
+
+      return res.json({
+        success: true,
+        media,
+        files,
+        links
+      });
+
+    } catch (error) {
+      console.error(
+        "PRIVATE PROFILE CONTENT ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not load private content"
+      });
+    }
+  }
+);
+
+
 /* =========================================
    SOCKET.IO
 ========================================= */
