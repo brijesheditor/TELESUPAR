@@ -224,6 +224,174 @@ header strong{font-size:18px}
     .avatar-wrap{width:125px;height:125px}
     .info-card{padding:14px}
 }
+
+
+/* COMPACT PROFILE PAGE */
+
+body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: #050914;
+}
+
+.page {
+    width: calc(100% - 24px);
+    max-width: 480px;
+    min-height: auto;
+    margin: 14px auto 25px;
+    border: 1px solid #27364b;
+    border-radius: 23px;
+    overflow: hidden;
+    box-shadow: 0 15px 45px #00000055;
+}
+
+/* RAINBOW BORDER ANIMATION */
+
+@keyframes rainbowRotate {
+    to { transform: rotate(360deg); }
+}
+
+/* DP BORDER */
+
+.avatar-wrap {
+    position: relative;
+    isolation: isolate;
+    padding: 5px;
+    background: #111b2b;
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+.avatar-wrap::before {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    z-index: -1;
+    background: conic-gradient(
+        #ff004c,
+        #ff9900,
+        #ffee00,
+        #00ff99,
+        #00c8ff,
+        #914cff,
+        #ff00c8,
+        #ff004c
+    );
+    animation: rainbowRotate 3s linear infinite;
+}
+
+/* USERNAME AND BIO BORDER */
+
+.info-card {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid transparent;
+    background: linear-gradient(#182438,#121b2a) padding-box;
+    overflow: hidden;
+}
+
+.info-card::before {
+    content: "";
+    position: absolute;
+    inset: -100%;
+    z-index: -1;
+    background: conic-gradient(
+        #ff004c,
+        #ff9900,
+        #ffee00,
+        #00ff99,
+        #00c8ff,
+        #914cff,
+        #ff00c8,
+        #ff004c
+    );
+    animation: rainbowRotate 4s linear infinite;
+}
+
+.info-card::after {
+    content: "";
+    position: absolute;
+    inset: 1.5px;
+    z-index: -1;
+    background: #182438;
+    border-radius: 15px;
+}
+
+/* DP CLICK */
+
+.avatar {
+    position: relative;
+    z-index: 2;
+    cursor: zoom-in;
+    display: block;
+}
+
+/* FULL SCREEN PHOTO */
+
+.photo-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0,0,0,.97);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    touch-action: manipulation;
+}
+
+.photo-viewer.show {
+    display: flex;
+}
+
+.photo-viewer img {
+    display: block;
+    max-width: 95vw;
+    max-height: 85vh;
+    object-fit: contain;
+    cursor: zoom-out;
+}
+
+/* SMALLER PROFILE */
+
+.profile {
+    padding-top: 25px;
+    padding-bottom: 17px;
+}
+
+.avatar-wrap {
+    width: 118px;
+    height: 118px;
+}
+
+.details {
+    padding-top: 4px;
+    gap: 11px;
+}
+
+.info-card {
+    padding: 14px;
+}
+
+.tabs {
+    gap: 5px;
+    padding: 10px 8px;
+}
+
+.tab {
+    min-width: 65px;
+    padding: 10px 5px;
+    font-size: 12px;
+}
+
+@media(max-width:380px) {
+    .page {
+        width: calc(100% - 16px);
+        margin-top: 8px;
+    }
+}
+
+    
 </style>
 </head>
 
