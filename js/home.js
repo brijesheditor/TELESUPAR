@@ -523,11 +523,13 @@ function renderChats(
 
             item.innerHTML = `
 
-                ${getAvatarHTML(other)}
+                <div class="avatar">
+
+    ${getAvatarHTML(other)}
 
 <div class="online-dot"></div>
 
-
+</div>
                 <div class="chat-info">
 
                     <div class="chat-top">
