@@ -72,57 +72,60 @@ async function loadProfile() {
     }
 }
 
-/* OPEN FULL SCREEN PHOTO */
+/* FULL SCREEN PROFILE PHOTO */
 
-$("avatar").addEventListener("click", () => {
-    if (!profileUser?.avatar) return;
+function openFullPhoto() {
+    const avatar = document.getElementById("avatar");
 
-    $("fullPhoto").src = profileUser.avatar;
-    $("photoViewer").classList.add("show");
-});
-
-$("closePhoto").addEventListener("click", () => {
-    $("photoViewer").classList.remove("show");
-    $("fullPhoto").src = "";
-});
-
-$("photoViewer").addEventListener("click", event => {
-    if (event.target === $("photoViewer")) {
-        $("photoViewer").classList.remove("show");
-        $("fullPhoto").src = "";
+    if (!avatar || !profileUser?.avatar) {
+        alert("Profile photo available nahi hai.");
+        return;
     }
-});
 
-document.addEventListener("keydown", event => {
+    const viewer = document.getElementById("photoViewer");
+    const fullPhoto = document.getElementById("fullPhoto");
+
+    fullPhoto.src = profileUser.avatar;
+    viewer.classList.add("show");
+}
+
+function closeFullPhoto() {
+    const viewer = document.getElementById("photoViewer");
+    const fullPhoto = document.getElementById("fullPhoto");
+
+    viewer.classList.remove("show");
+    fullPhoto.src = "";
+}
+
+document.getElementById("avatarWrap").addEventListener(
+    "click",
+    openFullPhoto
+);
+
+document.getElementById("avatar").addEventListener(
+    "click",
+    function(event) {
+        event.stopPropagation();
+        openFullPhoto();
+    }
+);
+
+document.getElementById("closePhoto").addEventListener(
+    "click",
+    closeFullPhoto
+);
+
+document.getElementById("photoViewer").addEventListener(
+    "click",
+    function(event) {
+        if (event.target === this) {
+            closeFullPhoto();
+        }
+    }
+);
+
+document.addEventListener("keydown", function(event) {
     if (event.key === "Escape") {
-        $("photoViewer").classList.remove("show");
-        $("fullPhoto").src = "";
+        closeFullPhoto();
     }
 });
-
-/* PROFILE TABS */
-
-document.querySelectorAll(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-
-        document.querySelectorAll(".tab").forEach(item => {
-            item.classList.remove("active");
-        });
-
-        tab.classList.add("active");
-
-        const type = tab.dataset.tab;
-
-        const messages = {
-            posts: "Posts will appear here.",
-            stories: "Stories will appear here.",
-            media: "Photos and videos will appear here.",
-            files: "Shared files will appear here.",
-            groups: "Groups will appear here."
-        };
-
-        $("content").textContent = messages[type];
-    });
-});
-
-loadProfile();
