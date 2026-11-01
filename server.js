@@ -268,6 +268,23 @@ avatar:
     };
 }
 
+function publicProfileUser(user) {
+    if (!user) return null;
+
+    const userId = user._id.toString();
+
+    return {
+        id: userId,
+        username: user.username || "",
+        displayName: user.displayName || user.username || "User",
+        bio: user.bio || "",
+        avatar: user.avatar || "",
+        createdAt: user.createdAt || null,
+        isOnline: isUserOnline(userId),
+        lastSeen: user.lastSeen || null
+    };
+}
+
 /* =========================================
    AUTH
 ========================================= */
