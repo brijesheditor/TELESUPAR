@@ -1,58 +1,299 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TELESUPAR Profile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#080d18">
+<title>TELESUPAR | Profile</title>
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#080b12;color:white;font-family:Arial,sans-serif}
-.page{max-width:600px;margin:auto;min-height:100vh;background:#0d121d}
-header{height:60px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #252b38;gap:15px}
-button{border:0;color:white;background:transparent;font-size:25px}
-.profile{text-align:center;padding:30px 18px}
-.avatar{width:110px;height:110px;border-radius:50%;object-fit:cover;background:#536dfe;margin-bottom:15px}
-h2{font-size:21px}
-.username{color:#8d9aaf;margin-top:6px}
-.bio{color:#d0d6e2;margin:15px auto;max-width:400px;line-height:1.5}
-.status{color:#36d399;font-size:13px;margin-top:10px}
-.tabs{display:flex;border-bottom:1px solid #252b38}
-.tabs div{flex:1;text-align:center;padding:15px;color:#9ca8ba}
-.section{padding:20px}
-.placeholder{color:#8792a5;text-align:center;padding:35px 10px;background:#151c29;border-radius:14px}
-.error{color:#ff8585;padding:20px;text-align:center}
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+    background:#080d18;
+    color:#f4f6fc;
+    font-family:Inter,system-ui,Arial,sans-serif;
+    min-height:100vh;
+}
+
+.page{
+    max-width:650px;
+    margin:auto;
+    min-height:100vh;
+    background:linear-gradient(180deg,#111b2b,#080d18 65%);
+    padding-bottom:35px;
+}
+
+header{
+    height:62px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:0 18px;
+    border-bottom:1px solid #263247;
+    background:#111927;
+    position:sticky;
+    top:0;
+    z-index:5;
+}
+
+.back{
+    color:white;
+    font-size:29px;
+    background:none;
+    border:0;
+    cursor:pointer;
+}
+
+header strong{font-size:18px}
+
+.profile{
+    text-align:center;
+    padding:36px 20px 25px;
+}
+
+.avatar-wrap{
+    width:142px;
+    height:142px;
+    margin:0 auto 19px;
+    padding:4px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#55aaff,#8055ff,#d35bff);
+    box-shadow:0 8px 35px #536dfe35;
+}
+
+.avatar{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    object-fit:cover;
+    background:#202b3d;
+    border:3px solid #101827;
+    cursor:zoom-in;
+}
+
+#name{
+    font-size:27px;
+    font-weight:800;
+    letter-spacing:-.5px;
+    margin-bottom:8px;
+}
+
+.status{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    color:#9ba9bd;
+    font-size:13px;
+    margin-top:5px;
+}
+
+.status-dot{
+    width:8px;
+    height:8px;
+    background:#929cad;
+    border-radius:50%;
+}
+
+.status.online{color:#39dca0}
+.status.online .status-dot{background:#39dca0}
+
+.details{
+    padding:8px 18px 20px;
+    display:grid;
+    gap:13px;
+}
+
+.info-card{
+    background:linear-gradient(145deg,#182438,#121b2a);
+    border:1px solid #34445d;
+    border-radius:17px;
+    padding:17px;
+    text-align:left;
+    box-shadow:0 8px 25px #00000020;
+}
+
+.info-label{
+    font-size:12px;
+    font-weight:800;
+    color:#79baff;
+    text-transform:uppercase;
+    letter-spacing:1.2px;
+    margin-bottom:10px;
+}
+
+.info-value{
+    color:#f4f6fc;
+    font-size:16px;
+    line-height:1.6;
+    overflow-wrap:anywhere;
+}
+
+.username-value{
+    font-size:18px;
+    font-weight:700;
+    color:#ffffff;
+}
+
+.tabs{
+    display:flex;
+    gap:8px;
+    padding:12px 14px;
+    overflow-x:auto;
+    border-top:1px solid #263247;
+    border-bottom:1px solid #263247;
+}
+
+.tab{
+    flex:1;
+    min-width:85px;
+    padding:12px 8px;
+    border-radius:12px;
+    color:#9aa9bd;
+    font-size:14px;
+    font-weight:700;
+    text-align:center;
+    background:#172235;
+    border:1px solid transparent;
+    cursor:pointer;
+}
+
+.tab.active{
+    background:#263e61;
+    border-color:#548fe0;
+    color:#8dc8ff;
+}
+
+.content{
+    padding:20px 16px;
+}
+
+.placeholder{
+    background:#141f30;
+    border:1px solid #2c3b52;
+    border-radius:17px;
+    padding:35px 15px;
+    text-align:center;
+    color:#9eacc0;
+    line-height:1.6;
+}
+
+.error{
+    color:#ff8585;
+    text-align:center;
+    padding:15px;
+}
+
+/* FULL SCREEN PHOTO */
+
+.photo-viewer{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:100;
+    background:rgba(0,0,0,.96);
+    align-items:center;
+    justify-content:center;
+    padding:15px;
+}
+
+.photo-viewer.show{display:flex}
+
+.photo-viewer img{
+    max-width:100%;
+    max-height:85vh;
+    object-fit:contain;
+    border-radius:12px;
+}
+
+.close-photo{
+    position:absolute;
+    top:22px;
+    right:20px;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:#263247;
+    color:white;
+    font-size:25px;
+    border:0;
+}
+
+@media(max-width:380px){
+    #name{font-size:24px}
+    .avatar-wrap{width:125px;height:125px}
+    .info-card{padding:14px}
+}
 </style>
 </head>
+
 <body>
+
 <div class="page">
+
 <header>
-<button onclick="history.back()">‹</button>
-<strong>Profile</strong>
+<button class="back" onclick="history.back()">‹</button>
+<strong>User Profile</strong>
 </header>
 
 <section class="profile">
-<img id="avatar" class="avatar" src="" alt="Profile photo">
-<h2 id="name">Loading...</h2>
-<div id="username" class="username"></div>
-<p id="bio" class="bio"></p>
-<div id="status" class="status"></div>
-</section>
 
-<div class="tabs">
-<div>Posts</div>
-<div>Stories</div>
-<div>Media</div>
+<div class="avatar-wrap" id="avatarWrap">
+<img id="avatar" class="avatar" alt="Profile photo">
 </div>
 
-<section class="section">
+<h1 id="name">Loading...</h1>
+
+<div id="status" class="status">
+<span class="status-dot"></span>
+<span id="statusText">Loading...</span>
+</div>
+
+</section>
+
+<section class="details">
+
+<div class="info-card">
+<div class="info-label">Username</div>
+<div class="info-value username-value" id="username">
+Loading...
+</div>
+</div>
+
+<div class="info-card">
+<div class="info-label">Bio</div>
+<div class="info-value" id="bio">
+Loading...
+</div>
+</div>
+
+</section>
+
+<nav class="tabs">
+<button class="tab active" data-tab="posts">Posts</button>
+<button class="tab" data-tab="stories">Stories</button>
+<button class="tab" data-tab="media">Media</button>
+<button class="tab" data-tab="files">Files</button>
+<button class="tab" data-tab="groups">Groups</button>
+</nav>
+
+<section class="content">
 <div class="placeholder" id="content">
-Posts and Stories will appear here.
+Posts will appear here.
 </div>
-<div id="error" class="error"></div>
+<div class="error" id="error"></div>
 </section>
+
+</div>
+
+<!-- FULL SCREEN PHOTO VIEWER -->
+
+<div class="photo-viewer" id="photoViewer">
+<button class="close-photo" id="closePhoto">×</button>
+<img id="fullPhoto" alt="Full size profile photo">
 </div>
 
 <script src="js/user-profile.js"></script>
+
 </body>
 </html>
