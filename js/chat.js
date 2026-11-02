@@ -1070,7 +1070,7 @@ async function uploadAttachment(file) {
     }
 }
 
-[photoInput, fileInput, cameraInput].forEach(input => {
+[photoInput, fileInput, cameraInput, videoInput].forEach(input => {
 
     if (!input) return;
 
