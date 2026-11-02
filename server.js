@@ -1529,6 +1529,77 @@ app.get(
   }
 );
 
+
+// =====================================
+// DELETE MY STORY API
+// Only story owner can delete
+// =====================================
+
+app.delete(
+  "/api/stories/:storyId",
+  auth,
+  async function(req, res) {
+    try {
+      const storyId = req.params.storyId;
+      const userId = req.user.id;
+
+      if (!validId(storyId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid story ID"
+        });
+      }
+
+      // Find only my own active story
+      const story = await stories.findOne({
+        _id: new ObjectId(storyId),
+        userId: new ObjectId(userId),
+        expiresAt: { $gt: new Date() }
+      });
+
+      if (!story) {
+        return res.status(404).json({
+          success: false,
+          message: "Story not found or access denied"
+        });
+      }
+
+      // Delete media from Cloudinary
+      if (story.publicId) {
+        await cloudinary.uploader.destroy(
+          story.publicId,
+          {
+            resource_type: story.resourceType || "image",
+            type: "upload",
+            invalidate: true
+          }
+        );
+      }
+
+      // Delete story from MongoDB
+      await stories.deleteOne({
+        _id: new ObjectId(storyId),
+        userId: new ObjectId(userId)
+      });
+
+      return res.json({
+        success: true,
+        message: "Story deleted successfully",
+        storyId: storyId
+      });
+
+    } catch (error) {
+      console.error("STORY DELETE ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not delete story"
+      });
+    }
+  }
+);
+
+
 /* =========================================
    USER SEARCH
 ========================================= */
