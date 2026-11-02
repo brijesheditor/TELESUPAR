@@ -100,13 +100,15 @@ async function loadPrivateContent() {
             "/private-content"
         );
 
-        privateContent = {
-            media: Array.isArray(data.media) ? data.media : [],
-            files: Array.isArray(data.files) ? data.files : [],
-            links: Array.isArray(data.links) ? data.links : []
-        };
+        
+privateContent = {
+    media: Array.isArray(data.media) ? data.media : [],
+    files: Array.isArray(data.files) ? data.files : [],
+    links: Array.isArray(data.links) ? data.links : []
+};
 
-        renderTab("media");
+updateVisibleTabs();
+
 
     } catch (error) {
         console.error("PRIVATE CONTENT ERROR:", error);
