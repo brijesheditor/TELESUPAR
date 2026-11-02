@@ -1103,6 +1103,251 @@ app.post(
 );
 
 
+// =====================================
+// STORY VIEW API
+// =====================================
+
+app.post(
+  "/api/stories/:storyId/view",
+  auth,
+  async function(req, res) {
+    try {
+      const storyId = req.params.storyId;
+      const viewerId = req.user.id;
+
+      if (!validId(storyId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid story ID"
+        });
+      }
+
+      const now = new Date();
+
+      const story = await stories.findOne({
+        _id: new ObjectId(storyId),
+        expiresAt: { $gt: now }
+      });
+
+      if (!story) {
+        return res.status(404).json({
+          success: false,
+          message: "Story not found or expired"
+        });
+      }
+
+      // Owner's own view is not counted
+      if (story.userId.toString() === viewerId) {
+        return res.json({
+          success: true,
+          counted: false
+        });
+      }
+
+      await stories.updateOne(
+        {
+          _id: new ObjectId(storyId),
+          expiresAt: { $gt: now },
+          "views.userId": {
+            $ne: new ObjectId(viewerId)
+          }
+        },
+        {
+          $push: {
+            views: {
+              userId: new ObjectId(viewerId),
+              viewedAt: now
+            }
+          }
+        }
+      );
+
+      const updatedStory = await stories.findOne({
+        _id: new ObjectId(storyId)
+      });
+
+      return res.json({
+        success: true,
+        counted: true,
+        viewsCount: updatedStory?.views?.length || 0
+      });
+
+    } catch (error) {
+      console.error("STORY VIEW ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not record story view"
+      });
+    }
+  }
+);
+
+
+// =====================================
+// STORY LIKE / UNLIKE API
+// =====================================
+
+app.post(
+  "/api/stories/:storyId/like",
+  auth,
+  async function(req, res) {
+    try {
+      const storyId = req.params.storyId;
+      const userId = req.user.id;
+
+      if (!validId(storyId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid story ID"
+        });
+      }
+
+      const now = new Date();
+
+      const story = await stories.findOne({
+        _id: new ObjectId(storyId),
+        expiresAt: { $gt: now }
+      });
+
+      if (!story) {
+        return res.status(404).json({
+          success: false,
+          message: "Story not found or expired"
+        });
+      }
+
+      if (story.userId.toString() === userId) {
+        return res.status(400).json({
+          success: false,
+          message: "You cannot like your own story"
+        });
+      }
+
+      const alreadyLiked = (story.likes || []).some(
+        id => id.toString() === userId
+      );
+
+      if (alreadyLiked) {
+        await stories.updateOne(
+          { _id: new ObjectId(storyId) },
+          {
+            $pull: {
+              likes: new ObjectId(userId)
+            }
+          }
+        );
+      } else {
+        await stories.updateOne(
+          {
+            _id: new ObjectId(storyId),
+            expiresAt: { $gt: new Date() }
+          },
+          {
+            $addToSet: {
+              likes: new ObjectId(userId)
+            }
+          }
+        );
+      }
+
+      const updatedStory = await stories.findOne({
+        _id: new ObjectId(storyId)
+      });
+
+      return res.json({
+        success: true,
+        liked: !alreadyLiked,
+        likesCount: updatedStory?.likes?.length || 0
+      });
+
+    } catch (error) {
+      console.error("STORY LIKE ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not update story like"
+      });
+    }
+  }
+);
+
+
+// =====================================
+// STORY VIEWERS LIST API
+// Only story owner can see viewers
+// =====================================
+
+app.get(
+  "/api/stories/:storyId/viewers",
+  auth,
+  async function(req, res) {
+    try {
+      const storyId = req.params.storyId;
+      const ownerId = req.user.id;
+
+      if (!validId(storyId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid story ID"
+        });
+      }
+
+      const story = await stories.findOne({
+        _id: new ObjectId(storyId),
+        userId: new ObjectId(ownerId),
+        expiresAt: { $gt: new Date() }
+      });
+
+      if (!story) {
+        return res.status(404).json({
+          success: false,
+          message: "Story not found or access denied"
+        });
+      }
+
+      const views = story.views || [];
+
+      const viewerIds = views.map(
+        view => view.userId
+      );
+
+      const viewerUsers = await users.find({
+        _id: { $in: viewerIds }
+      }).toArray();
+
+      const viewerMap = new Map(
+        viewerUsers.map(user => [
+          user._id.toString(),
+          publicUser(user)
+        ])
+      );
+
+      const viewers = views.map(view => ({
+        user: viewerMap.get(
+          view.userId.toString()
+        ) || null,
+        viewedAt: view.viewedAt
+      })).filter(view => view.user !== null);
+
+      return res.json({
+        success: true,
+        viewsCount: views.length,
+        viewers
+      });
+
+    } catch (error) {
+      console.error("STORY VIEWERS ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not load story viewers"
+      });
+    }
+  }
+);
+
+
 /* =========================================
    USER SEARCH
 ========================================= */
