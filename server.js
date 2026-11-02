@@ -1022,6 +1022,87 @@ app.post(
   }
 );
 
+
+app.post(
+  "/api/stories",
+  auth,
+  upload.single("file"),
+  async function(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a photo or video"
+        });
+      }
+
+      const mimeType = req.file.mimetype;
+
+      if (
+        !mimeType.startsWith("image/") &&
+        !mimeType.startsWith("video/")
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Only photos and videos are allowed in stories"
+        });
+      }
+
+      const caption = String(
+        req.body.caption || ""
+      ).trim().slice(0, 200);
+
+      const uploaded =
+        await uploadToCloudinary(req.file);
+
+      const now = new Date();
+
+      const story = {
+        userId: new ObjectId(req.user.id),
+        mediaUrl: uploaded.secure_url,
+        publicId: uploaded.public_id,
+        resourceType: uploaded.resource_type,
+        mimeType: mimeType,
+        fileName: req.file.originalname,
+        size: req.file.size,
+        caption: caption,
+        likes: [],
+        views: [],
+        createdAt: now,
+        expiresAt: new Date(
+          now.getTime() + 24 * 60 * 60 * 1000
+        )
+      };
+
+      const result = await stories.insertOne(story);
+
+      return res.status(201).json({
+        success: true,
+        message: "Story uploaded successfully",
+        story: {
+          id: result.insertedId.toString(),
+          mediaUrl: story.mediaUrl,
+          resourceType: story.resourceType,
+          caption: story.caption,
+          createdAt: story.createdAt,
+          expiresAt: story.expiresAt,
+          likesCount: 0,
+          viewsCount: 0
+        }
+      });
+
+    } catch (error) {
+      console.error("STORY UPLOAD ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Story upload failed"
+      });
+    }
+  }
+);
+
+
 /* =========================================
    USER SEARCH
 ========================================= */
