@@ -15,17 +15,26 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+
 const upload = multer({
   storage: multer.memoryStorage(),
+
   limits: {
-    fileSize: 10 * 1024 * 1024
+    fileSize: 25 * 1024 * 1024
   },
+
   fileFilter: (req, file, cb) => {
     const allowed = [
       "image/jpeg",
       "image/png",
       "image/webp",
       "image/gif",
+
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+      "video/3gpp",
+
       "application/pdf",
       "text/plain",
       "application/zip",
@@ -44,11 +53,18 @@ const upload = multer({
 function uploadToCloudinary(file) {
   return new Promise((resolve, reject) => {
     const isImage = file.mimetype.startsWith("image/");
+    const isVideo = file.mimetype.startsWith("video/");
+
+    const resourceType = isImage
+      ? "image"
+      : isVideo
+        ? "video"
+        : "raw";
 
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: "telesupar",
-        resource_type: isImage ? "image" : "raw",
+        resource_type: resourceType,
         type: "upload"
       },
       (error, result) => {
