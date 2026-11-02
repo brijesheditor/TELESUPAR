@@ -239,6 +239,44 @@ function renderLinks() {
     `;
 }
 
+
+/* SHOW ONLY TABS THAT HAVE CONTENT */
+function updateVisibleTabs() {
+    const available = {
+        media: privateContent.media.length > 0,
+        files: privateContent.files.length > 0,
+        links: privateContent.links.length > 0,
+
+        // These will be enabled when their backend is ready
+        posts: false,
+        stories: false,
+        groups: false
+    };
+
+    let firstTab = null;
+
+    document.querySelectorAll(".tab").forEach(button => {
+        const tabName = button.dataset.tab;
+        const show = available[tabName] === true;
+
+        button.style.display = show ? "" : "none";
+
+        button.classList.remove("active");
+
+        if (show && !firstTab) {
+            firstTab = button;
+        }
+    });
+
+    if (firstTab) {
+        firstTab.classList.add("active");
+        renderTab(firstTab.dataset.tab);
+    } else {
+        showEmpty("Abhi koi content shared nahi hua hai.");
+    }
+}
+
+
 /* TAB CONTENT */
 function renderTab(tab) {
     if (tab === "media") {
