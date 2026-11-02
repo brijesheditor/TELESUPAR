@@ -473,6 +473,30 @@ function createMessageElement(message) {
         link.style.textDecoration = "none";
         link.style.overflowWrap = "anywhere";
 
+       if (
+    attachment.mimeType &&
+    attachment.mimeType.startsWith("video/")
+) {
+    const video = document.createElement("video");
+
+    video.src = attachment.url;
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+
+    video.style.width = "260px";
+    video.style.maxWidth = "100%";
+    video.style.maxHeight = "300px";
+    video.style.borderRadius = "10px";
+    video.style.display = "block";
+
+    bubble.appendChild(video);
+
+} else if (
+    attachment.mimeType &&
+    attachment.mimeType.startsWith("image/")
+)
+
         if (
             attachment.mimeType &&
             attachment.mimeType.startsWith("image/")
