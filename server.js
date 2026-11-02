@@ -2747,6 +2747,58 @@ app.post(
 
       const receiverId = receiverObjectId.toString();
 
+let storyReply = null;
+
+if (storyReplyInput) {
+    const storyId = String(
+        storyReplyInput.storyId || ""
+    );
+
+    if (!validId(storyId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid story ID"
+        });
+    }
+
+    const story = await stories.findOne({
+        _id: new ObjectId(storyId),
+        expiresAt: { $gt: new Date() }
+    });
+
+    if (!story) {
+        return res.status(404).json({
+            success: false,
+            message: "Story not found or expired"
+        });
+    }
+
+    const ownerId = story.userId.toString();
+
+    if (ownerId === senderId) {
+        return res.status(400).json({
+            success: false,
+            message: "You cannot reply to your own story"
+        });
+    }
+
+    if (receiverId !== ownerId) {
+        return res.status(403).json({
+            success: false,
+            message: "Story owner does not match chat receiver"
+        });
+    }
+
+    storyReply = {
+        storyId: story._id.toString(),
+        ownerId,
+        mediaUrl: story.mediaUrl,
+        mimeType: story.mimeType,
+        resourceType: story.resourceType,
+        caption: story.caption || ""
+    };
+}
+      
       const uploaded = await uploadToCloudinary(req.file);
       const now = new Date();
       const receiverOnline = isUserOnline(receiverId);
