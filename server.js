@@ -1347,6 +1347,65 @@ app.get(
   }
 );
 
+// =====================================
+// STORY LIKES LIST API
+// Only story owner can see who liked
+// =====================================
+
+app.get(
+  "/api/stories/:storyId/likes",
+  auth,
+  async function(req, res) {
+    try {
+      const storyId = req.params.storyId;
+      const ownerId = req.user.id;
+
+      if (!validId(storyId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid story ID"
+        });
+      }
+
+      const story = await stories.findOne({
+        _id: new ObjectId(storyId),
+        userId: new ObjectId(ownerId),
+        expiresAt: { $gt: new Date() }
+      });
+
+      if (!story) {
+        return res.status(404).json({
+          success: false,
+          message: "Story not found or access denied"
+        });
+      }
+
+      const likeIds = story.likes || [];
+
+      const likedUsers = await users.find({
+        _id: { $in: likeIds }
+      }).toArray();
+
+      const likes = likedUsers.map(user =>
+        publicProfileUser(user)
+      );
+
+      return res.json({
+        success: true,
+        likesCount: likeIds.length,
+        likes
+      });
+
+    } catch (error) {
+      console.error("STORY LIKES ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not load story likes"
+      });
+    }
+  }
+);
 
 /* =========================================
    USER SEARCH
