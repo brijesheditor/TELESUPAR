@@ -2432,6 +2432,7 @@ app.post(
                     req.body.text ||
                     ""
                 ).trim();
+          const storyReplyInput = req.body.storyReply || null;
 
             if (
                 !validId(
