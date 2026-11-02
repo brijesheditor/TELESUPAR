@@ -1407,6 +1407,128 @@ app.get(
   }
 );
 
+// =====================================
+// STORIES FEED API
+// Returns my stories and other users' active stories
+// =====================================
+
+app.get(
+  "/api/stories/feed",
+  auth,
+  async function(req, res) {
+    try {
+      const myId = req.user.id;
+      const now = new Date();
+
+      // Get active stories from the last 24 hours
+      const allStories = await stories.find({
+        expiresAt: { $gt: now }
+      })
+      .sort({ createdAt: 1 })
+      .limit(500)
+      .toArray();
+
+      // Collect user IDs
+      const userIds = [
+        ...new Set(
+          allStories.map(story =>
+            story.userId.toString()
+          )
+        )
+      ];
+
+      // Load public user profiles
+      const storyUsers = await users.find({
+        _id: {
+          $in: userIds.map(id => new ObjectId(id))
+        }
+      }).toArray();
+
+      const userMap = new Map(
+        storyUsers.map(user => [
+          user._id.toString(),
+          publicProfileUser(user)
+        ])
+      );
+
+      // Prepare story data
+      const grouped = new Map();
+
+      for (const story of allStories) {
+        const userId = story.userId.toString();
+
+        if (!grouped.has(userId)) {
+          grouped.set(userId, []);
+        }
+
+        const likes = story.likes || [];
+        const views = story.views || [];
+
+        grouped.get(userId).push({
+          id: story._id.toString(),
+          mediaUrl: story.mediaUrl,
+          resourceType: story.resourceType,
+          mimeType: story.mimeType,
+          caption: story.caption || "",
+          createdAt: story.createdAt,
+          expiresAt: story.expiresAt,
+          likesCount: likes.length,
+          viewsCount: views.length,
+          likedByMe: likes.some(
+            id => id.toString() === myId
+          ),
+          viewedByMe: views.some(
+            view => view.userId.toString() === myId
+          )
+        });
+      }
+
+      const myStories = grouped.get(myId) || [];
+
+      const otherUsers = [];
+
+      for (const [userId, userStories] of grouped) {
+        if (userId === myId) continue;
+
+        const user = userMap.get(userId);
+        if (!user) continue;
+
+        otherUsers.push({
+          user,
+          stories: userStories
+        });
+      }
+
+      // Most recently updated users first
+      otherUsers.sort((a, b) => {
+        const aTime = new Date(
+          a.stories[a.stories.length - 1].createdAt
+        ).getTime();
+
+        const bTime = new Date(
+          b.stories[b.stories.length - 1].createdAt
+        ).getTime();
+
+        return bTime - aTime;
+      });
+
+      return res.json({
+        success: true,
+        myStories,
+        users: otherUsers
+      });
+
+    } catch (error) {
+      console.error("STORIES FEED ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not load stories feed"
+      });
+    }
+  }
+);
+
 /* =========================================
    USER SEARCH
 ========================================= */
