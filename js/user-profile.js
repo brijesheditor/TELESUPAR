@@ -124,7 +124,7 @@ updateVisibleTabs();
 
     console.error("Private content API failed:", error.message);
 }
-
+}
 
 /* EMPTY MESSAGE */
 function showEmpty(message) {
