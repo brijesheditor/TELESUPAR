@@ -1319,7 +1319,7 @@ app.get(
       const viewerMap = new Map(
         viewerUsers.map(user => [
           user._id.toString(),
-          publicUser(user)
+          publicProfileUser(user)
         ])
       );
 
