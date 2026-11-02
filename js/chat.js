@@ -1006,6 +1006,11 @@ cameraBtn.addEventListener("click", () => {
     cameraInput.click();
 });
 
+videoBtn.addEventListener("click", () => {
+    attachmentMenu.classList.remove("show");
+    videoInput.click();
+});
+
 /* ==========================================
    UPLOAD ATTACHMENT
 ========================================== */
@@ -1014,9 +1019,9 @@ async function uploadAttachment(file) {
 
     if (!file || !conversationId) return;
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 25 * 1024 * 1024) {
 
-        alert("Maximum file size is 10 MB");
+        alert("Maximum video/file size is 25 MB");
 
         return;
     }
