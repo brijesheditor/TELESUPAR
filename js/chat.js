@@ -60,10 +60,12 @@ const attachmentMenu = $("attachmentMenu");
 const photoBtn = $("photoBtn");
 const fileBtn = $("fileBtn");
 const cameraBtn = $("cameraBtn");
+const videoBtn = $("videoBtn");
 
 const photoInput = $("photoInput");
 const fileInput = $("fileInput");
 const cameraInput = $("cameraInput");
+const videoInput = $("videoInput");
 
 /* ==========================================
    STATE
