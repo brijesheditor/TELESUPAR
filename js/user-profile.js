@@ -110,12 +110,21 @@ privateContent = {
 updateVisibleTabs();
 
 
-    } catch (error) {
-        console.error("PRIVATE CONTENT ERROR:", error);
-        $("content").textContent =
-            "Private content could not be loaded.";
-    }
+   
+} catch (error) {
+    console.error("PRIVATE CONTENT ERROR:", error);
+
+    privateContent = {
+        media: [],
+        files: [],
+        links: []
+    };
+
+    updateVisibleTabs();
+
+    console.error("Private content API failed:", error.message);
 }
+
 
 /* EMPTY MESSAGE */
 function showEmpty(message) {
