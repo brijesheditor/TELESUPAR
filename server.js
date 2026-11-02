@@ -2181,6 +2181,9 @@ app.get(
                             text:
                                 message.text ||
                                 "",
+                          storyReply:
+    message.storyReply || null,
+                          
                           attachment:
                                message.attachment ||
                                null,
