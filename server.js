@@ -129,6 +129,7 @@ let db;
 let users;
 let messages;
 let conversations;
+let stories;
 
 const client =
     new MongoClient(
@@ -160,6 +161,7 @@ const onlineUsers =
    DATABASE CONNECTION
 ========================================= */
 
+
 async function connectDatabase() {
 
     await client.connect();
@@ -175,6 +177,9 @@ async function connectDatabase() {
 
     conversations =
         db.collection("conversations");
+
+    stories =
+        db.collection("stories");
 
     await users.createIndex(
         {
@@ -208,10 +213,27 @@ async function connectDatabase() {
         createdAt: 1
     });
 
+    // Stories expire automatically after 24 hours
+    await stories.createIndex(
+        {
+            expiresAt: 1
+        },
+        {
+            expireAfterSeconds: 0
+        }
+    );
+
+    // Find active stories quickly
+    await stories.createIndex({
+        userId: 1,
+        expiresAt: 1
+    });
+
     console.log(
         "MongoDB connected successfully"
     );
 }
+
 
 /* =========================================
    TOKEN
