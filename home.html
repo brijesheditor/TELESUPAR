@@ -701,6 +701,51 @@
   font-size: 18px;
 }
 
+    .viewer-profile-row {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid #303747;
+}
+
+.viewer-profile-avatar {
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  overflow:hidden;
+  flex-shrink:0;
+  background:#34466d;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+}
+
+.viewer-profile-avatar img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.viewer-profile-info {
+  flex:1;
+  min-width:0;
+}
+
+.viewer-profile-info small {
+  display:block;
+  color:#9ba5b8;
+  margin-top:4px;
+}
+
+.viewer-message-btn {
+  background:#4f8cff;
+  color:white;
+  padding:9px 12px;
+  border-radius:10px;
+  font-size:12px;
+}
     
   </style>
 </head>
@@ -1426,9 +1471,32 @@ document.getElementById("showStoryViewers")
 
         const person = viewer.user || viewer;
 
-row.textContent =
-  person.displayName || person.username || "User";
+row.innerHTML = `
+  <div class="viewer-profile-row">
+    <div class="viewer-profile-avatar">
+      ${
+        person.avatar
+          ? `<img src="${escapeHTML(person.avatar)}" alt="">`
+          : escapeHTML(
+              (person.displayName || person.username || "U")
+                .charAt(0).toUpperCase()
+            )
+      }
+    </div>
 
+    <div class="viewer-profile-info">
+      <strong>${escapeHTML(person.displayName || "User")}</strong>
+      <small>@${escapeHTML(person.username || "")}</small>
+    </div>
+
+    <button class="viewer-message-btn">Message</button>
+  </div>
+`;
+
+row.querySelector(".viewer-message-btn")
+  .addEventListener("click", () => {
+    startChat(person.id);
+  });
         storyViewersList.appendChild(row);
       });
 
