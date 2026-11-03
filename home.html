@@ -746,6 +746,24 @@
   border-radius:10px;
   font-size:12px;
 }
+
+.viewer-person {
+  width: 50px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.viewer-liked-heart {
+  font-size: 13px;
+  line-height: 14px;
+}
+
+.viewer-profile-row {
+  gap: 12px;
+}
     
   </style>
 </head>
@@ -1457,66 +1475,69 @@ document.getElementById("showStoryViewers")
     if (!currentStory || !activeStoryOwner) return;
 
     try {
-      const data = await api(
-        `/api/stories/${currentStory.id}/viewers`
-      );
+      const [viewerData, likeData] = await Promise.all([
+        api(`/api/stories/${currentStory.id}/viewers`),
+        api(`/api/stories/${currentStory.id}/likes`)
+      ]);
 
       storyViewersList.innerHTML = "";
 
-      (data.viewers || []).forEach(viewer => {
-        const row = document.createElement("div");
+      const likedIds = new Set(
+        (likeData.likes || []).map(person =>
+          String(person.id || person._id || "")
+        )
+      );
 
-        row.style.cssText =
-          "padding:10px 0;border-bottom:1px solid #303747;font-size:13px;";
-
+      (viewerData.viewers || []).forEach(viewer => {
         const person = viewer.user || viewer;
+        const personId = String(person.id || person._id || "");
+        const liked = likedIds.has(personId);
 
-row.innerHTML = `
-  <div class="viewer-profile-row">
-    <div class="viewer-profile-avatar">
-      ${
-        person.avatar
-          ? `<img src="${escapeHTML(person.avatar)}" alt="">`
-          : escapeHTML(
-              (person.displayName || person.username || "U")
-                .charAt(0).toUpperCase()
-            )
-      }
-    </div>
+        const row = document.createElement("div");
+        row.className = "viewer-profile-row";
 
-    <div class="viewer-profile-info">
-      <strong>${escapeHTML(person.displayName || "User")}</strong>
-      <small>@${escapeHTML(person.username || "")}</small>
-    </div>
+        row.innerHTML = `
+          <div class="viewer-person">
+            <div class="viewer-profile-avatar">
+              ${
+                person.avatar
+                  ? `<img src="${escapeHTML(person.avatar)}" alt="">`
+                  : escapeHTML(
+                      (person.displayName || person.username || "U")
+                        .charAt(0).toUpperCase()
+                    )
+              }
+            </div>
+            ${liked ? '<span class="viewer-liked-heart">❤️</span>' : ""}
+          </div>
 
-    <button class="viewer-message-btn">Message</button>
-  </div>
-`;
+          <div class="viewer-profile-info">
+            <strong>${escapeHTML(person.displayName || "User")}</strong>
+            <small>@${escapeHTML(person.username || "")}</small>
+          </div>
 
-row.querySelector(".viewer-message-btn")
-  .addEventListener("click", () => {
-    startChat(person.id);
-  });
+          <button class="viewer-message-btn">Message</button>
+        `;
+
+        row.querySelector(".viewer-message-btn")
+          .addEventListener("click", () => {
+            startChat(personId);
+          });
+
         storyViewersList.appendChild(row);
       });
 
-      if (!data.viewers || !data.viewers.length) {
+      if (!viewerData.viewers || !viewerData.viewers.length) {
         storyViewersList.textContent = "No views yet";
       }
 
-      storyViewsCount.textContent = data.viewsCount || 0;
+      storyViewsCount.textContent = viewerData.viewsCount || 0;
       storyViewersPanel.style.display = "block";
 
     } catch (error) {
       showToast(error.message);
     }
   });
-
-document.getElementById("closeViewersPanel")
-  .addEventListener("click", () => {
-    storyViewersPanel.style.display = "none";
-  });
-
     
 addStoryBtn.addEventListener("click", () => {
   storyFileInput.click();
