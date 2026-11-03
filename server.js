@@ -2582,6 +2582,8 @@ if (storyReplyInput) {
 
                 text,
 
+              storyReply,
+
                 createdAt:
                     now,
 
@@ -2647,6 +2649,8 @@ if (storyReplyInput) {
                 receiverId,
 
                 text,
+
+              storyReply,
 
                 createdAt:
                     now,
