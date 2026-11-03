@@ -523,6 +523,184 @@
   padding: 22px 5px;
   white-space: nowrap;
 }
+
+
+/* FULL SCREEN STORY VIEWER */
+.story-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: #050608;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.story-progress {
+  position: absolute;
+  top: 9px;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.3);
+  z-index: 5;
+}
+
+.story-viewer-header {
+  position: absolute;
+  top: 23px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 5;
+}
+
+.story-owner-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.story-owner-info small {
+  display: block;
+  color: #bbb;
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+.viewer-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #34466d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+.viewer-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.viewer-close {
+  background: rgba(255,255,255,.15);
+  color: white;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 18px;
+}
+
+.story-media-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.story-media-container img,
+.story-media-container video {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.story-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  width: 38px;
+  height: 60px;
+  background: rgba(0,0,0,.18);
+  color: white;
+  font-size: 34px;
+  border-radius: 12px;
+}
+
+.story-prev { left: 2px; }
+.story-next { right: 2px; }
+
+.viewer-caption {
+  position: absolute;
+  bottom: 85px;
+  left: 18px;
+  right: 18px;
+  text-align: center;
+  font-size: 14px;
+  text-shadow: 0 2px 5px #000;
+}
+
+.story-viewer-footer {
+  position: absolute;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 5;
+}
+
+.story-like-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  color: white;
+  font-size: 27px;
+}
+
+.owner-story-stats {
+  display: flex;
+  gap: 10px;
+}
+
+.owner-story-stats button {
+  background: rgba(255,255,255,.15);
+  color: white;
+  border-radius: 20px;
+  padding: 11px 14px;
+  font-size: 12px;
+}
+
+.story-viewers-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 55%;
+  overflow-y: auto;
+  background: #151a24;
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  z-index: 10;
+}
+
+.viewers-heading {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.viewers-heading button {
+  background: transparent;
+  color: white;
+  font-size: 18px;
+}
+
     
   </style>
 </head>
@@ -721,6 +899,50 @@
     id="toast"
     class="toast"
   ></div>
+
+<!-- FULL SCREEN STORY VIEWER -->
+<div id="storyViewer" class="story-viewer" style="display:none;">
+
+  <div class="story-progress" id="storyProgress"></div>
+
+  <div class="story-viewer-header">
+    <div class="story-owner-info">
+      <div id="viewerAvatar" class="viewer-avatar">U</div>
+      <div>
+        <div id="viewerName">User</div>
+        <small id="viewerTime">Just now</small>
+      </div>
+    </div>
+
+    <button id="closeStoryViewer" class="viewer-close">✕</button>
+  </div>
+
+  <button id="prevStory" class="story-nav story-prev">‹</button>
+
+  <div id="storyMediaContainer" class="story-media-container"></div>
+
+  <button id="nextStory" class="story-nav story-next">›</button>
+
+  <div id="viewerCaption" class="viewer-caption"></div>
+
+  <div class="story-viewer-footer">
+    <div id="ownerStoryStats" class="owner-story-stats" style="display:none;">
+      <button id="showStoryViewers">◉ <span id="storyViewsCount">0</span> Views</button>
+      <button id="deleteMyStory">🗑 Delete</button>
+    </div>
+
+    <button id="storyLikeBtn" class="story-like-btn">♡</button>
+  </div>
+
+  <div id="storyViewersPanel" class="story-viewers-panel" style="display:none;">
+    <div class="viewers-heading">
+      <b>Story Viewers</b>
+      <button id="closeViewersPanel">✕</button>
+    </div>
+    <div id="storyViewersList"></div>
+  </div>
+
+</div>
 
 
   <script>
