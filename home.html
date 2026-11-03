@@ -889,7 +889,159 @@
 
     }
 
+/* =================================
+   STORIES FEED + UPLOAD
+================================= */
 
+const storiesRow = document.getElementById("storiesRow");
+const addStoryBtn = document.getElementById("addStoryBtn");
+const storyFileInput = document.getElementById("storyFileInput");
+
+let myStories = [];
+let otherStories = [];
+
+function storyAvatar(user) {
+  const name = user.displayName || user.username || "User";
+  const initial = escapeHTML(name.charAt(0).toUpperCase());
+
+  if (user.avatar && /^https?:\/\//i.test(user.avatar)) {
+    return `<img src="${escapeHTML(user.avatar)}"
+      alt="${escapeHTML(name)}"
+      style="width:100%;height:100%;object-fit:cover;border-radius:50%;border:3px solid var(--bg);"
+      onerror="this.style.display='none';">`;
+  }
+
+  return initial;
+}
+
+function renderStories(data) {
+  myStories = data.myStories || [];
+  otherStories = data.users || [];
+
+  storiesRow.innerHTML = "";
+
+  const myItem = document.createElement("div");
+  myItem.className = "story-item";
+  myItem.id = "addStoryBtn";
+
+  myItem.innerHTML = `
+    <div class="story-ring add-story-ring">
+      <div class="story-avatar">＋</div>
+    </div>
+    <span>${myStories.length ? "My Story" : "Add Story"}</span>
+  `;
+
+  myItem.addEventListener("click", () => {
+    if (myStories.length) {
+      showToast("Your Story Viewer is coming next!");
+    } else {
+      storyFileInput.click();
+    }
+  });
+
+  storiesRow.appendChild(myItem);
+
+  otherStories.forEach(group => {
+    const user = group.user || {};
+    const name = user.displayName || user.username || "User";
+
+    const item = document.createElement("div");
+    item.className = "story-item";
+
+    item.innerHTML = `
+      <div class="story-ring">
+        <div class="story-avatar">
+          ${storyAvatar(user)}
+        </div>
+      </div>
+      <span>${escapeHTML(name)}</span>
+    `;
+
+    item.addEventListener("click", () => {
+      showToast("Story Viewer is coming in the next step!");
+    });
+
+    storiesRow.appendChild(item);
+  });
+}
+
+async function loadStories() {
+  try {
+    const data = await api("/api/stories/feed");
+
+    if (!data.success) {
+      throw new Error(data.message || "Could not load stories");
+    }
+
+    renderStories(data);
+  } catch (error) {
+    console.error("STORIES FEED ERROR:", error);
+    storiesRow.innerHTML = `
+      <div class="story-loading">
+        Stories could not load. Tap refresh.
+      </div>
+    `;
+    showToast(error.message);
+  }
+}
+
+addStoryBtn.addEventListener("click", () => {
+  storyFileInput.click();
+});
+
+storyFileInput.addEventListener("change", async () => {
+  const file = storyFileInput.files[0];
+
+  if (!file) return;
+
+  if (!file.type.startsWith("image/") &&
+      !file.type.startsWith("video/")) {
+    showToast("Only photos and videos are allowed");
+    storyFileInput.value = "";
+    return;
+  }
+
+  if (file.size > 25 * 1024 * 1024) {
+    showToast("Maximum story size is 25 MB");
+    storyFileInput.value = "";
+    return;
+  }
+
+  const caption = prompt("Write a story caption (optional):") || "";
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("caption", caption.slice(0, 200));
+
+  try {
+    showToast("Uploading your Story...");
+
+    const response = await fetch(API_URL + "/api/stories", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token
+      },
+      body: formData
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Story upload failed");
+    }
+
+    showToast("Story uploaded successfully!");
+    await loadStories();
+
+  } catch (error) {
+    console.error("STORY UPLOAD ERROR:", error);
+    showToast(error.message);
+  } finally {
+    storyFileInput.value = "";
+  }
+});
+
+    
     /* =================================
        LOAD MY PROFILE
     ================================= */
