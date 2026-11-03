@@ -459,6 +459,71 @@
       }
 
     }
+
+    
+/* STORIES */
+.stories-section {
+  margin: 0 0 22px;
+  overflow: hidden;
+}
+
+.stories-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  overflow-x: auto;
+  padding: 5px 2px 12px;
+  scrollbar-width: none;
+}
+
+.stories-row::-webkit-scrollbar {
+  display: none;
+}
+
+.story-item {
+  flex: 0 0 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.story-ring {
+  width: 62px;
+  height: 62px;
+  padding: 3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#ffb000,#ff2878,#8b5cf6);
+}
+
+.story-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #202838;
+  border: 3px solid var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25px;
+  font-weight: bold;
+}
+
+.add-story-ring {
+  background: #30394b;
+  border: 1px dashed #8290a8;
+}
+
+.story-loading {
+  color: var(--muted);
+  font-size: 11px;
+  padding: 22px 5px;
+  white-space: nowrap;
+}
+    
   </style>
 </head>
 
@@ -496,6 +561,29 @@
 
   <main class="main">
 
+
+<!-- STORIES SECTION -->
+<section class="stories-section">
+  <div class="section-title">
+    <h2>Stories</h2>
+    <span>24 hours</span>
+  </div>
+
+  <div id="storiesRow" class="stories-row">
+    <div class="story-item" id="addStoryBtn">
+      <div class="story-ring add-story-ring">
+        <div class="story-avatar">＋</div>
+      </div>
+      <span>My Story</span>
+    </div>
+
+    <div class="story-loading" id="storiesLoading">
+      Loading stories...
+    </div>
+  </div>
+</section>
+
+    
     <!-- SEARCH -->
 
     <div class="search-box">
