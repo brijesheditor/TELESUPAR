@@ -2029,9 +2029,11 @@ function getUserAvatar(user) {
 
     async function init(){
 
-      await loadMe();
+  await loadMe();
 
-      await loadChats();
+  await loadStories();
+
+  await loadChats();
 
     }
 
