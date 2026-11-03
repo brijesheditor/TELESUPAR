@@ -1136,15 +1136,15 @@ function storyAvatar(user) {
   return initial;
 }
 
+
 function renderStories(data) {
   myStories = data.myStories || [];
   otherStories = data.users || [];
-
   storiesRow.innerHTML = "";
 
   const myItem = document.createElement("div");
   myItem.className = "story-item";
-  
+
   const latestMyStory = myStories[myStories.length - 1];
 
   myItem.innerHTML = `
@@ -1165,7 +1165,7 @@ function renderStories(data) {
 
   myItem.addEventListener("click", () => {
     if (myStories.length) {
-      showToast("Your Story Viewer is coming next!");
+      openStoryGroup(myStories, true, null, 0);
     } else {
       storyFileInput.click();
     }
@@ -1182,15 +1182,13 @@ function renderStories(data) {
 
     item.innerHTML = `
       <div class="story-ring">
-        <div class="story-avatar">
-          ${storyAvatar(user)}
-        </div>
+        <div class="story-avatar">${storyAvatar(user)}</div>
       </div>
       <span>${escapeHTML(name)}</span>
     `;
 
     item.addEventListener("click", () => {
-      showToast("Story Viewer is coming next!");
+      openStoryGroup(group.stories || [], false, user, 0);
     });
 
     storiesRow.appendChild(item);
