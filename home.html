@@ -922,13 +922,23 @@ function renderStories(data) {
 
   const myItem = document.createElement("div");
   myItem.className = "story-item";
-  myItem.id = "addStoryBtn";
+  
+  const latestMyStory = myStories[myStories.length - 1];
 
   myItem.innerHTML = `
-    <div class="story-ring add-story-ring">
-      <div class="story-avatar">＋</div>
+    <div class="story-ring ${latestMyStory ? "" : "add-story-ring"}">
+      <div class="story-avatar" style="overflow:hidden;">
+        ${
+          latestMyStory
+            ? latestMyStory.resourceType === "video"
+              ? "▶"
+              : `<img src="${escapeHTML(latestMyStory.mediaUrl)}"
+                   style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+            : "＋"
+        }
+      </div>
     </div>
-    <span>${myStories.length ? "My Story" : "Add Story"}</span>
+    <span>${latestMyStory ? "My Story" : "Add Story"}</span>
   `;
 
   myItem.addEventListener("click", () => {
@@ -958,7 +968,7 @@ function renderStories(data) {
     `;
 
     item.addEventListener("click", () => {
-      showToast("Story Viewer is coming in the next step!");
+      showToast("Story Viewer is coming next!");
     });
 
     storiesRow.appendChild(item);
