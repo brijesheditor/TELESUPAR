@@ -530,6 +530,70 @@ function createMessageElement(message) {
         bubble.appendChild(link);
     }
 
+    // Story Reply Preview
+    if (message.storyReply) {
+        const story = message.storyReply;
+
+        const storyCard = document.createElement("div");
+        storyCard.className = "story-reply-card";
+
+        storyCard.style.borderLeft = "3px solid #8b5cf6";
+        storyCard.style.background = "rgba(139, 92, 246, 0.12)";
+        storyCard.style.padding = "9px";
+        storyCard.style.marginBottom = "8px";
+        storyCard.style.borderRadius = "8px";
+        storyCard.style.maxWidth = "240px";
+
+        const label = document.createElement("div");
+        label.textContent = "↩ Replied to a story";
+        label.style.fontSize = "12px";
+        label.style.fontWeight = "600";
+        label.style.marginBottom = "6px";
+        label.style.color = "#a78bfa";
+
+        storyCard.appendChild(label);
+
+        if (story.mediaUrl) {
+            let media;
+
+            if (
+                story.mimeType &&
+                story.mimeType.startsWith("video/")
+            ) {
+                media = document.createElement("video");
+                media.controls = true;
+                media.playsInline = true;
+                media.preload = "metadata";
+            } else {
+                media = document.createElement("img");
+                media.alt = "Story preview";
+                media.loading = "lazy";
+            }
+
+            media.src = story.mediaUrl;
+            media.style.width = "150px";
+            media.style.maxWidth = "100%";
+            media.style.maxHeight = "180px";
+            media.style.objectFit = "cover";
+            media.style.borderRadius = "7px";
+            media.style.display = "block";
+
+            storyCard.appendChild(media);
+        }
+
+        if (story.caption) {
+            const caption = document.createElement("div");
+            caption.textContent = story.caption;
+            caption.style.fontSize = "12px";
+            caption.style.marginTop = "6px";
+
+            storyCard.appendChild(caption);
+        }
+
+        bubble.appendChild(storyCard);
+    }
+
+   
     // Message text
     if (message.text) {
 
