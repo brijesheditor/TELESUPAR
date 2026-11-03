@@ -1215,6 +1215,239 @@ async function loadStories() {
   }
 }
 
+/* =================================
+   FULL SCREEN STORY VIEWER
+================================= */
+
+const storyViewer = document.getElementById("storyViewer");
+const storyMediaContainer = document.getElementById("storyMediaContainer");
+const viewerName = document.getElementById("viewerName");
+const viewerAvatar = document.getElementById("viewerAvatar");
+const viewerTime = document.getElementById("viewerTime");
+const viewerCaption = document.getElementById("viewerCaption");
+const storyLikeBtn = document.getElementById("storyLikeBtn");
+const ownerStoryStats = document.getElementById("ownerStoryStats");
+const storyViewsCount = document.getElementById("storyViewsCount");
+const storyViewersPanel = document.getElementById("storyViewersPanel");
+const storyViewersList = document.getElementById("storyViewersList");
+
+let activeStoryList = [];
+let activeStoryIndex = 0;
+let activeStoryOwner = false;
+let activeStoryUser = null;
+let currentStory = null;
+
+function openStoryGroup(list, isOwner, user, index = 0) {
+  if (!list || !list.length) return;
+
+  activeStoryList = list;
+  activeStoryIndex = index;
+  activeStoryOwner = isOwner;
+  activeStoryUser = user;
+
+  storyViewer.style.display = "flex";
+  showCurrentStory();
+}
+
+async function showCurrentStory() {
+  currentStory = activeStoryList[activeStoryIndex];
+
+  if (!currentStory) return;
+
+  storyViewersPanel.style.display = "none";
+  storyMediaContainer.innerHTML = "";
+
+  const user = activeStoryUser || {};
+  const name = user.displayName || user.username || "You";
+
+  viewerName.textContent = name;
+  viewerAvatar.textContent = name.charAt(0).toUpperCase();
+
+  if (user.avatar) {
+    viewerAvatar.innerHTML = `
+      <img src="${escapeHTML(user.avatar)}" alt="">
+    `;
+  }
+
+  viewerTime.textContent = currentStory.createdAt
+    ? new Date(currentStory.createdAt).toLocaleString()
+    : "Just now";
+
+  viewerCaption.textContent = currentStory.caption || "";
+
+  ownerStoryStats.style.display = activeStoryOwner ? "flex" : "none";
+  storyLikeBtn.style.display = activeStoryOwner ? "none" : "block";
+
+  storyLikeBtn.textContent = currentStory.likedByMe ? "♥" : "♡";
+  storyViewsCount.textContent = currentStory.viewsCount || 0;
+
+  const media = document.createElement(
+    currentStory.resourceType === "video" ? "video" : "img"
+  );
+
+  media.src = currentStory.mediaUrl;
+
+  if (currentStory.resourceType === "video") {
+    media.controls = true;
+    media.autoplay = true;
+    media.playsInline = true;
+  } else {
+    media.alt = "Story";
+  }
+
+  storyMediaContainer.appendChild(media);
+
+  document.getElementById("storyProgress").style.width = "100%";
+
+  try {
+    const result = await api(
+      `/api/stories/${currentStory.id}/view`,
+      {
+        method: "POST",
+        body: JSON.stringify({})
+      }
+    );
+
+    if (result.viewsCount !== undefined) {
+      currentStory.viewsCount = result.viewsCount;
+      storyViewsCount.textContent = result.viewsCount;
+    }
+  } catch (error) {
+    console.error("STORY VIEW ERROR:", error);
+  }
+}
+
+function closeStoryViewer() {
+  const video = storyMediaContainer.querySelector("video");
+  if (video) video.pause();
+
+  storyViewer.style.display = "none";
+  storyMediaContainer.innerHTML = "";
+  storyViewersPanel.style.display = "none";
+}
+
+function nextStory() {
+  if (activeStoryIndex < activeStoryList.length - 1) {
+    activeStoryIndex++;
+    showCurrentStory();
+  } else {
+    closeStoryViewer();
+  }
+}
+
+function previousStory() {
+  if (activeStoryIndex > 0) {
+    activeStoryIndex--;
+    showCurrentStory();
+  }
+}
+
+document.getElementById("closeStoryViewer")
+  .addEventListener("click", closeStoryViewer);
+
+document.getElementById("nextStory")
+  .addEventListener("click", nextStory);
+
+document.getElementById("prevStory")
+  .addEventListener("click", previousStory);
+
+storyLikeBtn.addEventListener("click", async () => {
+  if (!currentStory || activeStoryOwner) return;
+
+  try {
+    const result = await api(
+      `/api/stories/${currentStory.id}/like`,
+      {
+        method: "POST",
+        body: JSON.stringify({})
+      }
+    );
+
+    currentStory.likedByMe = result.liked;
+    currentStory.likesCount = result.likesCount;
+
+    storyLikeBtn.textContent = result.liked ? "♥" : "♡";
+
+    showToast(result.liked ? "Story liked!" : "Like removed");
+
+  } catch (error) {
+    showToast(error.message);
+  }
+});
+
+document.getElementById("deleteMyStory")
+  .addEventListener("click", async () => {
+    if (!currentStory || !activeStoryOwner) return;
+
+    if (!confirm("Delete this Story permanently?")) return;
+
+    try {
+      await api(`/api/stories/${currentStory.id}`, {
+        method: "DELETE"
+      });
+
+      showToast("Story deleted");
+
+      activeStoryList.splice(activeStoryIndex, 1);
+
+      if (!activeStoryList.length) {
+        closeStoryViewer();
+      } else {
+        activeStoryIndex = Math.min(
+          activeStoryIndex,
+          activeStoryList.length - 1
+        );
+        showCurrentStory();
+      }
+
+      await loadStories();
+
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+
+document.getElementById("showStoryViewers")
+  .addEventListener("click", async () => {
+    if (!currentStory || !activeStoryOwner) return;
+
+    try {
+      const data = await api(
+        `/api/stories/${currentStory.id}/viewers`
+      );
+
+      storyViewersList.innerHTML = "";
+
+      (data.viewers || []).forEach(viewer => {
+        const row = document.createElement("div");
+
+        row.style.cssText =
+          "padding:10px 0;border-bottom:1px solid #303747;font-size:13px;";
+
+        row.textContent =
+          viewer.displayName || viewer.username || "User";
+
+        storyViewersList.appendChild(row);
+      });
+
+      if (!data.viewers || !data.viewers.length) {
+        storyViewersList.textContent = "No views yet";
+      }
+
+      storyViewsCount.textContent = data.viewsCount || 0;
+      storyViewersPanel.style.display = "block";
+
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+
+document.getElementById("closeViewersPanel")
+  .addEventListener("click", () => {
+    storyViewersPanel.style.display = "none";
+  });
+
+    
 addStoryBtn.addEventListener("click", () => {
   storyFileInput.click();
 });
