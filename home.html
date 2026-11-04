@@ -1537,6 +1537,11 @@ document.getElementById("showStoryViewers")
             startChat(personId);
           });
 
+        row.querySelector(".viewer-person")
+  .addEventListener("click", () => {
+    window.location.href = `profile.html?id=${encodeURIComponent(personId)}`;
+  });
+
         storyViewersList.appendChild(row);
       });
 
