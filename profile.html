@@ -1,173 +1,651 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Profile | TELESUPAR</title>
+<meta name="theme-color" content="#080d19">
+<title>TELESUPAR | Profile</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#080d19;
+  --panel:#111b2c;
+  --panel2:#17243a;
+  --border:#253650;
+  --text:#f4f7ff;
+  --muted:#91a1bb;
+  --cyan:#42d9e8;
+  --blue:#547cff;
+  --violet:#9467ff;
+}
+
 body{
-  background:#090d18;
-  color:#f4f6ff;
-  font-family:Arial,sans-serif;
+  background:
+    radial-gradient(ellipse at 15% 0%,#15294a 0%,transparent 38%),
+    radial-gradient(ellipse at 100% 30%,#241746 0%,transparent 35%),
+    var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Arial,sans-serif;
   min-height:100vh;
-  padding:20px 15px 40px;
+  padding:18px 14px 45px;
 }
-.container{max-width:500px;margin:auto}
-.header{
-  display:flex;align-items:center;gap:15px;
-  margin:10px 0 28px;
+
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+.container{max-width:520px;margin:auto}
+
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:5px 0 22px;
 }
-.back{
-  width:42px;height:42px;border:1px solid #29334a;
-  background:#151d30;color:white;border-radius:13px;
-  font-size:22px;cursor:pointer;
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
 }
-.header h2{font-size:21px}
-.header p{font-size:12px;color:#8c98b5;margin-top:5px}
-.card{
-  background:#121a2b;border:1px solid #26334d;
-  border-radius:22px;padding:24px 18px;margin-bottom:18px;
+
+.brand-logo{
+  width:40px;height:40px;
+  display:grid;place-items:center;
+  border-radius:14px;
+  background:linear-gradient(135deg,var(--cyan),var(--blue),var(--violet));
+  color:#07111d;
+  font-size:20px;font-weight:900;
+  box-shadow:0 5px 22px #42d9e833;
 }
-.photo-area{text-align:center;padding:10px 0 25px}
+
+.brand-name{
+  font-size:18px;
+  font-weight:850;
+  letter-spacing:1.3px;
+}
+
+.brand-sub{
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:1.5px;
+}
+
+.icon-btn{
+  width:42px;height:42px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:#121d30;
+  color:white;
+  font-size:22px;
+}
+
+.profile-card{
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:25px;
+  background:linear-gradient(145deg,#15243a,#101827 70%);
+  padding:23px 18px;
+  box-shadow:0 18px 50px #0004;
+}
+
+.profile-card:before{
+  content:"";
+  position:absolute;
+  width:180px;height:180px;
+  right:-75px;top:-95px;
+  border-radius:50%;
+  background:#42d9e81a;
+  filter:blur(5px);
+}
+
+.profile-main{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:17px;
+}
+
+.avatar-wrap{
+  width:94px;height:94px;
+  flex-shrink:0;
+  padding:3px;
+  border-radius:27px;
+  background:linear-gradient(135deg,var(--cyan),var(--blue),var(--violet));
+}
+
 .avatar{
-  width:112px;height:112px;border-radius:50%;
-  object-fit:cover;background:#263b67;
-  border:4px solid #526ff0;
+  width:100%;height:100%;
+  object-fit:cover;
+  border:3px solid #111b2c;
+  border-radius:24px;
+  background:#243957;
 }
-.change-photo{
-  display:block;margin:14px auto 0;
-  color:#91a9ff;font-size:13px;cursor:pointer;
+
+.identity{min-width:0}
+.identity h1{
+  font-size:21px;
+  line-height:1.3;
+  overflow-wrap:anywhere;
 }
-input[type=file]{display:none}
-.field{margin-top:20px}
+
+.username{
+  color:var(--cyan);
+  font-size:13px;
+  margin-top:5px;
+}
+
+.online-label{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-top:9px;
+  color:#9eb1ca;
+  font-size:11px;
+}
+
+.online-dot{
+  width:7px;height:7px;
+  border-radius:50%;
+  background:#35d99a;
+  box-shadow:0 0 10px #35d99a;
+}
+
+.bio{
+  color:#b5c2d8;
+  font-size:13px;
+  line-height:1.65;
+  margin-top:20px;
+  overflow-wrap:anywhere;
+}
+
+.profile-actions{
+  display:flex;
+  gap:10px;
+  margin-top:21px;
+}
+
+.action-btn{
+  flex:1;
+  padding:12px 8px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:#1a2940;
+  color:white;
+  font-size:13px;
+  font-weight:750;
+}
+
+.primary-btn{
+  border:0;
+  color:#07111d;
+  background:linear-gradient(110deg,var(--cyan),#7795ff);
+}
+
+.action-btn:active{transform:scale(.98)}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin:15px 0;
+}
+
+.stat{
+  padding:16px 5px;
+  text-align:center;
+  border:1px solid var(--border);
+  border-radius:17px;
+  background:#111b2c;
+}
+
+.stat strong{
+  display:block;
+  font-size:20px;
+  color:white;
+}
+
+.stat span{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  margin-top:4px;
+}
+
+.section{
+  margin-top:17px;
+  padding:19px 16px;
+  border:1px solid var(--border);
+  border-radius:21px;
+  background:#111b2c;
+}
+
+.section-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:16px;
+}
+
+.section-heading h2{font-size:16px}
+.section-heading small{color:var(--muted);font-size:11px}
+
+.post-tools{
+  display:flex;
+  gap:9px;
+  margin-bottom:17px;
+}
+
+.post-create{
+  width:100%;
+  padding:12px;
+  border:1px solid #34506b;
+  border-radius:13px;
+  background:#172941;
+  color:var(--cyan);
+  font-weight:700;
+}
+
+.empty-posts{
+  text-align:center;
+  padding:26px 12px;
+  border:1px dashed #34445d;
+  border-radius:16px;
+}
+
+.empty-icon{
+  width:54px;height:54px;
+  display:grid;place-items:center;
+  margin:0 auto 12px;
+  border-radius:18px;
+  background:#1d3047;
+  color:var(--cyan);
+  font-size:25px;
+}
+
+.empty-posts h3{font-size:14px}
+.empty-posts p{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6;
+  margin-top:7px;
+}
+
+.edit-card{display:none}
+.edit-card.open{display:block}
+
+.field{margin-top:16px}
 .field label{
-  display:block;color:#aab5ce;font-size:13px;
-  margin-bottom:9px;
+  display:block;
+  color:#aabbd2;
+  font-size:12px;
+  margin-bottom:8px;
 }
+
 .field input,.field textarea{
-  width:100%;padding:14px;
-  border:1px solid #303d59;border-radius:12px;
-  background:#0b1220;color:white;font-size:15px;
+  width:100%;
+  padding:13px;
+  border:1px solid #30425d;
+  border-radius:12px;
+  background:#0a1423;
+  color:white;
   outline:none;
 }
-.field input:focus,.field textarea:focus{border-color:#6683ff}
-.field textarea{resize:vertical;min-height:95px}
-.field input[readonly]{opacity:.65}
-.hint{font-size:11px;color:#8794b0;margin-top:7px}
-.save{
-  width:100%;padding:15px;margin-top:23px;
-  background:linear-gradient(120deg,#526ff0,#7959e9);
-  color:white;border:0;border-radius:13px;
-  font-weight:bold;font-size:15px;cursor:pointer;
+
+.field input:focus,.field textarea:focus{
+  border-color:var(--cyan);
+  box-shadow:0 0 0 3px #42d9e815;
 }
-.logout{
-  width:100%;padding:14px;border-radius:13px;
-  border:1px solid #713b4a;background:#251522;
-  color:#ff8799;font-weight:bold;font-size:15px;
+
+.field textarea{
+  min-height:90px;
+  resize:vertical;
+}
+
+.hint{font-size:11px;color:var(--muted);margin-top:6px}
+
+.save-btn{
+  width:100%;
+  margin-top:19px;
+  padding:14px;
+  border:0;
+  border-radius:13px;
+  color:#07111d;
+  font-weight:800;
+  background:linear-gradient(110deg,var(--cyan),#8191ff);
+}
+
+.photo-change{
+  display:block;
+  width:max-content;
+  margin-top:10px;
+  color:var(--cyan);
+  font-size:12px;
   cursor:pointer;
 }
-.status{text-align:center;color:#a8b7d8;font-size:13px;margin-top:15px}
-.footer{text-align:center;color:#687692;font-size:12px;margin-top:25px}
+
+#photoInput{display:none}
+
+.account-card{
+  margin-top:17px;
+  padding:17px;
+  border:1px solid var(--border);
+  border-radius:19px;
+  background:#111b2c;
+}
+
+.account-card h3{font-size:14px;margin-bottom:13px}
+
+.account-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px 0;
+  color:#aabbd2;
+  font-size:12px;
+  border-bottom:1px solid #25344a;
+}
+
+.account-row:last-child{border:0}
+.account-row strong{color:white;font-weight:600;overflow-wrap:anywhere}
+
+.logout-btn{
+  width:100%;
+  padding:13px;
+  margin-top:13px;
+  border:1px solid #703c50;
+  border-radius:12px;
+  color:#ff9aaf;
+  background:#291722;
+  font-weight:700;
+}
+
+.status{
+  min-height:18px;
+  text-align:center;
+  color:var(--cyan);
+  font-size:12px;
+  margin:13px 0;
+}
+
+.footer{
+  text-align:center;
+  color:#64748b;
+  font-size:11px;
+  margin-top:25px;
+  letter-spacing:.5px;
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:10;
+  background:#020611d9;
+  padding:20px;
+  align-items:center;
+  justify-content:center;
+}
+
+.modal.open{display:flex}
+
+.modal-box{
+  width:100%;
+  max-width:420px;
+  padding:21px;
+  border:1px solid var(--border);
+  border-radius:21px;
+  background:#121d30;
+}
+
+.modal-box h2{font-size:18px}
+.modal-box p{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6;
+  margin-top:8px;
+}
+
+.modal-box textarea{
+  width:100%;
+  min-height:110px;
+  margin-top:16px;
+  padding:13px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#091321;
+  color:white;
+  resize:vertical;
+}
+
+.modal-actions{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+
+.modal-actions button{
+  flex:1;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:#1b2b43;
+  color:white;
+}
+
+@media(max-width:360px){
+  .profile-main{gap:12px}
+  .avatar-wrap{width:78px;height:78px}
+  .identity h1{font-size:18px}
+}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-  <header class="header">
-    <button class="back" id="backBtn">‹</button>
-    <div>
-      <h2>My Profile</h2>
-      <p>Manage your TELESUPAR account</p>
+  <header class="topbar">
+    <div class="brand">
+      <button class="icon-btn" id="backBtn">‹</button>
+      <div class="brand-logo">T</div>
+      <div>
+        <div class="brand-name">TELESUPAR</div>
+        <div class="brand-sub">YOUR DIGITAL SPACE</div>
+      </div>
     </div>
+    <button class="icon-btn" id="moreBtn" title="More">⋮</button>
   </header>
 
-  <section class="card">
+  <main>
+    <section class="profile-card">
+      <div class="profile-main">
+        <div class="avatar-wrap">
+          <img id="avatar" class="avatar" alt="Profile photo">
+        </div>
 
-    <div class="photo-area">
-      <img id="avatar" class="avatar" alt="Profile photo">
-      <label class="change-photo" for="photoInput">
-        📷 Change profile photo
-      </label>
-      <input id="photoInput" type="file" accept="image/*">
-    </div>
-
-    <form id="profileForm">
-
-      <div class="field">
-        <label>Display Name</label>
-        <input id="displayName" maxlength="40"
-          placeholder="Your name" required>
+        <div class="identity">
+          <h1 id="profileName">Loading...</h1>
+          <div class="username" id="profileUsername">@loading</div>
+          <div class="online-label" id="onlineLabel">
+            <span class="online-dot"></span>
+            <span>Checking status...</span>
+          </div>
+        </div>
       </div>
 
-      <div class="field">
-        <label>Username</label>
-        <input id="username" readonly>
-        <p class="hint">Username cannot be changed here.</p>
+      <p class="bio" id="profileBio">Loading profile information...</p>
+
+      <div class="profile-actions">
+        <button class="action-btn primary-btn" id="followBtn" hidden>
+          Follow
+        </button>
+        <button class="action-btn" id="messageBtn" hidden>
+          Message
+        </button>
+        <button class="action-btn primary-btn" id="editBtn" hidden>
+          Edit Profile
+        </button>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <strong id="postsCount">—</strong>
+        <span>Posts</span>
+      </div>
+      <div class="stat">
+        <strong id="followersCount">—</strong>
+        <span>Followers</span>
+      </div>
+      <div class="stat">
+        <strong id="followingCount">—</strong>
+        <span>Following</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <h2>Posts & Updates</h2>
+        <small id="postsLabel">Your activity</small>
       </div>
 
-      <div class="field">
-        <label>Email Address</label>
-        <input id="email" readonly>
+      <div class="post-tools" id="postTools" hidden>
+        <button class="post-create" id="createPostBtn">
+          ＋ Create a post
+        </button>
       </div>
 
-      <div class="field">
-        <label>About Me</label>
-        <textarea id="bio" maxlength="160"
-          placeholder="Write something about yourself..."></textarea>
-        <p class="hint">Maximum 160 characters.</p>
+      <div class="empty-posts" id="emptyPosts">
+        <div class="empty-icon">✦</div>
+        <h3>No posts yet</h3>
+        <p id="emptyPostText">
+          This space is ready for new updates and moments.
+        </p>
+      </div>
+    </section>
+
+    <section class="section edit-card" id="editCard">
+      <div class="section-heading">
+        <h2>Edit your profile</h2>
+        <small>Personal details</small>
       </div>
 
-      <button class="save" id="saveBtn" type="submit">
-        Save Changes
-      </button>
+      <form id="profileForm">
+        <div class="field">
+          <label for="displayName">Display Name</label>
+          <input id="displayName" maxlength="40"
+            placeholder="Your name" required>
+        </div>
 
-    </form>
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" readonly>
+          <p class="hint">Username cannot be changed here.</p>
+        </div>
 
-    <p class="status" id="status"></p>
-  </section>
+        <div class="field">
+          <label for="email">Email Address (Private)</label>
+          <input id="email" readonly>
+          <p class="hint">Only you can see your email address.</p>
+        </div>
 
-  <section class="card">
-    <h3 style="margin-bottom:18px">Account</h3>
-    <button class="logout" id="logoutBtn">Log Out</button>
-  </section>
+        <div class="field">
+          <label for="bio">About Me</label>
+          <textarea id="bio" maxlength="160"
+            placeholder="Write something about yourself..."></textarea>
+          <p class="hint">Maximum 160 characters.</p>
+        </div>
 
-  <div class="footer">TELESUPAR • Your conversations, your space</div>
+        <label class="photo-change" for="photoInput">
+          Change profile photo
+        </label>
+        <input id="photoInput" type="file" accept="image/*">
 
+        <button class="save-btn" id="saveBtn" type="submit">
+          Save Changes
+        </button>
+      </form>
+    </section>
+
+    <section class="account-card" id="accountCard">
+      <h3>Account Information</h3>
+      <div class="account-row">
+        <span>Member since</span>
+        <strong id="memberSince">—</strong>
+      </div>
+      <div class="account-row">
+        <span>Account status</span>
+        <strong id="accountStatus">—</strong>
+      </div>
+      <button class="logout-btn" id="logoutBtn">Log Out</button>
+    </section>
+
+    <p class="status" id="status" role="status"></p>
+  </main>
+
+  <div class="footer">
+    TELESUPAR · YOUR CONVERSATIONS, YOUR COMMUNITY
+  </div>
 </div>
 
+<!-- Create Post Preview -->
+<div class="modal" id="postModal">
+  <div class="modal-box">
+    <h2>Create a post</h2>
+    <p>
+      Your post composer is ready. Publishing will be connected
+      when the secure Posts API is added.
+    </p>
+    <textarea id="postDraft" maxlength="2000"
+      placeholder="What's on your mind?"></textarea>
+    <div class="modal-actions">
+      <button id="closePostBtn">Cancel</button>
+      <button id="saveDraftBtn">Save draft locally</button>
+    </div>
+    <p id="draftStatus"></p>
+  </div>
+</div>
 
 <script>
+"use strict";
+
 const API_URL = "https://telesupar.onrender.com";
 const token = localStorage.getItem("telesupar_token");
+const params = new URLSearchParams(location.search);
+const viewedUserId = params.get("id");
+const isPublicProfile = Boolean(viewedUserId);
+
+const $ = id => document.getElementById(id);
+
+let currentProfile = null;
 
 if (!token) {
   location.replace("login.html");
 }
 
-const $ = id => document.getElementById(id);
-
-const params = new URLSearchParams(location.search);
-const viewedUserId = params.get("id");
-const isPublicProfile = Boolean(viewedUserId);
-
 function showStatus(message) {
-  $("status").textContent = message;
+  $("status").textContent = message || "";
 }
 
-function saveLocalUser(user) {
-  localStorage.setItem("telesupar_user", JSON.stringify(user));
+function setText(id, value) {
+  $(id).textContent = value == null ? "" : String(value);
+}
+
+function avatarFallback(user) {
+  const name = user.displayName || user.username || "User";
+  return "https://ui-avatars.com/api/?name=" +
+    encodeURIComponent(name) +
+    "&background=203b60&color=ffffff&size=200";
 }
 
 function setAvatar(user) {
-  const name = user.displayName || user.username || "U";
-
-  $("avatar").src = user.avatar ||
-    "https://ui-avatars.com/api/?name=" +
-    encodeURIComponent(name) +
-    "&background=263b67&color=ffffff&size=200";
+  $("avatar").src = user.avatar || avatarFallback(user);
 }
 
 async function api(path, options = {}) {
@@ -179,7 +657,12 @@ async function api(path, options = {}) {
     }
   });
 
-  const data = await response.json();
+  let data = {};
+  try {
+    data = await response.json();
+  } catch (_) {
+    throw new Error("Server returned an invalid response.");
+  }
 
   if (!response.ok) {
     throw new Error(data.message || "Request failed");
@@ -188,23 +671,66 @@ async function api(path, options = {}) {
   return data;
 }
 
-function displayUser(user) {
-  $("displayName").value = user.displayName || "";
-  $("username").value = user.username || "";
-  $("email").value = user.email || "";
-  $("bio").value = user.bio || "";
-  setAvatar(user);
+function formatDate(value) {
+  if (!value) return "Not available";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not available";
+
+  return date.toLocaleDateString("en-IN", {
+    month: "short",
+    year: "numeric"
+  });
 }
 
-function setPublicMode() {
-  $("displayName").readOnly = true;
-  $("username").readOnly = true;
-  $("email").readOnly = true;
-  $("bio").readOnly = true;
+function displayProfile(user) {
+  if (!user) throw new Error("Profile data not found.");
 
-  $("saveBtn").style.display = "none";
-  $("photoInput").style.display = "none";
-  $("logoutBtn").style.display = "none";
+  currentProfile = user;
+
+  setText("profileName", user.displayName || "User");
+  setText("profileUsername", "@" + (user.username || "unknown"));
+  setText("profileBio", user.bio || "No bio added yet.");
+  setAvatar(user);
+
+  const online = Boolean(user.isOnline);
+  $("onlineLabel").innerHTML = "";
+
+  const dot = document.createElement("span");
+  dot.className = "online-dot";
+  dot.style.background = online ? "#35d99a" : "#8995aa";
+
+  const label = document.createElement("span");
+  label.textContent = online ? "Online now" : "Offline";
+
+  $("onlineLabel").append(dot, label);
+
+  setText("memberSince", formatDate(user.createdAt));
+  setText("accountStatus", "Active");
+
+  // Do not invent statistics before the real APIs exist.
+  setText("postsCount", "—");
+  setText("followersCount", "—");
+  setText("followingCount", "—");
+}
+
+function setOwnProfileMode() {
+  $("editBtn").hidden = false;
+  $("postTools").hidden = false;
+  $("accountCard").hidden = false;
+  $("postsLabel").textContent = "Your activity";
+  $("emptyPostText").textContent =
+    "Your posts will appear here when the Posts feature is connected.";
+}
+
+function setPublicProfileMode() {
+  $("followBtn").hidden = false;
+  $("messageBtn").hidden = false;
+  $("accountCard").hidden = true;
+  $("postsLabel").textContent = "Profile activity";
+  $("emptyPostText").textContent =
+    "This user has no published posts to show yet.";
+  $("editCard").classList.remove("open");
 }
 
 async function loadProfile() {
@@ -212,33 +738,52 @@ async function loadProfile() {
     showStatus("Loading profile...");
 
     if (isPublicProfile) {
-      setPublicMode();
+      setPublicProfileMode();
 
       const data = await api(
-        "/api/users/" +
-        encodeURIComponent(viewedUserId) +
-        "/profile"
+        "/api/users/" + encodeURIComponent(viewedUserId) + "/profile"
       );
 
-      const user = data.profile;
+      displayProfile(data.profile);
+    } else {
+      setOwnProfileMode();
 
-      displayUser(user);
-      showStatus("");
-      return;
+      const data = await api("/api/me");
+
+      displayProfile(data.user);
+
+      $("displayName").value = data.user.displayName || "";
+      $("username").value = data.user.username || "";
+      $("email").value = data.user.email || "";
+      $("bio").value = data.user.bio || "";
+
+      localStorage.setItem("telesupar_user", JSON.stringify(data.user));
     }
 
-    const data = await api("/api/me");
-
-    displayUser(data.user);
-    saveLocalUser(data.user);
     showStatus("");
 
   } catch (error) {
     showStatus(error.message);
+
+    if (
+      error.message.toLowerCase().includes("token") ||
+      error.message.toLowerCase().includes("unauthorized")
+    ) {
+      logout();
+    }
   }
 }
 
-// Save profile: own profile only
+// Edit profile
+$("editBtn").addEventListener("click", function() {
+  $("editCard").classList.toggle("open");
+  $("editCard").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+});
+
+// Save profile
 $("profileForm").addEventListener("submit", async function(event) {
   event.preventDefault();
 
@@ -246,6 +791,11 @@ $("profileForm").addEventListener("submit", async function(event) {
 
   const displayName = $("displayName").value.trim();
   const bio = $("bio").value.trim();
+
+  if (!displayName) {
+    showStatus("Please enter your display name.");
+    return;
+  }
 
   $("saveBtn").disabled = true;
   $("saveBtn").textContent = "Saving...";
@@ -257,9 +807,10 @@ $("profileForm").addEventListener("submit", async function(event) {
       body: JSON.stringify({displayName, bio})
     });
 
-    displayUser(data.user);
-    saveLocalUser(data.user);
-    showStatus("✓ Profile saved successfully");
+    displayProfile(data.user);
+    localStorage.setItem("telesupar_user", JSON.stringify(data.user));
+    $("editCard").classList.remove("open");
+    showStatus("Profile updated successfully.");
 
   } catch (error) {
     showStatus(error.message);
@@ -269,7 +820,7 @@ $("profileForm").addEventListener("submit", async function(event) {
   }
 });
 
-// Upload photo: own profile only
+// Upload profile photo
 $("photoInput").addEventListener("change", async function() {
   if (isPublicProfile) return;
 
@@ -278,11 +829,13 @@ $("photoInput").addEventListener("change", async function() {
 
   if (!file.type.startsWith("image/")) {
     showStatus("Please select an image.");
+    this.value = "";
     return;
   }
 
   if (file.size > 10 * 1024 * 1024) {
     showStatus("Image must be under 10 MB.");
+    this.value = "";
     return;
   }
 
@@ -297,15 +850,48 @@ $("photoInput").addEventListener("change", async function() {
       body: formData
     });
 
-    displayUser(data.user);
-    saveLocalUser(data.user);
-    showStatus("✓ Profile photo updated");
+    displayProfile(data.user);
+    localStorage.setItem("telesupar_user", JSON.stringify(data.user));
+    $("avatar").scrollIntoView({behavior:"smooth",block:"center"});
+    showStatus("Profile photo updated.");
 
   } catch (error) {
     showStatus(error.message);
   }
 
   this.value = "";
+});
+
+// Follow is shown in the interface, but waits for secure backend API.
+$("followBtn").addEventListener("click", function() {
+  showStatus("Follow feature will be activated with the secure Follow API.");
+});
+
+// Message button - conversation API integration comes next.
+$("messageBtn").addEventListener("click", function() {
+  showStatus("Message connection will be activated in the next integration step.");
+});
+
+// Create post composer
+$("createPostBtn").addEventListener("click", function() {
+  $("postModal").classList.add("open");
+});
+
+$("closePostBtn").addEventListener("click", function() {
+  $("postModal").classList.remove("open");
+});
+
+$("saveDraftBtn").addEventListener("click", function() {
+  const draft = $("postDraft").value.trim();
+
+  if (!draft) {
+    $("draftStatus").textContent = "Write something first.";
+    return;
+  }
+
+  // Local draft only; not published or sent to the server.
+  localStorage.setItem("telesupar_post_draft", draft);
+  $("draftStatus").textContent = "Draft saved on this device.";
 });
 
 function logout() {
@@ -321,10 +907,24 @@ $("logoutBtn").addEventListener("click", function() {
 });
 
 $("backBtn").addEventListener("click", function() {
-  location.href = "home.html";
+  if (history.length > 1) {
+    history.back();
+  } else {
+    location.href = "home.html";
+  }
+});
+
+$("moreBtn").addEventListener("click", function() {
+  if (!isPublicProfile) {
+    $("editCard").classList.add("open");
+    $("editCard").scrollIntoView({behavior:"smooth"});
+  } else {
+    showStatus("More profile options will be added with the privacy controls.");
+  }
 });
 
 loadProfile();
 </script>
+
 </body>
 </html>
