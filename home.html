@@ -369,48 +369,173 @@
     }
 
     /* BOTTOM NAV */
+/* V5 PINK GLASS NAVIGATION */
 
-    .bottom-nav{
-      position:fixed;
-      left:0;
-      right:0;
-      bottom:0;
-      z-index:25;
-      height:67px;
-      display:flex;
-      justify-content:center;
-      background:rgba(10,13,20,.94);
-      backdrop-filter:blur(20px);
-      border-top:1px solid rgba(255,255,255,.07);
-    }
+.bottom-nav {
+  position:fixed;
+  bottom:13px;
+  left:12px;
+  right:12px;
+  height:76px;
+  z-index:100;
 
-    .nav-inner{
-      width:100%;
-      max-width:760px;
-      display:flex;
-      justify-content:space-around;
-    }
+  background:rgba(255,255,255,.09);
+  backdrop-filter:blur(25px);
+  -webkit-backdrop-filter:blur(25px);
 
-    .nav-btn{
-      width:25%;
-      background:transparent;
-      color:var(--muted);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:5px;
-      font-size:20px;
-    }
+  border:1px solid rgba(255,255,255,.19);
+  border-radius:25px;
 
-    .nav-btn span{
-      font-size:9px;
-      font-weight:600;
-    }
+  box-shadow:
+    0 10px 35px rgba(0,0,0,.4),
+    0 0 25px rgba(255,90,180,.08);
+}
 
-    .nav-btn.active{
-      color:var(--accent);
-    }
+.nav-inner {
+  height:100%;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+}
+
+.nav-btn {
+  flex:1;
+  height:62px;
+  margin:5px 2px;
+  background:transparent;
+  color:#a99bad;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+
+  border-radius:17px;
+  transition:all .3s ease;
+}
+
+.nav-btn .nav-icon {
+  font-size:23px;
+  line-height:25px;
+}
+
+.nav-btn span:last-child {
+  font-size:10px;
+  font-weight:600;
+}
+
+.nav-btn.active {
+  color:#ff91ce;
+  background:rgba(255,105,190,.16);
+  box-shadow:0 0 20px rgba(255,105,190,.15);
+  transform:translateY(-3px);
+}
+
+.nav-btn:active {
+  transform:scale(.91);
+}
+
+/* GROUP GLASS POPUP */
+
+.group-modal {
+  position:fixed;
+  inset:0;
+  z-index:200;
+  background:rgba(0,0,0,.65);
+  backdrop-filter:blur(7px);
+  display:none;
+  align-items:flex-end;
+}
+
+.group-modal.show {
+  display:flex;
+}
+
+.group-sheet {
+  width:100%;
+  padding:13px 20px 30px;
+  background:rgba(31,22,40,.96);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:27px 27px 0 0;
+  box-shadow:0 -10px 40px rgba(255,90,180,.12);
+  animation:sheetUp .3s ease;
+}
+
+@keyframes sheetUp {
+  from {transform:translateY(100%)}
+  to {transform:translateY(0)}
+}
+
+.sheet-handle {
+  width:42px;
+  height:4px;
+  border-radius:10px;
+  background:#8c718c;
+  margin:0 auto 22px;
+}
+
+.group-sheet h2 {
+  font-size:21px;
+  color:white;
+}
+
+.group-sheet > p {
+  color:#b7a6bd;
+  font-size:12px;
+  margin:7px 0 20px;
+}
+
+.group-option {
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:17px;
+  margin-bottom:12px;
+
+  color:white;
+  text-align:left;
+  border-radius:18px;
+
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.13);
+  transition:.2s;
+}
+
+.group-option:active {
+  transform:scale(.97);
+  background:rgba(255,120,195,.15);
+}
+
+.option-icon {
+  font-size:28px;
+}
+
+.option-info {
+  flex:1;
+}
+
+.option-info b {
+  display:block;
+  font-size:14px;
+}
+
+.option-info small {
+  display:block;
+  color:#b7a6bd;
+  font-size:11px;
+  margin-top:5px;
+}
+
+.close-group {
+  width:100%;
+  padding:14px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;
+  color:white;
+  background:rgba(255,255,255,.08);
+}
 
     /* TOAST */
 
@@ -925,51 +1050,73 @@
 
 
   <!-- BOTTOM NAV -->
+<!-- TELESUPAR V5 PINK GLASS NAV -->
 
-  <nav class="bottom-nav">
+<nav class="bottom-nav">
+  <div class="nav-inner">
 
-    <div class="nav-inner">
+    <button class="nav-btn" data-page="home">
+      <span class="nav-icon">⌂</span>
+      <span>Home</span>
+    </button>
 
-      <button
-        class="nav-btn active"
-        data-page="chats"
-        type="button"
-      >
-        💬
-        <span>Chats</span>
-      </button>
+    <button class="nav-btn active" data-page="chat">
+      <span class="nav-icon">◉</span>
+      <span>Chat</span>
+    </button>
 
-      <button
-        class="nav-btn"
-        data-page="contacts"
-        type="button"
-      >
-        👥
-        <span>Contacts</span>
-      </button>
+    <button class="nav-btn" data-page="explore">
+      <span class="nav-icon">⌕</span>
+      <span>Explore</span>
+    </button>
 
-      <button
-        class="nav-btn"
-        data-page="profile"
-        type="button"
-      >
-        👤
-        <span>Profile</span>
-      </button>
+    <button class="nav-btn" data-page="group">
+      <span class="nav-icon">♧</span>
+      <span>Group</span>
+    </button>
 
-      <button
-        class="nav-btn"
-        data-page="settings"
-        type="button"
-      >
-        ⚙️
-        <span>Settings</span>
-      </button>
+    <button class="nav-btn" data-page="profile">
+      <span class="nav-icon">◎</span>
+      <span>Profile</span>
+    </button>
 
-    </div>
+  </div>
+</nav>
 
-  </nav>
+<!-- GROUP OPTIONS POPUP -->
 
+<div class="group-modal" id="groupModal">
+  <div class="group-sheet">
+
+    <div class="sheet-handle"></div>
+
+    <h2>Community</h2>
+    <p>Create your own community on TELESUPAR</p>
+
+    <button class="group-option" onclick="openGroupPage()">
+      <span class="option-icon">👥</span>
+      <span class="option-info">
+        <b>Create Group</b>
+        <small>Chat together with your members</small>
+      </span>
+      <span>›</span>
+    </button>
+
+    <button class="group-option" onclick="openChannelPage()">
+      <span class="option-icon">📢</span>
+      <span class="option-info">
+        <b>Create Channel</b>
+        <small>Share updates with your audience</small>
+      </span>
+      <span>›</span>
+    </button>
+
+    <button class="close-group" onclick="closeGroupModal()">
+      Cancel
+    </button>
+
+  </div>
+</div>
 
   <div
     id="toast"
@@ -2402,62 +2549,75 @@ storyFileInput.addEventListener("change", async () => {
     /* =================================
        NAVIGATION
     ================================= */
+/* =================================
+   TELESUPAR V5 NAVIGATION
+================================= */
 
-    document.querySelectorAll(
-      ".nav-btn"
-    ).forEach(
-      button => {
+const groupModal = document.getElementById("groupModal");
 
-        button.addEventListener(
-          "click",
-          function(){
+function openGroupModal() {
+  groupModal.classList.add("show");
+}
 
-            const page =
-              button.dataset.page;
+function closeGroupModal() {
+  groupModal.classList.remove("show");
+}
 
+function openGroupPage() {
+  window.location.href = "create-group.html";
+}
 
-            if(page === "chats"){
-              return;
-            }
+function openChannelPage() {
+  window.location.href = "create-channel.html";
+}
 
+groupModal.addEventListener("click", function(e) {
+  if (e.target === groupModal) {
+    closeGroupModal();
+  }
+});
 
-            if(page === "contacts"){
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    closeGroupModal();
+  }
+});
 
-              searchInput.focus();
+document.querySelectorAll(".nav-btn").forEach(button => {
 
-              showToast(
-                "Search users from here"
-              );
+  button.addEventListener("click", function() {
 
-              return;
+    const page = button.dataset.page;
 
-            }
+    if (page === "group") {
+      openGroupModal();
+      return;
+    }
 
+    if (page === "chat") {
+      window.location.href = "home.html";
+      return;
+    }
 
-            if(page === "profile"){
+    if (page === "home") {
+      window.location.href = "index.html";
+      return;
+    }
 
-              window.location.href =
-                "profile.html";
+    if (page === "explore") {
+      window.location.href = "explore.html";
+      return;
+    }
 
-              return;
+    if (page === "profile") {
+      window.location.href = "profile.html";
+      return;
+    }
 
-            }
+  });
 
+});
 
-            if(page === "settings"){
-
-              window.location.href =
-                "settings.html";
-
-              return;
-
-            }
-
-          }
-        );
-
-      }
-    );
 
 
     /* =================================
