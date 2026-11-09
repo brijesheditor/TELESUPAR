@@ -131,6 +131,7 @@ let messages;
 let conversations;
 let stories;
 let posts;
+let notifications;
 
 const client =
     new MongoClient(
@@ -183,6 +184,18 @@ async function connectDatabase() {
         db.collection("stories");
 
   posts = db.collection("posts");
+
+  notifications = db.collection("notifications");
+
+await notifications.createIndex({
+  recipientId: 1,
+  createdAt: -1
+});
+
+await notifications.createIndex({
+  recipientId: 1,
+  read: 1
+});
 
 await posts.createIndex({ createdAt: -1 });
 
