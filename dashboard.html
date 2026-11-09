@@ -1,0 +1,683 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TELESUPAR — Home</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #090914;
+  --panel: #171526;
+  --pink: #ff75c8;
+  --purple: #a879ff;
+  --muted: #aaa3bc;
+}
+
+body {
+  min-height: 100vh;
+  padding-bottom: 110px;
+  font-family: Arial, sans-serif;
+  color: white;
+  background:
+    radial-gradient(circle at 10% 0%, #392044 0%, transparent 35%),
+    radial-gradient(circle at 100% 30%, #211943 0%, transparent 35%),
+    var(--bg);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.container {
+  max-width: 650px;
+  margin: auto;
+  padding: 20px 17px;
+}
+
+/* HEADER */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 27px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #ff65c1, #8959ff);
+  font-size: 22px;
+  font-weight: bold;
+  box-shadow: 0 0 20px #ff65c144;
+}
+
+.brand h2 {
+  font-size: 19px;
+  letter-spacing: .5px;
+}
+
+.brand small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.header-btn {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #ffffff20;
+  border-radius: 14px;
+  background: #ffffff0d;
+  color: white;
+  font-size: 20px;
+}
+
+/* WELCOME */
+
+.welcome {
+  padding: 23px 20px;
+  border-radius: 25px;
+  background: linear-gradient(125deg, #42214c, #211c42);
+  border: 1px solid #ffffff20;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 25px;
+}
+
+.welcome:after {
+  content: "✦";
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  font-size: 75px;
+  color: #ffffff12;
+}
+
+.welcome .tag {
+  color: #ff9cda;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.welcome h1 {
+  font-size: 25px;
+  margin: 12px 0 8px;
+}
+
+.welcome p {
+  color: #d0c3df;
+  font-size: 12px;
+  line-height: 1.6;
+  max-width: 240px;
+}
+
+/* SECTION */
+
+.section {
+  margin-top: 27px;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.section-head h3 {
+  font-size: 16px;
+}
+
+.section-head a {
+  color: var(--pink);
+  font-size: 11px;
+  text-decoration: none;
+}
+
+/* QUICK ACTIONS */
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 11px;
+}
+
+.action {
+  min-height: 112px;
+  border-radius: 19px;
+  border: 1px solid #ffffff18;
+  background: #ffffff0c;
+  color: white;
+  padding: 15px 8px;
+  text-align: center;
+  transition: .2s;
+}
+
+.action:active {
+  transform: scale(.94);
+  background: #ff75c822;
+}
+
+.action .emoji {
+  width: 43px;
+  height: 43px;
+  margin: 0 auto 10px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+  background: linear-gradient(135deg, #ff75c833, #9b72ff33);
+}
+
+.action b {
+  display: block;
+  font-size: 11px;
+}
+
+.action small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+/* EXPLORE CARD */
+
+.explore-card {
+  padding: 19px;
+  border-radius: 21px;
+  border: 1px solid #ffffff18;
+  background: linear-gradient(120deg, #241d3d, #251a31);
+}
+
+.explore-card h3 {
+  font-size: 17px;
+  margin-bottom: 7px;
+}
+
+.explore-card p {
+  color: #bdb2cc;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.primary-btn {
+  border: none;
+  margin-top: 15px;
+  padding: 11px 17px;
+  border-radius: 12px;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  background: linear-gradient(100deg, #ff65bc, #9764ff);
+}
+
+/* FEATURE ROW */
+
+.feature-list {
+  display: grid;
+  gap: 11px;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid #ffffff15;
+  background: #ffffff09;
+  border-radius: 17px;
+  color: white;
+  text-decoration: none;
+}
+
+.feature-icon {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  font-size: 20px;
+  background: #ff75c822;
+}
+
+.feature-info {
+  flex: 1;
+}
+
+.feature-info b {
+  display: block;
+  font-size: 12px;
+}
+
+.feature-info small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 5px;
+}
+
+.arrow {
+  color: var(--pink);
+  font-size: 20px;
+}
+
+.footer {
+  text-align: center;
+  color: #766e85;
+  font-size: 10px;
+  padding: 28px 0 10px;
+}
+
+/* BOTTOM NAV */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 13px;
+  left: 12px;
+  right: 12px;
+  height: 76px;
+  z-index: 100;
+  background: rgba(255,255,255,.09);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255,255,255,.19);
+  border-radius: 25px;
+  box-shadow: 0 10px 35px #0006, 0 0 25px #ff5ab414;
+}
+
+.nav-inner {
+  height: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.nav-btn {
+  flex: 1;
+  height: 62px;
+  margin: 5px 2px;
+  border: none;
+  background: transparent;
+  color: #a99bad;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 17px;
+  transition: .3s;
+}
+
+.nav-icon {
+  font-size: 23px;
+  line-height: 25px;
+}
+
+.nav-btn span:last-child {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.nav-btn.active {
+  color: #ff91ce;
+  background: #ff69be29;
+  box-shadow: 0 0 20px #ff69be26;
+  transform: translateY(-3px);
+}
+
+.nav-btn:active {
+  transform: scale(.91);
+}
+
+/* GROUP POPUP */
+
+.group-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #000a;
+  backdrop-filter: blur(7px);
+  display: none;
+  align-items: flex-end;
+}
+
+.group-modal.show {
+  display: flex;
+}
+
+.group-sheet {
+  width: 100%;
+  padding: 13px 20px 30px;
+  background: #21182df5;
+  border: 1px solid #ffffff22;
+  border-radius: 27px 27px 0 0;
+  animation: sheetUp .3s ease;
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.sheet-handle {
+  width: 42px;
+  height: 4px;
+  border-radius: 10px;
+  background: #8c718c;
+  margin: 0 auto 22px;
+}
+
+.group-sheet h2 {
+  font-size: 21px;
+}
+
+.group-sheet > p {
+  color: #b7a6bd;
+  font-size: 12px;
+  margin: 7px 0 20px;
+}
+
+.group-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 17px;
+  margin-bottom: 12px;
+  color: white;
+  text-align: left;
+  border-radius: 18px;
+  background: #ffffff12;
+  border: 1px solid #ffffff20;
+}
+
+.option-icon {
+  font-size: 28px;
+}
+
+.option-info {
+  flex: 1;
+}
+
+.option-info b {
+  display: block;
+  font-size: 14px;
+}
+
+.option-info small {
+  display: block;
+  color: #b7a6bd;
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.close-group {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ffffff18;
+  border-radius: 14px;
+  color: white;
+  background: #ffffff12;
+}
+
+@media (min-width: 700px) {
+  .container {
+    padding-top: 30px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="brand">
+      <div class="logo">T</div>
+      <div>
+        <h2>TELESUPAR</h2>
+        <small>CONNECT • CHAT • SHARE</small>
+      </div>
+    </div>
+    <button class="header-btn" onclick="goTo('profile.html')">◎</button>
+  </header>
+
+  <!-- WELCOME -->
+  <section class="welcome">
+    <span class="tag">WELCOME TO TELESUPAR</span>
+    <h1>Hello, Welcome! 👋</h1>
+    <p>Your space to connect with people, chat with friends and build communities.</p>
+  </section>
+
+  <!-- QUICK ACTIONS -->
+  <section class="section">
+    <div class="section-head">
+      <h3>Quick Actions</h3>
+    </div>
+
+    <div class="actions">
+
+      <button class="action" onclick="goTo('home.html')">
+        <span class="emoji">💬</span>
+        <b>New Chat</b>
+        <small>Message friends</small>
+      </button>
+
+      <button class="action" onclick="openGroupModal()">
+        <span class="emoji">👥</span>
+        <b>Create Group</b>
+        <small>Build community</small>
+      </button>
+
+      <button class="action" onclick="openChannelPage()">
+        <span class="emoji">📢</span>
+        <b>Channel</b>
+        <small>Share updates</small>
+      </button>
+
+    </div>
+  </section>
+
+  <!-- EXPLORE -->
+  <section class="section">
+    <div class="section-head">
+      <h3>Discover TELESUPAR</h3>
+      <a href="explore.html">Explore →</a>
+    </div>
+
+    <div class="explore-card">
+      <h3>Discover New People ✨</h3>
+      <p>Find people and communities. Explore what's available on TELESUPAR.</p>
+      <button class="primary-btn" onclick="goTo('explore.html')">
+        Explore Now →
+      </button>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section">
+    <div class="section-head">
+      <h3>Your Space</h3>
+    </div>
+
+    <div class="feature-list">
+
+      <a class="feature" href="home.html">
+        <span class="feature-icon">💬</span>
+        <span class="feature-info">
+          <b>Messages</b>
+          <small>Open your conversations</small>
+        </span>
+        <span class="arrow">›</span>
+      </a>
+
+      <a class="feature" href="explore.html">
+        <span class="feature-icon">🌍</span>
+        <span class="feature-info">
+          <b>Explore People</b>
+          <small>Discover people and communities</small>
+        </span>
+        <span class="arrow">›</span>
+      </a>
+
+      <a class="feature" href="profile.html">
+        <span class="feature-icon">👤</span>
+        <span class="feature-info">
+          <b>My Profile</b>
+          <small>View your profile</small>
+        </span>
+        <span class="arrow">›</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    TELESUPAR V5 • Made for connection ❤️
+  </footer>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="nav-inner">
+
+    <button class="nav-btn active" data-page="home">
+      <span class="nav-icon">⌂</span>
+      <span>Home</span>
+    </button>
+
+    <button class="nav-btn" data-page="chat">
+      <span class="nav-icon">◉</span>
+      <span>Chat</span>
+    </button>
+
+    <button class="nav-btn" data-page="explore">
+      <span class="nav-icon">⌕</span>
+      <span>Explore</span>
+    </button>
+
+    <button class="nav-btn" data-page="group">
+      <span class="nav-icon">♧</span>
+      <span>Group</span>
+    </button>
+
+    <button class="nav-btn" data-page="profile">
+      <span class="nav-icon">◎</span>
+      <span>Profile</span>
+    </button>
+
+  </div>
+</nav>
+
+<!-- GROUP MODAL -->
+<div class="group-modal" id="groupModal">
+  <div class="group-sheet">
+
+    <div class="sheet-handle"></div>
+    <h2>Community</h2>
+    <p>Create your own community on TELESUPAR</p>
+
+    <button class="group-option" onclick="openGroupPage()">
+      <span class="option-icon">👥</span>
+      <span class="option-info">
+        <b>Create Group</b>
+        <small>Chat together with your members</small>
+      </span>
+      <span>›</span>
+    </button>
+
+    <button class="group-option" onclick="openChannelPage()">
+      <span class="option-icon">📢</span>
+      <span class="option-info">
+        <b>Create Channel</b>
+        <small>Share updates with your audience</small>
+      </span>
+      <span>›</span>
+    </button>
+
+    <button class="close-group" onclick="closeGroupModal()">
+      Cancel
+    </button>
+
+  </div>
+</div>
+
+<script>
+function goTo(page) {
+  window.location.href = page;
+}
+
+const groupModal = document.getElementById("groupModal");
+
+function openGroupModal() {
+  groupModal.classList.add("show");
+}
+
+function closeGroupModal() {
+  groupModal.classList.remove("show");
+}
+
+function openGroupPage() {
+  goTo("create-group.html");
+}
+
+function openChannelPage() {
+  goTo("create-channel.html");
+}
+
+groupModal.addEventListener("click", function(e) {
+  if (e.target === groupModal) closeGroupModal();
+});
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") closeGroupModal();
+});
+
+document.querySelectorAll(".nav-btn").forEach(button => {
+  button.addEventListener("click", function() {
+    const page = button.dataset.page;
+
+    if (page === "group") {
+      openGroupModal();
+      return;
+    }
+
+    const pages = {
+      home: "index.html",
+      chat: "home.html",
+      explore: "explore.html",
+      profile: "profile.html"
+    };
+
+    if (pages[page]) goTo(pages[page]);
+  });
+});
+</script>
+
+</body>
+</html>
