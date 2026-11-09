@@ -447,120 +447,507 @@ button {
     padding-top: 30px;
   }
 }
+
+
+.social-container {
+  max-width: 680px;
+  margin: auto;
+  padding: 0 0 110px;
+}
+
+.social-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  background: rgba(12,10,23,.94);
+  backdrop-filter: blur(22px);
+  border-bottom: 1px solid #ffffff13;
+}
+
+.social-header .brand {
+  flex-shrink: 0;
+}
+
+.social-header .brand h2 {
+  font-size: 15px;
+  color: white;
+}
+
+.social-header .brand small {
+  color: #b8a5c5;
+  font-size: 8px;
+}
+
+.social-header .logo {
+  background: linear-gradient(135deg,#ff65bd,#875cff);
+  box-shadow: 0 0 18px #ff65bd40;
+}
+
+.mini-search {
+  flex: 1;
+  min-width: 0;
+  height: 37px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid #ffffff19;
+  border-radius: 13px;
+  background: #ffffff0d;
+}
+
+.mini-search span {
+  color: #ff91ce;
+  font-size: 20px;
+}
+
+.mini-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: white;
+  background: transparent;
+  font-size: 11px;
+}
+
+.profile-mini {
+  flex-shrink: 0;
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#ff75c8,#8c64ff);
+  color: white;
+  font-size: 19px;
+}
+
+.social-main {
+  padding: 17px 14px;
+}
+
+.feed-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 5px 2px 13px;
+}
+
+.feed-heading h3 {
+  color: white;
+  font-size: 15px;
+}
+
+.feed-heading small,
+.feed-heading span {
+  color: #ff91ce;
+  font-size: 10px;
+}
+
+.stories-section {
+  margin-bottom: 20px;
+}
+
+.stories-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 5px 2px 12px;
+  scrollbar-width: none;
+}
+
+.stories-row::-webkit-scrollbar {
+  display: none;
+}
+
+.story-item {
+  flex: 0 0 65px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  color: #e9dfee;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.story-ring {
+  width: 62px;
+  height: 62px;
+  padding: 3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#ffb000,#ff2878,#895cff);
+}
+
+.story-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid #100d1a;
+  background: #272039;
+  color: white;
+  font-size: 22px;
+}
+
+.story-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.add-story-ring {
+  background: #ffffff18;
+  border: 1px dashed #ff91ce;
+}
+
+.composer {
+  padding: 15px;
+  margin-bottom: 25px;
+  border: 1px solid #ffffff19;
+  border-radius: 20px;
+  background: linear-gradient(135deg,#21182f,#171426);
+  box-shadow: 0 10px 30px #0003;
+}
+
+.composer-top {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.my-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: bold;
+  background: linear-gradient(135deg,#ff65bd,#875cff);
+}
+
+.composer-top input {
+  width: 100%;
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid #ffffff17;
+  border-radius: 13px;
+  outline: none;
+  color: white;
+  background: #ffffff0b;
+  font-size: 12px;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #ffffff14;
+}
+
+.media-label {
+  color: #ff9bd3;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.publish-btn {
+  padding: 10px 17px;
+  border-radius: 12px;
+  color: white;
+  background: linear-gradient(100deg,#ff65bd,#9360ff);
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.selected-preview {
+  margin-top: 10px;
+  color: #c8b8d2;
+  font-size: 10px;
+}
+
+.feed-tabs {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ffffff15;
+}
+
+.post-card {
+  overflow: hidden;
+  margin-bottom: 20px;
+  border: 1px solid #ffffff17;
+  border-radius: 20px;
+  background: #171425;
+}
+
+.post-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+}
+
+.post-avatar {
+  width: 39px;
+  height: 39px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: linear-gradient(135deg,#ff65bd,#875cff);
+}
+
+.post-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-user {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-user b {
+  display: block;
+  font-size: 12px;
+}
+
+.post-user small {
+  color: #a99bb6;
+  font-size: 10px;
+}
+
+.post-media {
+  width: 100%;
+  max-height: 520px;
+  display: block;
+  object-fit: contain;
+  background: #080710;
+}
+
+.post-caption {
+  padding: 12px 14px;
+  color: #eee5f4;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.post-actions {
+  display: flex;
+  gap: 17px;
+  padding: 0 14px 15px;
+}
+
+.post-actions button {
+  color: #f5ddeb;
+  background: transparent;
+  font-size: 12px;
+}
+
+.post-actions button.liked {
+  color: #ff5d9d;
+}
+
+.feed-empty {
+  padding: 35px 15px;
+  text-align: center;
+  color: #a99bb6;
+  font-size: 12px;
+}
+
+.story-viewer {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 25px 14px;
+  background: #080710;
+  color: white;
+}
+
+.story-viewer.open {
+  display: flex;
+}
+
+.story-viewer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.story-viewer-top small {
+  display: block;
+  margin-top: 4px;
+  color: #b5a8c0;
+}
+
+.story-viewer-top button,
+.story-viewer-bottom button {
+  color: white;
+  background: #ffffff1c;
+  border-radius: 12px;
+  padding: 11px;
+}
+
+.story-media {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  margin: 18px 0;
+}
+
+.story-media img,
+.story-media video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.story-caption {
+  text-align: center;
+  font-size: 13px;
+  padding: 10px;
+}
+
+.story-viewer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.social-toast {
+  position: fixed;
+  z-index: 600;
+  bottom: 105px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 11px 17px;
+  border-radius: 12px;
+  color: white;
+  background: #30243b;
+  border: 1px solid #ffffff20;
+  font-size: 11px;
+  opacity: 0;
+  pointer-events: none;
+  transition: .2s;
+}
+
+.social-toast.show {
+  opacity: 1;
+}
+
+  
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="container social-container">
 
-  <!-- HEADER -->
-  <header class="header">
+  <header class="social-header">
     <div class="brand">
-      <div class="logo">T</div>
+      <div class="logo">TS</div>
       <div>
         <h2>TELESUPAR</h2>
-        <small>CONNECT • CHAT • SHARE</small>
+        <small>YOUR SOCIAL WORLD</small>
       </div>
     </div>
-    <button class="header-btn" onclick="goTo('profile.html')">◎</button>
+
+    <form id="feedSearch" class="mini-search">
+      <span>⌕</span>
+      <input id="topSearch" placeholder="Search..." />
+    </form>
+
+    <button class="profile-mini" onclick="goTo('profile.html')">◎</button>
   </header>
 
-  <!-- WELCOME -->
-  <section class="welcome">
-    <span class="tag">WELCOME TO TELESUPAR</span>
-    <h1>Hello, Welcome! 👋</h1>
-    <p>Your space to connect with people, chat with friends and build communities.</p>
-  </section>
+  <main class="social-main">
 
-  <!-- QUICK ACTIONS -->
-  <section class="section">
-    <div class="section-head">
-      <h3>Quick Actions</h3>
+    <section class="stories-section">
+      <div class="feed-heading">
+        <h3>Stories</h3>
+        <small>24 hours</small>
+      </div>
+
+      <div id="storiesRow" class="stories-row">
+        <div class="story-loading">Loading stories...</div>
+      </div>
+
+      <input type="file" id="storyFileInput"
+        accept="image/*,video/*" hidden>
+    </section>
+
+    <section class="composer">
+      <div class="composer-top">
+        <div class="my-avatar" id="myAvatar">T</div>
+        <input id="postCaption" maxlength="2200"
+          placeholder="What's happening today?" />
+      </div>
+
+      <div id="selectedPreview" class="selected-preview"></div>
+
+      <div class="composer-actions">
+        <label class="media-label" for="postFile">
+          <span>▧</span> Photo / Video
+        </label>
+        <input type="file" id="postFile"
+          accept="image/*,video/mp4,video/webm"
+          hidden>
+        <button id="publishPost" class="publish-btn">
+          Publish ↗
+        </button>
+      </div>
+    </section>
+
+    <div class="feed-heading feed-tabs">
+      <h3>Community Feed</h3>
+      <span>For You</span>
     </div>
 
-    <div class="actions">
+    <section id="postsFeed">
+      <div class="feed-empty">Loading posts...</div>
+    </section>
 
-      <button class="action" onclick="goTo('home.html')">
-        <span class="emoji">💬</span>
-        <b>New Chat</b>
-        <small>Message friends</small>
-      </button>
-
-      <button class="action" onclick="openGroupModal()">
-        <span class="emoji">👥</span>
-        <b>Create Group</b>
-        <small>Build community</small>
-      </button>
-
-      <button class="action" onclick="openChannelPage()">
-        <span class="emoji">📢</span>
-        <b>Channel</b>
-        <small>Share updates</small>
-      </button>
-
-    </div>
-  </section>
-
-  <!-- EXPLORE -->
-  <section class="section">
-    <div class="section-head">
-      <h3>Discover TELESUPAR</h3>
-      <a href="explore.html">Explore →</a>
-    </div>
-
-    <div class="explore-card">
-      <h3>Discover New People ✨</h3>
-      <p>Find people and communities. Explore what's available on TELESUPAR.</p>
-      <button class="primary-btn" onclick="goTo('explore.html')">
-        Explore Now →
-      </button>
-    </div>
-  </section>
-
-  <!-- FEATURES -->
-  <section class="section">
-    <div class="section-head">
-      <h3>Your Space</h3>
-    </div>
-
-    <div class="feature-list">
-
-      <a class="feature" href="home.html">
-        <span class="feature-icon">💬</span>
-        <span class="feature-info">
-          <b>Messages</b>
-          <small>Open your conversations</small>
-        </span>
-        <span class="arrow">›</span>
-      </a>
-
-      <a class="feature" href="explore.html">
-        <span class="feature-icon">🌍</span>
-        <span class="feature-info">
-          <b>Explore People</b>
-          <small>Discover people and communities</small>
-        </span>
-        <span class="arrow">›</span>
-      </a>
-
-      <a class="feature" href="profile.html">
-        <span class="feature-icon">👤</span>
-        <span class="feature-info">
-          <b>My Profile</b>
-          <small>View your profile</small>
-        </span>
-        <span class="arrow">›</span>
-      </a>
-
-    </div>
-  </section>
-
-  <footer class="footer">
-    TELESUPAR V5 • Made for connection ❤️
-  </footer>
-
+  </main>
 </div>
+
+<!-- STORY VIEWER -->
+<div id="storyViewer" class="story-viewer">
+  <div class="story-viewer-top">
+    <div>
+      <b id="storyOwnerName">Story</b>
+      <small id="storyOwnerTime"></small>
+    </div>
+    <button id="closeStory">✕</button>
+  </div>
+
+  <div id="storyMedia" class="story-media"></div>
+  <div id="storyCaption" class="story-caption"></div>
+
+  <div class="story-viewer-bottom">
+    <button id="storyPrev">‹ Previous</button>
+    <button id="storyLike">♡ Like</button>
+    <button id="storyNext">Next ›</button>
+  </div>
+</div>
+
+<div id="socialToast" class="social-toast"></div>
+
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
@@ -677,6 +1064,476 @@ document.querySelectorAll(".nav-btn").forEach(button => {
     if (pages[page]) goTo(pages[page]);
   });
 });
+
+  
+const SOCIAL_API = "https://telesupar.onrender.com";
+const SOCIAL_TOKEN = localStorage.getItem("telesupar_token");
+
+if (!SOCIAL_TOKEN) {
+  location.replace("login.html");
+}
+
+const $ = id => document.getElementById(id);
+
+function toast(message) {
+  const el = $("socialToast");
+  el.textContent = message;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2400);
+}
+
+function safeText(value) {
+  return String(value || "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+async function socialApi(path, options = {}) {
+  const headers = {
+    Authorization: "Bearer " + SOCIAL_TOKEN,
+    ...(options.headers || {})
+  };
+
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(SOCIAL_API + path, {
+    ...options,
+    headers
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Request failed");
+  }
+
+  return data;
+}
+
+// USER PROFILE
+async function loadSocialProfile() {
+  try {
+    const data = await socialApi("/api/me");
+
+    if (data.user) {
+      const user = data.user;
+      $("myAvatar").textContent =
+        (user.displayName || user.username || "T")[0].toUpperCase();
+
+      if (user.avatar) {
+        $("myAvatar").innerHTML =
+          `<img src="${safeText(user.avatar)}"
+          style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      }
+    }
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+// STORIES
+let storyGroups = [];
+let activeStories = [];
+let activeStoryIndex = 0;
+let activeStoryOwner = false;
+
+function storyAvatar(user) {
+  if (user.avatar) {
+    return `<img src="${safeText(user.avatar)}" alt="">`;
+  }
+
+  return safeText(
+    (user.displayName || user.username || "U")[0].toUpperCase()
+  );
+}
+
+async function loadSocialStories() {
+  const row = $("storiesRow");
+
+  try {
+    const data = await socialApi("/api/stories/feed");
+    if (!data.success) throw new Error("Stories unavailable");
+
+    storyGroups = [
+      ...(data.myStories?.length
+        ? [{
+            user: null,
+            stories: data.myStories,
+            owner: true
+          }]
+        : []),
+      ...(data.users || []).map(group => ({
+        ...group,
+        owner: false
+      }))
+    ];
+
+    row.innerHTML = "";
+
+    const myItem = document.createElement("div");
+    myItem.className = "story-item";
+
+    const latest = data.myStories?.[data.myStories.length - 1];
+
+    myItem.innerHTML = `
+      <div class="story-ring ${latest ? "" : "add-story-ring"}">
+        <div class="story-avatar">
+          ${latest ? (latest.resourceType === "video"
+            ? "▶"
+            : `<img src="${safeText(latest.mediaUrl)}">`) : "+"}
+        </div>
+      </div>
+      <span>${latest ? "My Story" : "Add Story"}</span>
+    `;
+
+    myItem.onclick = () => {
+      if (latest) {
+        openSocialStory(data.myStories, null, true, 0);
+      } else {
+        $("storyFileInput").click();
+      }
+    };
+
+    row.appendChild(myItem);
+
+    (data.users || []).forEach(group => {
+      const user = group.user || {};
+      const item = document.createElement("div");
+      item.className = "story-item";
+
+      item.innerHTML = `
+        <div class="story-ring">
+          <div class="story-avatar">${storyAvatar(user)}</div>
+        </div>
+        <span>${safeText(user.displayName || user.username)}</span>
+      `;
+
+      item.onclick = () =>
+        openSocialStory(group.stories, user, false, 0);
+
+      row.appendChild(item);
+    });
+
+  } catch (error) {
+    row.innerHTML = `<div class="feed-empty">Stories could not load</div>`;
+    console.error(error);
+  }
+}
+
+function openSocialStory(list, user, owner, index) {
+  activeStories = list || [];
+  activeStoryIndex = index;
+  activeStoryOwner = owner;
+  showSocialStory(user);
+}
+
+async function showSocialStory(user) {
+  const story = activeStories[activeStoryIndex];
+  if (!story) return;
+
+  $("storyOwnerName").textContent =
+    user?.displayName || user?.username || "My Story";
+
+  $("storyOwnerTime").textContent =
+    new Date(story.createdAt).toLocaleString();
+
+  $("storyCaption").textContent = story.caption || "";
+
+  $("storyMedia").innerHTML =
+    story.resourceType === "video"
+      ? `<video src="${safeText(story.mediaUrl)}" controls autoplay playsinline></video>`
+      : `<img src="${safeText(story.mediaUrl)}" alt="Story">`;
+
+  $("storyLike").style.display = activeStoryOwner ? "none" : "block";
+  $("storyLike").textContent = story.likedByMe ? "♥ Liked" : "♡ Like";
+
+  $("storyViewer").classList.add("open");
+
+  if (!activeStoryOwner) {
+    try {
+      await socialApi(`/api/stories/${story.id}/view`, {
+        method: "POST",
+        body: JSON.stringify({})
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+}
+
+$("closeStory").onclick = () => {
+  const video = $("storyMedia").querySelector("video");
+  if (video) video.pause();
+  $("storyViewer").classList.remove("open");
+};
+
+$("storyNext").onclick = () => {
+  if (activeStoryIndex < activeStories.length - 1) {
+    activeStoryIndex++;
+    showSocialStory(null);
+  } else {
+    $("closeStory").click();
+  }
+};
+
+$("storyPrev").onclick = () => {
+  if (activeStoryIndex > 0) {
+    activeStoryIndex--;
+    showSocialStory(null);
+  }
+};
+
+$("storyLike").onclick = async () => {
+  const story = activeStories[activeStoryIndex];
+  if (!story || activeStoryOwner) return;
+
+  try {
+    const result = await socialApi(
+      `/api/stories/${story.id}/like`,
+      {
+        method: "POST",
+        body: JSON.stringify({})
+      }
+    );
+
+    story.likedByMe = result.liked;
+    $("storyLike").textContent = result.liked ? "♥ Liked" : "♡ Like";
+  } catch (error) {
+    toast(error.message);
+  }
+};
+
+// UPLOAD STORY
+$("storyFileInput").addEventListener("change", async () => {
+  const file = $("storyFileInput").files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/") &&
+      !file.type.startsWith("video/")) {
+    toast("Choose a photo or video");
+    return;
+  }
+
+  if (file.size > 25 * 1024 * 1024) {
+    toast("Maximum size is 25 MB");
+    return;
+  }
+
+  const form = new FormData();
+  form.append("file", file);
+  form.append("caption", prompt("Story caption?") || "");
+
+  try {
+    toast("Uploading story...");
+    await socialApi("/api/stories", {
+      method: "POST",
+      body: form
+    });
+    await loadSocialStories();
+    toast("Story uploaded!");
+  } catch (error) {
+    toast(error.message);
+  } finally {
+    $("storyFileInput").value = "";
+  }
+});
+
+// POSTS FEED
+async function loadSocialPosts() {
+  const feed = $("postsFeed");
+  feed.innerHTML = `<div class="feed-empty">Loading posts...</div>`;
+
+  try {
+    const data = await socialApi("/api/posts/feed");
+    const posts = data.posts || [];
+
+    if (!posts.length) {
+      feed.innerHTML = `
+        <div class="feed-empty">
+          ✨<br><br>
+          No posts yet.<br>
+          Be the first to share something!
+        </div>`;
+      return;
+    }
+
+    feed.innerHTML = "";
+
+    posts.forEach(post => {
+      const user = post.user || {};
+      const card = document.createElement("article");
+      card.className = "post-card";
+
+      const avatar = user.avatar
+        ? `<img src="${safeText(user.avatar)}">`
+        : safeText((user.displayName || "U")[0].toUpperCase());
+
+      let media = "";
+
+      if (post.mediaUrl && post.mediaType === "video") {
+        media = `<video class="post-media"
+          src="${safeText(post.mediaUrl)}"
+          controls playsinline preload="metadata"></video>`;
+      } else if (post.mediaUrl) {
+        media = `<img class="post-media"
+          src="${safeText(post.mediaUrl)}" alt="Post">`;
+      }
+
+      card.innerHTML = `
+        <div class="post-head">
+          <div class="post-avatar">${avatar}</div>
+          <div class="post-user">
+            <b>${safeText(user.displayName || user.username)}</b>
+            <small>@${safeText(user.username || "")} ·
+            ${new Date(post.createdAt).toLocaleDateString()}</small>
+          </div>
+        </div>
+
+        ${media}
+
+        ${post.caption
+          ? `<div class="post-caption">${safeText(post.caption)}</div>`
+          : ""}
+
+        <div class="post-actions">
+          <button class="${post.likedByMe ? "liked" : ""}"
+            data-like="${safeText(post.id)}">
+            ${post.likedByMe ? "♥" : "♡"}
+            <span>${post.likesCount || 0}</span> Likes
+          </button>
+          <button type="button" disabled>Comment · Coming soon</button>
+          <button type="button"
+            data-share="${safeText(post.id)}">↗ Share</button>
+        </div>
+      `;
+
+      feed.appendChild(card);
+    });
+
+    feed.querySelectorAll("[data-like]").forEach(button => {
+      button.onclick = async () => {
+        try {
+          const result = await socialApi(
+            `/api/posts/${button.dataset.like}/like`,
+            {
+              method: "POST",
+              body: JSON.stringify({})
+            }
+          );
+
+          button.classList.toggle("liked", result.liked);
+          button.innerHTML =
+            `${result.liked ? "♥" : "♡"}
+            <span>${result.likesCount}</span> Likes`;
+        } catch (error) {
+          toast(error.message);
+        }
+      };
+    });
+
+    feed.querySelectorAll("[data-share]").forEach(button => {
+      button.onclick = async () => {
+        const url = location.href + "#post-" + button.dataset.share;
+
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: "TELESUPAR Post",
+              url
+            });
+          } catch (error) {
+            if (error.name !== "AbortError") toast("Share failed");
+          }
+        } else {
+          await navigator.clipboard.writeText(url);
+          toast("Link copied");
+        }
+      };
+    });
+
+  } catch (error) {
+    feed.innerHTML = `<div class="feed-empty">Posts could not load. Please refresh.</div>`;
+    toast(error.message);
+  }
+}
+
+// SELECT POST PHOTO / VIDEO
+$("postFile").onchange = () => {
+  const file = $("postFile").files[0];
+  $("selectedPreview").textContent = file
+    ? "Selected: " + file.name
+    : "";
+};
+
+// PUBLISH POST
+$("publishPost").onclick = async () => {
+  const file = $("postFile").files[0];
+  const caption = $("postCaption").value.trim();
+
+  if (!file && !caption) {
+    toast("Write something or choose a photo/video");
+    return;
+  }
+
+  if (file && file.size > 25 * 1024 * 1024) {
+    toast("Maximum file size is 25 MB");
+    return;
+  }
+
+  const form = new FormData();
+  if (file) form.append("file", file);
+  form.append("caption", caption);
+
+  const button = $("publishPost");
+  button.disabled = true;
+  button.textContent = "Publishing...";
+
+  try {
+    await socialApi("/api/posts", {
+      method: "POST",
+      body: form
+    });
+
+    $("postCaption").value = "";
+    $("postFile").value = "";
+    $("selectedPreview").textContent = "";
+
+    await loadSocialPosts();
+    toast("Your post is published!");
+  } catch (error) {
+    toast(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Publish ↗";
+  }
+};
+
+// SEARCH
+$("feedSearch").onsubmit = event => {
+  event.preventDefault();
+  const query = $("topSearch").value.trim();
+  if (query) {
+    location.href = "explore.html?search=" + encodeURIComponent(query);
+  }
+};
+
+// START
+async function initSocialDashboard() {
+  await loadSocialProfile();
+  await Promise.all([
+    loadSocialStories(),
+    loadSocialPosts()
+  ]);
+}
+
+initSocialDashboard();
+
 </script>
 
 </body>
