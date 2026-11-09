@@ -130,6 +130,7 @@ let users;
 let messages;
 let conversations;
 let stories;
+let posts;
 
 const client =
     new MongoClient(
@@ -180,6 +181,10 @@ async function connectDatabase() {
 
     stories =
         db.collection("stories");
+
+  posts = db.collection("posts");
+
+await posts.createIndex({ createdAt: -1 });
 
     await users.createIndex(
         {
