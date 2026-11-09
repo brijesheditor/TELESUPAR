@@ -1740,6 +1740,7 @@ app.post(
 );
 
 // LIKE / UNLIKE POST
+
 app.post("/api/posts/:postId/like", auth, async (req, res) => {
   try {
     const { postId } = req.params;
@@ -1772,11 +1773,31 @@ app.post("/api/posts/:postId/like", auth, async (req, res) => {
         { _id: new ObjectId(postId) },
         { $pull: { likes: new ObjectId(userId) } }
       );
+
+      await notifications.deleteOne({
+        recipientId: post.userId,
+        actorId: new ObjectId(userId),
+        postId: new ObjectId(postId),
+        type: "post_like"
+      });
+
     } else {
       await posts.updateOne(
         { _id: new ObjectId(postId) },
         { $addToSet: { likes: new ObjectId(userId) } }
       );
+
+      // Don't notify users about their own likes
+      if (post.userId.toString() !== userId) {
+        await notifications.insertOne({
+          recipientId: post.userId,
+          actorId: new ObjectId(userId),
+          postId: new ObjectId(postId),
+          type: "post_like",
+          read: false,
+          createdAt: new Date()
+        });
+      }
     }
 
     const updated = await posts.findOne({
@@ -1788,11 +1809,128 @@ app.post("/api/posts/:postId/like", auth, async (req, res) => {
       liked: !alreadyLiked,
       likesCount: (updated.likes || []).length
     });
+
   } catch (error) {
     console.error("POST LIKE ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Could not update like"
+    });
+  }
+});
+
+/* =================================
+   NOTIFICATIONS API
+================================= */
+
+// GET MY NOTIFICATIONS
+app.get("/api/notifications", auth, async (req, res) => {
+  try {
+    const recipientId = new ObjectId(req.user.id);
+
+    const items = await notifications.find({
+      recipientId
+    })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .toArray();
+
+    const actorIds = [
+      ...new Set(items.map(n => n.actorId.toString()))
+    ];
+
+    const postIds = [
+      ...new Set(items.map(n => n.postId.toString()))
+    ];
+
+    const [actors, relatedPosts, unreadCount] =
+      await Promise.all([
+        users.find({
+          _id: {
+            $in: actorIds.map(id => new ObjectId(id))
+          }
+        }).toArray(),
+
+        posts.find({
+          _id: {
+            $in: postIds.map(id => new ObjectId(id))
+          }
+        }).toArray(),
+
+        notifications.countDocuments({
+          recipientId,
+          read: false
+        })
+      ]);
+
+    const actorMap = new Map(
+      actors.map(u => [
+        u._id.toString(),
+        publicProfileUser(u)
+      ])
+    );
+
+    const postMap = new Map(
+      relatedPosts.map(p => [
+        p._id.toString(),
+        {
+          id: p._id.toString(),
+          caption: p.caption || "",
+          mediaUrl: p.mediaUrl || ""
+        }
+      ])
+    );
+
+    const result = items.map(n => ({
+      id: n._id.toString(),
+      type: n.type,
+      read: !!n.read,
+      createdAt: n.createdAt,
+      actor: actorMap.get(n.actorId.toString()) || null,
+      post: postMap.get(n.postId.toString()) || null
+    }));
+
+    res.json({
+      success: true,
+      notifications: result,
+      unreadCount
+    });
+
+  } catch (error) {
+    console.error("NOTIFICATIONS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Could not load notifications"
+    });
+  }
+});
+
+// MARK ALL NOTIFICATIONS AS READ
+app.patch("/api/notifications/read", auth, async (req, res) => {
+  try {
+    const result = await notifications.updateMany(
+      {
+        recipientId: new ObjectId(req.user.id),
+        read: false
+      },
+      {
+        $set: {
+          read: true,
+          readAt: new Date()
+        }
+      }
+    );
+
+    res.json({
+      success: true,
+      modifiedCount: result.modifiedCount
+    });
+
+  } catch (error) {
+    console.error("MARK NOTIFICATIONS READ ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Could not update notifications"
     });
   }
 });
