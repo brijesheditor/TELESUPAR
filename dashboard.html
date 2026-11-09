@@ -1746,6 +1746,7 @@ async function loadSocialPosts() {
       const user = post.user || {};
       const card = document.createElement("article");
       card.className = "post-card";
+      card.id = "post-" + post.id;
 
       const avatar = user.avatar
         ? `<img src="${safeText(user.avatar)}">`
@@ -1916,6 +1917,201 @@ document.addEventListener("keydown", event => {
   }
 });
 
+
+
+/* =================================
+   ACTIVITY NOTIFICATIONS
+================================= */
+
+const activityModal = $("activityModal");
+
+function timeAgo(dateValue) {
+  const date = new Date(dateValue);
+  const seconds = Math.max(
+    0,
+    Math.floor((Date.now() - date.getTime()) / 1000)
+  );
+
+  if (seconds < 60) return "Just now";
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + " min ago";
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + " hr ago";
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return days + " days ago";
+
+  return date.toLocaleDateString();
+}
+
+function updateNotificationDot(count) {
+  const dot = $("notificationDot");
+  dot.classList.toggle("show", count > 0);
+}
+
+async function loadNotifications(silent = false) {
+  const list = $("notificationsList");
+
+  try {
+    const data = await socialApi("/api/notifications");
+
+    const notifications = data.notifications || [];
+
+    updateNotificationDot(data.unreadCount || 0);
+
+    if (!notifications.length) {
+      list.innerHTML = `
+        <div class="notification-empty">
+          ❤️<br><br>
+          No activity yet.<br>
+          Your likes and updates will appear here.
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = "";
+
+    notifications.forEach(item => {
+      const actor = item.actor || {};
+      const post = item.post || {};
+
+      const avatar = actor.avatar
+        ? `<img src="${safeText(actor.avatar)}" alt="">`
+        : safeText(
+            (actor.displayName || actor.username || "U")[0]
+              .toUpperCase()
+          );
+
+      const message =
+        item.type === "post_like"
+          ? "liked your post."
+          : "interacted with your post.";
+
+      const postPreview = post.mediaUrl
+        ? `<img src="${safeText(post.mediaUrl)}" alt="">`
+        : "♥";
+
+      const row = document.createElement("div");
+
+      row.className =
+        "notification-item" + (item.read ? "" : " unread");
+
+      row.innerHTML = `
+        <div class="notification-avatar">
+          ${avatar}
+        </div>
+
+        <div class="notification-info">
+          <b>${safeText(
+            actor.displayName || actor.username || "Someone"
+          )}</b>
+          ${safeText(message)}
+          <small>${safeText(timeAgo(item.createdAt))}</small>
+        </div>
+
+        <div class="notification-post">
+          ${postPreview}
+        </div>
+      `;
+
+      row.onclick = () => {
+        activityModal.classList.remove("show");
+
+        if (post.id) {
+          const target = $("post-" + post.id);
+
+          if (target) {
+            target.scrollIntoView({
+              behavior: "smooth",
+              block: "center"
+            });
+
+            target.style.outline = "2px solid #ff65bd";
+
+            setTimeout(() => {
+              target.style.outline = "";
+            }, 1800);
+          } else {
+            toast("Post is not currently in the loaded feed");
+          }
+        }
+      };
+
+      list.appendChild(row);
+    });
+
+    if (activityModal.classList.contains("show")) {
+      await markNotificationsRead();
+    }
+
+  } catch (error) {
+    if (!silent) {
+      list.innerHTML = `
+        <div class="notification-empty">
+          Could not load notifications.<br>
+          Please try again.
+        </div>
+      `;
+      console.error("ACTIVITY ERROR:", error);
+    }
+  }
+}
+
+async function markNotificationsRead() {
+  try {
+    await socialApi("/api/notifications/read", {
+      method: "PATCH",
+      body: JSON.stringify({})
+    });
+
+    updateNotificationDot(0);
+
+    document.querySelectorAll(".notification-item")
+      .forEach(item => item.classList.remove("unread"));
+
+  } catch (error) {
+    console.error("MARK READ ERROR:", error);
+  }
+}
+
+// OPEN ACTIVITY
+$("activityOpen").onclick = async () => {
+  activityModal.classList.add("show");
+  $("notificationsList").innerHTML = `
+    <div class="feed-empty">Loading notifications...</div>
+  `;
+  await loadNotifications();
+};
+
+// CLOSE ACTIVITY
+$("activityClose").onclick = () => {
+  activityModal.classList.remove("show");
+};
+
+activityModal.addEventListener("click", event => {
+  if (event.target === activityModal) {
+    activityModal.classList.remove("show");
+  }
+});
+
+// ESCAPE CLOSE
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    activityModal.classList.remove("show");
+  }
+});
+
+// CHECK NEW ACTIVITY EVERY 30 SECONDS
+loadNotifications(true);
+
+setInterval(() => {
+  loadNotifications(true);
+}, 30000);
+
+  
 // START
 async function initSocialDashboard() {
   await loadSocialProfile();
