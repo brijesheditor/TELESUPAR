@@ -982,6 +982,22 @@ button {
 .nav-btn.active .profile-nav-avatar {
   border-color: #ff91ce;
 }
+
+  .activity-open-btn {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #ff75c855;
+  border-radius: 14px;
+  background: #ff75c81a;
+  color: #ff5d9d;
+  font-size: 27px;
+  box-shadow: 0 0 18px #ff65bd25;
+  transition: .2s;
+}
+
+.activity-open-btn:active {
+  transform: scale(.90);
+  }
   
 </style>
 </head>
@@ -1004,10 +1020,10 @@ button {
       ＋
     </button>
 
-    <button class="profile-mini" onclick="goTo('profile.html')"
-      type="button" aria-label="My Profile">
-      <span id="topProfileAvatar">◎</span>
-    </button>
+    <button class="activity-open-btn" id="activityOpen"
+  type="button" aria-label="Activity Notifications">
+  ♥
+</button>
   </div>
 </header>
 
