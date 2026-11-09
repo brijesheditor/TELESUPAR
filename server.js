@@ -1605,6 +1605,186 @@ app.delete(
 );
 
 
+
+
+/* =========================================
+   TELESUPAR POSTS API
+========================================= */
+
+// GET ALL POSTS
+app.get("/api/posts/feed", auth, async (req, res) => {
+  try {
+    const allPosts = await posts.find({})
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .toArray();
+
+    const ids = [...new Set(
+      allPosts.map(post => post.userId.toString())
+    )];
+
+    const authors = await users.find({
+      _id: { $in: ids.map(id => new ObjectId(id)) }
+    }).toArray();
+
+    const authorMap = new Map(
+      authors.map(user => [
+        user._id.toString(),
+        publicProfileUser(user)
+      ])
+    );
+
+    const result = allPosts.map(post => ({
+      id: post._id.toString(),
+      caption: post.caption || "",
+      mediaUrl: post.mediaUrl,
+      mediaType: post.mediaType,
+      createdAt: post.createdAt,
+      likesCount: (post.likes || []).length,
+      likedByMe: (post.likes || []).some(
+        id => id.toString() === req.user.id
+      ),
+      user: authorMap.get(post.userId.toString()) || null
+    })).filter(post => post.user);
+
+    res.json({ success: true, posts: result });
+  } catch (error) {
+    console.error("POST FEED ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Could not load posts"
+    });
+  }
+});
+
+// CREATE POST
+app.post(
+  "/api/posts",
+  auth,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      const caption = String(req.body.caption || "")
+        .trim()
+        .slice(0, 2200);
+
+      if (!req.file && !caption) {
+        return res.status(400).json({
+          success: false,
+          message: "Add a photo, video or caption"
+        });
+      }
+
+      let mediaUrl = "";
+      let mediaType = "";
+
+      if (req.file) {
+        const type = req.file.mimetype;
+
+        if (!type.startsWith("image/") &&
+            !type.startsWith("video/")) {
+          return res.status(400).json({
+            success: false,
+            message: "Only photos and videos are allowed"
+          });
+        }
+
+        const uploaded = await uploadToCloudinary(req.file);
+        mediaUrl = uploaded.secure_url;
+        mediaType = type.startsWith("video/") ? "video" : "image";
+      }
+
+      const post = {
+        userId: new ObjectId(req.user.id),
+        caption,
+        mediaUrl,
+        mediaType,
+        likes: [],
+        createdAt: new Date()
+      };
+
+      const saved = await posts.insertOne(post);
+
+      res.status(201).json({
+        success: true,
+        message: "Post published",
+        post: {
+          id: saved.insertedId.toString(),
+          caption,
+          mediaUrl,
+          mediaType,
+          createdAt: post.createdAt
+        }
+      });
+    } catch (error) {
+      console.error("CREATE POST ERROR:", error);
+      res.status(500).json({
+        success: false,
+        message: "Could not publish post"
+      });
+    }
+  }
+);
+
+// LIKE / UNLIKE POST
+app.post("/api/posts/:postId/like", auth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.id;
+
+    if (!validId(postId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post ID"
+      });
+    }
+
+    const post = await posts.findOne({
+      _id: new ObjectId(postId)
+    });
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      });
+    }
+
+    const alreadyLiked = (post.likes || []).some(
+      id => id.toString() === userId
+    );
+
+    if (alreadyLiked) {
+      await posts.updateOne(
+        { _id: new ObjectId(postId) },
+        { $pull: { likes: new ObjectId(userId) } }
+      );
+    } else {
+      await posts.updateOne(
+        { _id: new ObjectId(postId) },
+        { $addToSet: { likes: new ObjectId(userId) } }
+      );
+    }
+
+    const updated = await posts.findOne({
+      _id: new ObjectId(postId)
+    });
+
+    res.json({
+      success: true,
+      liked: !alreadyLiked,
+      likesCount: (updated.likes || []).length
+    });
+  } catch (error) {
+    console.error("POST LIKE ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Could not update like"
+    });
+  }
+});
+
+
 /* =========================================
    USER SEARCH
 ========================================= */
