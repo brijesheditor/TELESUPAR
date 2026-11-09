@@ -998,6 +998,174 @@ button {
 .activity-open-btn:active {
   transform: scale(.90);
   }
+
+
+/* ACTIVITY NOTIFICATIONS */
+
+.activity-open-btn {
+  position: relative;
+}
+
+.notification-dot {
+  display: none;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff315f;
+  border: 2px solid #100d1a;
+  box-shadow: 0 0 10px #ff315f;
+}
+
+.notification-dot.show {
+  display: block;
+}
+
+.activity-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  align-items: flex-end;
+  justify-content: center;
+  background: #000b;
+  backdrop-filter: blur(8px);
+}
+
+.activity-modal.show {
+  display: flex;
+}
+
+.activity-panel {
+  width: 100%;
+  max-width: 600px;
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: 20px 16px 30px;
+  background: #171425;
+  border: 1px solid #ffffff20;
+  border-radius: 25px 25px 0 0;
+  animation: sheetUp .25s ease;
+}
+
+.activity-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.activity-head h2 {
+  font-size: 21px;
+}
+
+.activity-head small {
+  display: block;
+  margin-top: 5px;
+  color: #b8a5c5;
+  font-size: 11px;
+}
+
+.activity-head button {
+  width: 35px;
+  height: 35px;
+  border-radius: 11px;
+  color: white;
+  background: #ffffff15;
+  border: 1px solid #ffffff20;
+}
+
+.activity-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.activity-tabs span {
+  padding: 9px 15px;
+  border-radius: 20px;
+  font-size: 11px;
+  color: #c6b6d0;
+  background: #ffffff0c;
+}
+
+.activity-tabs .active {
+  color: white;
+  background: #a34dbe55;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 9px;
+  border-bottom: 1px solid #ffffff12;
+  border-radius: 12px;
+}
+
+.notification-item.unread {
+  background: #a34dbe15;
+}
+
+.notification-avatar {
+  width: 43px;
+  height: 43px;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#ff65bd,#875cff);
+  font-weight: bold;
+}
+
+.notification-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.notification-info {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.notification-info small {
+  display: block;
+  margin-top: 4px;
+  color: #a99bb6;
+  font-size: 10px;
+}
+
+.notification-post {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff12;
+  display: grid;
+  place-items: center;
+  color: #ff91ce;
+}
+
+.notification-post img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.notification-empty {
+  padding: 40px 15px;
+  text-align: center;
+  color: #b8a5c5;
+  font-size: 12px;
+}
+
   
 </style>
 </head>
@@ -1023,6 +1191,7 @@ button {
     <button class="activity-open-btn" id="activityOpen"
   type="button" aria-label="Activity Notifications">
   ♥
+  <span id="notificationDot" class="notification-dot"></span>
 </button>
   </div>
 </header>
@@ -1094,6 +1263,35 @@ button {
     </section>
   </div>
 </div>
+
+<!-- ACTIVITY NOTIFICATIONS -->
+<div class="activity-modal" id="activityModal">
+
+  <div class="activity-panel">
+
+    <div class="activity-head">
+      <div>
+        <h2>Activity ❤️</h2>
+        <small>What's happening on TELESUPAR</small>
+      </div>
+
+      <button id="activityClose" type="button">✕</button>
+    </div>
+
+    <div class="activity-tabs">
+      <span class="active">All Activity</span>
+      <span>Likes</span>
+    </div>
+
+    <div id="notificationsList">
+      <div class="feed-empty">
+        Loading notifications...
+      </div>
+    </div>
+
+  </div>
+</div>
+
   
 <!-- STORY VIEWER -->
 <div id="storyViewer" class="story-viewer">
