@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -851,6 +850,138 @@ button {
   opacity: 1;
 }
 
+
+/* HEADER CREATE + PROFILE */
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.create-open-btn {
+  width: 39px;
+  height: 39px;
+  border: 1px solid #ffffff25;
+  border-radius: 13px;
+  color: white;
+  font-size: 27px;
+  line-height: 1;
+  background: linear-gradient(135deg,#ff65bd,#875cff);
+  box-shadow: 0 0 18px #ff65bd35;
+}
+
+.profile-mini {
+  width: 39px;
+  height: 39px;
+  padding: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 2px solid #ff91ce;
+  border-radius: 50%;
+  background: #30213f;
+  color: white;
+  font-size: 19px;
+}
+
+.profile-mini img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* CREATE MODAL */
+
+.create-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: #000b;
+  backdrop-filter: blur(10px);
+}
+
+.create-modal.show {
+  display: flex;
+}
+
+.create-panel {
+  width: 100%;
+  max-width: 480px;
+  padding: 17px;
+  border: 1px solid #ffffff24;
+  border-radius: 23px;
+  background: #171425;
+  box-shadow: 0 20px 60px #0008;
+}
+
+.create-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+
+.create-panel-head h3 {
+  font-size: 17px;
+}
+
+.create-panel-head small {
+  display: block;
+  color: #b8a5c5;
+  font-size: 10px;
+  margin-top: 5px;
+}
+
+.create-panel-head button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #ffffff20;
+  border-radius: 10px;
+  color: white;
+  background: #ffffff12;
+}
+
+.create-panel .composer {
+  margin: 0;
+}
+
+.education-note {
+  margin-top: 13px;
+  color: #c9b8d7;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* PROFILE DP IN BOTTOM NAV */
+
+.profile-nav-avatar {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1.5px solid #b8a5c5;
+  border-radius: 50%;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.profile-nav-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.nav-btn.active .profile-nav-avatar {
+  border-color: #ff91ce;
+}
   
 </style>
 </head>
@@ -860,21 +991,25 @@ button {
 <div class="container social-container">
 
   <header class="social-header">
-    <div class="brand">
-      <div class="logo">TS</div>
-      <div>
-        <h2>TELESUPAR</h2>
-        <small>YOUR SOCIAL WORLD</small>
-      </div>
+  <div class="brand">
+    <div class="logo">TS</div>
+    <div>
+      <h2>TELESUPAR</h2>
+      <small>LEARN • SHARE • GROW</small>
     </div>
+  </div>
 
-    <form id="feedSearch" class="mini-search">
-      <span>⌕</span>
-      <input id="topSearch" placeholder="Search..." />
-    </form>
+  <div class="header-tools">
+    <button class="create-open-btn" id="createOpen" type="button">
+      ＋
+    </button>
 
-    <button class="profile-mini" onclick="goTo('profile.html')">◎</button>
-  </header>
+    <button class="profile-mini" onclick="goTo('profile.html')"
+      type="button" aria-label="My Profile">
+      <span id="topProfileAvatar">◎</span>
+    </button>
+  </div>
+</header>
 
   <main class="social-main">
 
@@ -926,6 +1061,46 @@ button {
   </main>
 </div>
 
+<!-- CREATE POST / REEL PANEL -->
+<div class="create-modal" id="createModal">
+  <div class="create-panel">
+    <div class="create-panel-head">
+      <div>
+        <h3>Create Post / Reel</h3>
+        <small>Share something educational</small>
+      </div>
+      <button type="button" id="createClose">✕</button>
+    </div>
+
+    <section class="composer">
+      <div class="composer-top">
+        <div class="my-avatar" id="myAvatar">T</div>
+        <input id="postCaption" maxlength="2200"
+          placeholder="Share your knowledge..." />
+      </div>
+
+      <div id="selectedPreview" class="selected-preview"></div>
+
+      <div class="composer-actions">
+        <label class="media-label" for="postFile">
+          ▧ Photo / Video
+        </label>
+
+        <input type="file" id="postFile"
+          accept="image/*,video/mp4,video/webm" hidden>
+
+        <button id="publishPost" class="publish-btn" type="button">
+          Publish ↗
+        </button>
+      </div>
+
+      <p class="education-note">
+        🎓 Only educational posts and videos are allowed.
+      </p>
+    </section>
+  </div>
+</div>
+  
 <!-- STORY VIEWER -->
 <div id="storyViewer" class="story-viewer">
   <div class="story-viewer-top">
