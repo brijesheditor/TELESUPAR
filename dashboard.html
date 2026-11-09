@@ -1149,9 +1149,9 @@ button {
     </button>
 
     <button class="nav-btn" data-page="profile">
-      <span class="nav-icon">◎</span>
-      <span>Profile</span>
-    </button>
+  <span class="nav-icon profile-nav-avatar" id="navProfileAvatar">◎</span>
+  <span>Profile</span>
+</button>
 
   </div>
 </nav>
@@ -1295,20 +1295,35 @@ async function socialApi(path, options = {}) {
 async function loadSocialProfile() {
   try {
     const data = await socialApi("/api/me");
+    const user = data.user;
 
-    if (data.user) {
-      const user = data.user;
-      $("myAvatar").textContent =
-        (user.displayName || user.username || "T")[0].toUpperCase();
+    if (!user) return;
 
-      if (user.avatar) {
-        $("myAvatar").innerHTML =
-          `<img src="${safeText(user.avatar)}"
-          style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-      }
+    const name = user.displayName || user.username || "T";
+    const initial = name[0].toUpperCase();
+    const avatar = user.avatar || "";
+
+    // Create panel avatar
+    $("myAvatar").textContent = initial;
+
+    // Header profile DP
+    $("topProfileAvatar").innerHTML = avatar
+      ? `<img src="${safeText(avatar)}" alt="Profile">`
+      : initial;
+
+    // Bottom navigation profile DP
+    $("navProfileAvatar").innerHTML = avatar
+      ? `<img src="${safeText(avatar)}" alt="Profile">`
+      : initial;
+
+    if (avatar) {
+      $("myAvatar").innerHTML =
+        `<img src="${safeText(avatar)}"
+        style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
     }
+
   } catch (error) {
-    toast(error.message);
+    console.error("Profile loading:", error);
   }
 }
 
