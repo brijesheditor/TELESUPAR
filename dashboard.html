@@ -1300,11 +1300,6 @@ async function loadSocialProfile() {
     // Create panel avatar
     $("myAvatar").textContent = initial;
 
-    // Header profile DP
-    $("topProfileAvatar").innerHTML = avatar
-      ? `<img src="${safeText(avatar)}" alt="Profile">`
-      : initial;
-
     // Bottom navigation profile DP
     $("navProfileAvatar").innerHTML = avatar
       ? `<img src="${safeText(avatar)}" alt="Profile">`
