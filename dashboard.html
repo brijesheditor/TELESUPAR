@@ -1695,6 +1695,7 @@ $("publishPost").onclick = async () => {
     $("selectedPreview").textContent = "";
 
     await loadSocialPosts();
+    createModal.classList.remove("show");
     toast("Your post is published!");
   } catch (error) {
     toast(error.message);
@@ -1705,13 +1706,28 @@ $("publishPost").onclick = async () => {
 };
 
 // SEARCH
-$("feedSearch").onsubmit = event => {
-  event.preventDefault();
-  const query = $("topSearch").value.trim();
-  if (query) {
-    location.href = "explore.html?search=" + encodeURIComponent(query);
-  }
+// CREATE POST / REEL MODAL
+const createModal = $("createModal");
+
+$("createOpen").onclick = () => {
+  createModal.classList.add("show");
 };
+
+$("createClose").onclick = () => {
+  createModal.classList.remove("show");
+};
+
+createModal.addEventListener("click", event => {
+  if (event.target === createModal) {
+    createModal.classList.remove("show");
+  }
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    createModal.classList.remove("show");
+  }
+});
 
 // START
 async function initSocialDashboard() {
