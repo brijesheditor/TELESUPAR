@@ -1917,8 +1917,6 @@ document.addEventListener("keydown", event => {
   }
 });
 
-
-
 /* =================================
    ACTIVITY NOTIFICATIONS
 ================================= */
@@ -1950,8 +1948,6 @@ function updateNotificationDot(count) {
   const dot = $("notificationDot");
   dot.classList.toggle("show", count > 0);
 }
-
-async function loadNotifications(silent = false) {
 
 async function loadNotifications(silent = false) {
   const list = $("notificationsList");
