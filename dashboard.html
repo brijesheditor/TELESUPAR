@@ -2530,6 +2530,27 @@ async function loadNotifications(silent = false) {
           }
         }
 
+        if (item.type === "post_comment" && post.id) {
+  const target = $("post-" + post.id);
+
+  if (target) {
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+
+    target.style.outline = "2px solid #c49aff";
+
+    setTimeout(() => {
+      target.style.outline = "";
+    }, 1800);
+
+    openPostComments(post.id);
+  } else {
+    toast("Post is not currently in the loaded feed");
+  }
+}
+
         if (item.type === "story_like") {
           toast("Story notification opened");
         }
