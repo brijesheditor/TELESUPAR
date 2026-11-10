@@ -1952,11 +1952,12 @@ function updateNotificationDot(count) {
 }
 
 async function loadNotifications(silent = false) {
+
+async function loadNotifications(silent = false) {
   const list = $("notificationsList");
 
   try {
     const data = await socialApi("/api/notifications");
-
     const notifications = data.notifications || [];
 
     updateNotificationDot(data.unreadCount || 0);
@@ -1977,6 +1978,7 @@ async function loadNotifications(silent = false) {
     notifications.forEach(item => {
       const actor = item.actor || {};
       const post = item.post || {};
+      const story = item.story || {};
 
       const avatar = actor.avatar
         ? `<img src="${safeText(actor.avatar)}" alt="">`
@@ -1985,14 +1987,22 @@ async function loadNotifications(silent = false) {
               .toUpperCase()
           );
 
-      const message =
-        item.type === "post_like"
-          ? "liked your post."
-          : "interacted with your post.";
+      let message = "interacted with you.";
+      let preview = "♥";
 
-      const postPreview = post.mediaUrl
-        ? `<img src="${safeText(post.mediaUrl)}" alt="">`
-        : "♥";
+      if (item.type === "post_like") {
+        message = "liked your post.";
+        preview = post.mediaUrl
+          ? `<img src="${safeText(post.mediaUrl)}" alt="">`
+          : "♥";
+      }
+
+      if (item.type === "story_like") {
+        message = "liked your story.";
+        preview = story.mediaUrl
+          ? `<img src="${safeText(story.mediaUrl)}" alt="">`
+          : "❤️";
+      }
 
       const row = document.createElement("div");
 
@@ -2013,14 +2023,14 @@ async function loadNotifications(silent = false) {
         </div>
 
         <div class="notification-post">
-          ${postPreview}
+          ${preview}
         </div>
       `;
 
       row.onclick = () => {
         activityModal.classList.remove("show");
 
-        if (post.id) {
+        if (item.type === "post_like" && post.id) {
           const target = $("post-" + post.id);
 
           if (target) {
@@ -2028,7 +2038,6 @@ async function loadNotifications(silent = false) {
               behavior: "smooth",
               block: "center"
             });
-
             target.style.outline = "2px solid #ff65bd";
 
             setTimeout(() => {
@@ -2037,6 +2046,10 @@ async function loadNotifications(silent = false) {
           } else {
             toast("Post is not currently in the loaded feed");
           }
+        }
+
+        if (item.type === "story_like") {
+          toast("Story notification opened");
         }
       };
 
