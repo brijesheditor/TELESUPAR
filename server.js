@@ -1205,7 +1205,7 @@ app.post(
 // =====================================
 // STORY LIKE / UNLIKE API
 // =====================================
-
+// STORY LIKE / UNLIKE + NOTIFICATION
 app.post(
   "/api/stories/:storyId/like",
   auth,
@@ -1221,11 +1221,12 @@ app.post(
         });
       }
 
-      const now = new Date();
+      const storyObjectId = new ObjectId(storyId);
+      const actorObjectId = new ObjectId(userId);
 
       const story = await stories.findOne({
-        _id: new ObjectId(storyId),
-        expiresAt: { $gt: now }
+        _id: storyObjectId,
+        expiresAt: { $gt: new Date() }
       });
 
       if (!story) {
@@ -1248,29 +1249,39 @@ app.post(
 
       if (alreadyLiked) {
         await stories.updateOne(
-          { _id: new ObjectId(storyId) },
-          {
-            $pull: {
-              likes: new ObjectId(userId)
-            }
-          }
+          { _id: storyObjectId },
+          { $pull: { likes: actorObjectId } }
         );
+
+        // Unlike karne par us like ki notification hata do
+        await notifications.deleteOne({
+          recipientId: story.userId,
+          actorId: actorObjectId,
+          storyId: storyObjectId,
+          type: "story_like"
+        });
       } else {
         await stories.updateOne(
           {
-            _id: new ObjectId(storyId),
+            _id: storyObjectId,
             expiresAt: { $gt: new Date() }
           },
-          {
-            $addToSet: {
-              likes: new ObjectId(userId)
-            }
-          }
+          { $addToSet: { likes: actorObjectId } }
         );
+
+        // Story owner ko notification
+        await notifications.insertOne({
+          recipientId: story.userId,
+          actorId: actorObjectId,
+          storyId: storyObjectId,
+          type: "story_like",
+          read: false,
+          createdAt: new Date()
+        });
       }
 
       const updatedStory = await stories.findOne({
-        _id: new ObjectId(storyId)
+        _id: storyObjectId
       });
 
       return res.json({
@@ -1289,7 +1300,6 @@ app.post(
     }
   }
 );
-
 
 // =====================================
 // STORY VIEWERS LIST API
@@ -1836,14 +1846,30 @@ app.get("/api/notifications", auth, async (req, res) => {
       .toArray();
 
     const actorIds = [
-      ...new Set(items.map(n => n.actorId.toString()))
+      ...new Set(
+        items
+          .filter(n => n.actorId)
+          .map(n => n.actorId.toString())
+      )
     ];
 
     const postIds = [
-      ...new Set(items.map(n => n.postId.toString()))
+      ...new Set(
+        items
+          .filter(n => n.postId)
+          .map(n => n.postId.toString())
+      )
     ];
 
-    const [actors, relatedPosts, unreadCount] =
+    const storyIds = [
+      ...new Set(
+        items
+          .filter(n => n.storyId)
+          .map(n => n.storyId.toString())
+      )
+    ];
+
+    const [actors, relatedPosts, relatedStories, unreadCount] =
       await Promise.all([
         users.find({
           _id: {
@@ -1857,6 +1883,12 @@ app.get("/api/notifications", auth, async (req, res) => {
           }
         }).toArray(),
 
+        stories.find({
+          _id: {
+            $in: storyIds.map(id => new ObjectId(id))
+          }
+        }).toArray(),
+
         notifications.countDocuments({
           recipientId,
           read: false
@@ -1864,19 +1896,31 @@ app.get("/api/notifications", auth, async (req, res) => {
       ]);
 
     const actorMap = new Map(
-      actors.map(u => [
-        u._id.toString(),
-        publicProfileUser(u)
+      actors.map(user => [
+        user._id.toString(),
+        publicProfileUser(user)
       ])
     );
 
     const postMap = new Map(
-      relatedPosts.map(p => [
-        p._id.toString(),
+      relatedPosts.map(post => [
+        post._id.toString(),
         {
-          id: p._id.toString(),
-          caption: p.caption || "",
-          mediaUrl: p.mediaUrl || ""
+          id: post._id.toString(),
+          caption: post.caption || "",
+          mediaUrl: post.mediaUrl || ""
+        }
+      ])
+    );
+
+    const storyMap = new Map(
+      relatedStories.map(story => [
+        story._id.toString(),
+        {
+          id: story._id.toString(),
+          mediaUrl: story.mediaUrl || "",
+          caption: story.caption || "",
+          expiresAt: story.expiresAt
         }
       ])
     );
@@ -1886,8 +1930,15 @@ app.get("/api/notifications", auth, async (req, res) => {
       type: n.type,
       read: !!n.read,
       createdAt: n.createdAt,
-      actor: actorMap.get(n.actorId.toString()) || null,
-      post: postMap.get(n.postId.toString()) || null
+      actor: n.actorId
+        ? actorMap.get(n.actorId.toString()) || null
+        : null,
+      post: n.postId
+        ? postMap.get(n.postId.toString()) || null
+        : null,
+      story: n.storyId
+        ? storyMap.get(n.storyId.toString()) || null
+        : null
     }));
 
     res.json({
@@ -1898,6 +1949,7 @@ app.get("/api/notifications", auth, async (req, res) => {
 
   } catch (error) {
     console.error("NOTIFICATIONS ERROR:", error);
+
     res.status(500).json({
       success: false,
       message: "Could not load notifications"
