@@ -1762,8 +1762,238 @@ app.post(
   }
 );
 
-// LIKE / UNLIKE POST
 
+/* =====================================
+   COMMENTS SYSTEM
+===================================== */
+
+// 1. CREATE COMMENT
+app.post(
+  "/api/posts/:postId/comments",
+  auth,
+  async (req, res) => {
+    try {
+      const postId = req.params.postId;
+      const userId = req.user.id;
+
+      if (!validId(postId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid post ID"
+        });
+      }
+
+      const text = String(req.body.text || "")
+        .trim()
+        .slice(0, 500);
+
+      if (!text) {
+        return res.status(400).json({
+          success: false,
+          message: "Comment cannot be empty"
+        });
+      }
+
+      const postObjectId = new ObjectId(postId);
+      const userObjectId = new ObjectId(userId);
+
+      const post = await posts.findOne({
+        _id: postObjectId
+      });
+
+      if (!post) {
+        return res.status(404).json({
+          success: false,
+          message: "Post not found"
+        });
+      }
+
+      const comment = {
+        postId: postObjectId,
+        userId: userObjectId,
+        text,
+        createdAt: new Date()
+      };
+
+      const saved = await comments.insertOne(comment);
+
+      // Notify post owner
+      if (post.userId.toString() !== userId) {
+        await notifications.insertOne({
+          recipientId: post.userId,
+          actorId: userObjectId,
+          postId: postObjectId,
+          commentId: saved.insertedId,
+          commentText: text,
+          type: "post_comment",
+          read: false,
+          createdAt: new Date()
+        });
+      }
+
+      const user = await users.findOne({
+        _id: userObjectId
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Comment added",
+        comment: {
+          id: saved.insertedId.toString(),
+          text,
+          createdAt: comment.createdAt,
+          user: publicProfileUser(user)
+        }
+      });
+
+    } catch (error) {
+      console.error("CREATE COMMENT ERROR:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Could not add comment"
+      });
+    }
+  }
+);
+
+// 2. GET COMMENTS
+app.get(
+  "/api/posts/:postId/comments",
+  auth,
+  async (req, res) => {
+    try {
+      const postId = req.params.postId;
+
+      if (!validId(postId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid post ID"
+        });
+      }
+
+      const postObjectId = new ObjectId(postId);
+
+      const post = await posts.findOne({
+        _id: postObjectId
+      });
+
+      if (!post) {
+        return res.status(404).json({
+          success: false,
+          message: "Post not found"
+        });
+      }
+
+      const allComments = await comments.find({
+        postId: postObjectId
+      })
+        .sort({ createdAt: 1 })
+        .limit(100)
+        .toArray();
+
+      const userIds = [
+        ...new Set(
+          allComments.map(c => c.userId.toString())
+        )
+      ];
+
+      const authors = await users.find({
+        _id: {
+          $in: userIds.map(id => new ObjectId(id))
+        }
+      }).toArray();
+
+      const authorMap = new Map(
+        authors.map(user => [
+          user._id.toString(),
+          publicProfileUser(user)
+        ])
+      );
+
+      const result = allComments.map(c => ({
+        id: c._id.toString(),
+        text: c.text,
+        createdAt: c.createdAt,
+        user: authorMap.get(c.userId.toString()) || null,
+        isMine: c.userId.toString() === req.user.id
+      }));
+
+      res.json({
+        success: true,
+        comments: result,
+        count: result.length
+      });
+
+    } catch (error) {
+      console.error("GET COMMENTS ERROR:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Could not load comments"
+      });
+    }
+  }
+);
+
+// 3. DELETE MY COMMENT
+app.delete(
+  "/api/posts/:postId/comments/:commentId",
+  auth,
+  async (req, res) => {
+    try {
+      const { postId, commentId } = req.params;
+      const userObjectId = new ObjectId(req.user.id);
+
+      if (!validId(postId) || !validId(commentId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid ID"
+        });
+      }
+
+      const postObjectId = new ObjectId(postId);
+      const commentObjectId = new ObjectId(commentId);
+
+      const result = await comments.deleteOne({
+        _id: commentObjectId,
+        postId: postObjectId,
+        userId: userObjectId
+      });
+
+      if (result.deletedCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Comment not found or not yours"
+        });
+      }
+
+      // Remove related notification, if any
+      await notifications.deleteOne({
+        actorId: userObjectId,
+        postId: postObjectId,
+        commentId: commentObjectId,
+        type: "post_comment"
+      });
+
+      res.json({
+        success: true,
+        message: "Comment deleted"
+      });
+
+    } catch (error) {
+      console.error("DELETE COMMENT ERROR:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Could not delete comment"
+      });
+    }
+  }
+);
+
+
+// LIKE / UNLIKE POST
 app.post("/api/posts/:postId/like", auth, async (req, res) => {
   try {
     const { postId } = req.params;
