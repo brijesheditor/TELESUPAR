@@ -1486,6 +1486,36 @@ button {
   </div>
 </div>
 
+<!-- TALKSTACK COMMENTS PANEL -->
+<div class="comments-modal" id="commentsModal">
+  <div class="comments-panel">
+
+    <div class="comments-head">
+      <h3>Discussion</h3>
+      <button type="button" id="commentsClose">✕</button>
+    </div>
+
+    <div class="comments-list" id="commentsList">
+      <div class="comments-empty">Loading...</div>
+    </div>
+
+    <form class="comment-composer" id="commentForm">
+      <input
+        type="text"
+        id="commentInput"
+        maxlength="500"
+        placeholder="Write your thoughts..."
+        autocomplete="off"
+        required
+      >
+
+      <button type="submit" id="commentSend">
+        Send
+      </button>
+    </form>
+
+  </div>
+</div>
   
 <!-- STORY VIEWER -->
 <div id="storyViewer" class="story-viewer">
@@ -1979,7 +2009,41 @@ async function loadSocialPosts() {
             ${post.likedByMe ? "♥" : "♡"}
             <span>${post.likesCount || 0}</span> Likes
           </button>
-          <button type="button" disabled>Comment · Coming soon</button>
+          
+          <button
+  type="button"
+  class="comment-open-btn"
+  data-comments="${safeText(post.id)}"
+  aria-label="Open comments"
+  title="Open comments"
+>
+  <svg viewBox="0 0 48 48" fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true">
+
+    <path
+      d="M17 7H37C40.3 7 43 9.7 43 13V25C43 28.3 40.3 31 37 31H32L25 37V31H17C13.7 31 11 28.3 11 25V13C11 9.7 13.7 7 17 7Z"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linejoin="round"
+    />
+
+    <path
+      d="M7 17H6C3.8 17 2 18.8 2 21V33C2 35.2 3.8 37 6 37H10L16 42V37H21"
+      stroke="#ff91ce"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <circle cx="20" cy="19" r="1.8" fill="currentColor"/>
+    <circle cx="27" cy="19" r="1.8" fill="currentColor"/>
+    <circle cx="34" cy="19" r="1.8" fill="currentColor"/>
+
+  </svg>
+
+  <span class="comment-count">${post.commentsCount || 0}</span>
+</button>
           <button type="button"
             data-share="${safeText(post.id)}">↗ Share</button>
         </div>
