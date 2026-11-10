@@ -1960,9 +1960,11 @@ app.get("/api/notifications", auth, async (req, res) => {
 // MARK ALL NOTIFICATIONS AS READ
 app.patch("/api/notifications/read", auth, async (req, res) => {
   try {
-    const result = await notifications.updateMany(
+    const recipientId = new ObjectId(req.user.id);
+
+    await notifications.updateMany(
       {
-        recipientId: new ObjectId(req.user.id),
+        recipientId,
         read: false
       },
       {
@@ -1975,14 +1977,15 @@ app.patch("/api/notifications/read", auth, async (req, res) => {
 
     res.json({
       success: true,
-      modifiedCount: result.modifiedCount
+      message: "Notifications marked as read"
     });
 
   } catch (error) {
-    console.error("MARK NOTIFICATIONS READ ERROR:", error);
+    console.error("MARK READ ERROR:", error);
+
     res.status(500).json({
       success: false,
-      message: "Could not update notifications"
+      message: "Could not mark notifications as read"
     });
   }
 });
@@ -3845,6 +3848,33 @@ io.on(
 
     }
 );
+
+
+// DELETE READ NOTIFICATIONS AFTER 48 HOURS
+async function cleanupReadNotifications() {
+  try {
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+    const result = await notifications.deleteMany({
+      read: true,
+      readAt: { $lte: cutoff }
+    });
+
+    if (result.deletedCount > 0) {
+      console.log(
+        `Deleted ${result.deletedCount} old read notifications`
+      );
+    }
+  } catch (error) {
+    console.error("NOTIFICATION CLEANUP ERROR:", error);
+  }
+}
+
+// Run cleanup every hour
+setInterval(cleanupReadNotifications, 60 * 60 * 1000);
+
+// Also run once after server starts
+cleanupReadNotifications();
 
 /* =========================================
    START SERVER
