@@ -2179,15 +2179,13 @@ app.patch(
   }
 );
 
-
-// 3. DELETE MY COMMENT
+ // DELETE MY COMMENT + ALL REPLIES
 app.delete(
   "/api/posts/:postId/comments/:commentId",
   auth,
   async (req, res) => {
     try {
       const { postId, commentId } = req.params;
-      const userObjectId = new ObjectId(req.user.id);
 
       if (!validId(postId) || !validId(commentId)) {
         return res.status(400).json({
@@ -2198,31 +2196,67 @@ app.delete(
 
       const postObjectId = new ObjectId(postId);
       const commentObjectId = new ObjectId(commentId);
+      const userObjectId = new ObjectId(req.user.id);
 
-      const result = await comments.deleteOne({
+      // Find original comment or reply owned by current user
+      const comment = await comments.findOne({
         _id: commentObjectId,
         postId: postObjectId,
         userId: userObjectId
       });
 
-      if (result.deletedCount === 0) {
+      if (!comment) {
         return res.status(404).json({
           success: false,
           message: "Comment not found or not yours"
         });
       }
 
-      // Remove related notification, if any
-      await notifications.deleteOne({
-        actorId: userObjectId,
+      let deletedIds = [commentObjectId];
+
+      // If original comment, collect all its replies
+      if (!comment.parentCommentId) {
+        const replies = await comments.find({
+          postId: postObjectId,
+          parentCommentId: commentObjectId
+        }).project({ _id: 1 }).toArray();
+
+        deletedIds = [
+          commentObjectId,
+          ...replies.map(reply => reply._id)
+        ];
+
+        // Delete original comment and all replies
+        await comments.deleteMany({
+          postId: postObjectId,
+          $or: [
+            { _id: commentObjectId },
+            { parentCommentId: commentObjectId }
+          ]
+        });
+
+      } else {
+        // Delete only selected reply
+        await comments.deleteOne({
+          _id: commentObjectId,
+          postId: postObjectId,
+          userId: userObjectId
+        });
+      }
+
+      // Remove notifications related to deleted comments/replies
+      await notifications.deleteMany({
         postId: postObjectId,
-        commentId: commentObjectId,
-        type: "post_comment"
+        $or: [
+          { commentId: { $in: deletedIds } },
+          { replyId: { $in: deletedIds } }
+        ]
       });
 
       res.json({
         success: true,
-        message: "Comment deleted"
+        message: "Comment and related replies deleted",
+        deletedCount: deletedIds.length
       });
 
     } catch (error) {
