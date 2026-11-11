@@ -1,0 +1,825 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0f17">
+<title>TELESUPAR — Explore</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+:root{
+  --bg:#0b0f17;
+  --panel:#131a25;
+  --panel2:#192231;
+  --border:#273244;
+  --text:#f4f6fb;
+  --muted:#8995a8;
+  --accent:#8b72ee;
+  --green:#36d69b;
+}
+
+body{
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,Helvetica,sans-serif;
+  overflow-x:hidden;
+}
+
+button,input{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.page{
+  max-width:680px;
+  min-height:100vh;
+  margin:auto;
+  padding-bottom:110px;
+}
+
+/* HEADER */
+
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:20;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:17px;
+  background:rgba(11,15,23,.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+
+.brand-logo{
+  width:39px;
+  height:39px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:var(--accent);
+  font-size:18px;
+  font-weight:bold;
+}
+
+.brand h1{
+  font-size:17px;
+  letter-spacing:.5px;
+}
+
+.brand small{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+  margin-top:4px;
+}
+
+.back-btn{
+  width:40px;
+  height:40px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  color:white;
+  background:var(--panel);
+  font-size:22px;
+}
+
+/* CONTENT */
+
+.main{
+  padding:22px 15px;
+}
+
+.heading{
+  margin-bottom:20px;
+}
+
+.heading h2{
+  font-size:23px;
+  font-weight:750;
+}
+
+.heading p{
+  margin-top:7px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.5;
+}
+
+/* SEARCH */
+
+.search-box{
+  height:52px;
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:0 15px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:var(--panel);
+  margin-bottom:18px;
+}
+
+.search-icon{
+  color:var(--muted);
+  font-size:21px;
+}
+
+.search-box input{
+  width:100%;
+  border:0;
+  outline:0;
+  color:white;
+  background:transparent;
+  font-size:13px;
+}
+
+.search-box input::placeholder{
+  color:#738095;
+}
+
+/* FILTERS */
+
+.filters{
+  display:flex;
+  gap:9px;
+  margin-bottom:20px;
+}
+
+.filter-btn{
+  padding:9px 16px;
+  border:1px solid var(--border);
+  border-radius:20px;
+  background:var(--panel);
+  color:#aab4c5;
+  font-size:11px;
+  font-weight:700;
+}
+
+.filter-btn.active{
+  color:white;
+  background:var(--accent);
+  border-color:var(--accent);
+}
+
+/* SECTION */
+
+.section-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.section-head h3{
+  font-size:14px;
+}
+
+.section-head span{
+  color:var(--muted);
+  font-size:11px;
+}
+
+/* USER LIST */
+
+.user-list{
+  display:grid;
+  gap:9px;
+}
+
+.user-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:var(--panel);
+}
+
+.avatar{
+  position:relative;
+  width:49px;
+  height:49px;
+  flex-shrink:0;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:15px;
+  background:#28334a;
+  color:white;
+  font-size:18px;
+  font-weight:bold;
+}
+
+.avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.online-dot{
+  position:absolute;
+  right:0;
+  bottom:0;
+  width:12px;
+  height:12px;
+  border:2px solid var(--panel);
+  border-radius:50%;
+  background:#64748b;
+}
+
+.online-dot.online{
+  background:var(--green);
+}
+
+.user-info{
+  flex:1;
+  min-width:0;
+}
+
+.user-name{
+  font-size:13px;
+  font-weight:700;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.username{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:11px;
+}
+
+.user-bio{
+  margin-top:5px;
+  color:#a6b0c0;
+  font-size:10px;
+  line-height:1.4;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.user-status{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:10px;
+}
+
+.user-status.online{
+  color:var(--green);
+}
+
+/* ACTIONS */
+
+.actions{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex-shrink:0;
+}
+
+.action-btn{
+  min-width:75px;
+  padding:8px 10px;
+  border-radius:9px;
+  font-size:10px;
+  font-weight:700;
+}
+
+.profile-btn{
+  border:1px solid var(--border);
+  color:#dce3ee;
+  background:var(--panel2);
+}
+
+.message-btn{
+  color:white;
+  background:var(--accent);
+}
+
+.action-btn:disabled{
+  opacity:.5;
+}
+
+/* STATES */
+
+.state{
+  padding:42px 15px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.7;
+  border:1px dashed var(--border);
+  border-radius:16px;
+  background:var(--panel);
+}
+
+.loader{
+  width:25px;
+  height:25px;
+  margin:0 auto 12px;
+  border:3px solid #ffffff20;
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+
+/* TOAST */
+
+.toast{
+  position:fixed;
+  z-index:200;
+  left:50%;
+  bottom:100px;
+  transform:translateX(-50%);
+  padding:12px 17px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#202a39;
+  color:white;
+  font-size:11px;
+  opacity:0;
+  pointer-events:none;
+  transition:.2s;
+}
+
+.toast.show{
+  opacity:1;
+}
+
+/* BOTTOM NAV */
+
+.bottom-nav{
+  position:fixed;
+  left:12px;
+  right:12px;
+  bottom:12px;
+  z-index:100;
+  max-width:656px;
+  height:72px;
+  margin:auto;
+  border:1px solid #ffffff20;
+  border-radius:19px;
+  background:rgba(20,27,39,.96);
+  backdrop-filter:blur(20px);
+}
+
+.nav-inner{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+}
+
+.nav-btn{
+  flex:1;
+  height:58px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  border:0;
+  border-radius:13px;
+  color:#8c98aa;
+  background:transparent;
+}
+
+.nav-btn.active{
+  color:#b7a6ff;
+  background:#8b72ee20;
+}
+
+.nav-icon{
+  font-size:21px;
+}
+
+.nav-btn span:last-child{
+  font-size:9px;
+  font-weight:700;
+}
+
+@media(min-width:700px){
+  .bottom-nav{
+    left:50%;
+    right:auto;
+    width:656px;
+    transform:translateX(-50%);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">T</div>
+      <div>
+        <h1>TELESUPAR</h1>
+        <small>DISCOVER PEOPLE</small>
+      </div>
+    </div>
+
+    <button class="back-btn" id="backBtn">‹</button>
+  </header>
+
+  <main class="main">
+
+    <section class="heading">
+      <h2>Explore</h2>
+      <p>Discover people and connect with the TELESUPAR community.</p>
+    </section>
+
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input
+        type="search"
+        id="searchInput"
+        placeholder="Search name or username..."
+        autocomplete="off"
+      >
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">
+        All people
+      </button>
+
+      <button class="filter-btn" data-filter="online">
+        ● Online
+      </button>
+    </div>
+
+    <div class="section-head">
+      <h3 id="listTitle">People you may know</h3>
+      <span id="resultCount">Loading...</span>
+    </div>
+
+    <div class="user-list" id="userList">
+      <div class="state">
+        <div class="loader"></div>
+        Loading people...
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav class="bottom-nav">
+  <div class="nav-inner">
+
+    <button class="nav-btn" data-page="home">
+      <span class="nav-icon">⌂</span>
+      <span>Home</span>
+    </button>
+
+    <button class="nav-btn" data-page="chat">
+      <span class="nav-icon">◉</span>
+      <span>Chat</span>
+    </button>
+
+    <button class="nav-btn active" data-page="explore">
+      <span class="nav-icon">⌕</span>
+      <span>Explore</span>
+    </button>
+
+    <button class="nav-btn" data-page="group">
+      <span class="nav-icon">♧</span>
+      <span>Group</span>
+    </button>
+
+    <button class="nav-btn" data-page="profile">
+      <span class="nav-icon">◎</span>
+      <span>Profile</span>
+    </button>
+
+  </div>
+</nav>
+
+<script>
+"use strict";
+
+const API = "https://telesupar.onrender.com";
+const token = localStorage.getItem("telesupar_token");
+
+const $ = id => document.getElementById(id);
+
+let allUsers = [];
+let activeFilter = "all";
+let searchTimer = null;
+let requestNumber = 0;
+
+if (!token) {
+  location.replace("login.html");
+}
+
+function escapeHTML(value){
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  })[char]);
+}
+
+function showToast(message){
+  const el = $("toast");
+  el.textContent = message;
+  el.classList.add("show");
+
+  setTimeout(() => {
+    el.classList.remove("show");
+  }, 2300);
+}
+
+async function api(path, options = {}){
+  const response = await fetch(API + path, {
+    ...options,
+    headers:{
+      Authorization:"Bearer " + token,
+      ...(options.headers || {})
+    }
+  });
+
+  let data = {};
+
+  try{
+    data = await response.json();
+  }catch(error){
+    throw new Error("Invalid server response");
+  }
+
+  if(!response.ok){
+    throw new Error(data.message || "Request failed");
+  }
+
+  return data;
+}
+
+function avatarHTML(user){
+  const name = user.displayName || user.username || "U";
+
+  if(user.avatar){
+    return `<img src="${escapeHTML(user.avatar)}" alt="">`;
+  }
+
+  return escapeHTML(name.charAt(0).toUpperCase());
+}
+
+function renderUsers(){
+
+  const list = $("userList");
+
+  const filtered = allUsers.filter(user => {
+
+    if(activeFilter === "online" && !user.isOnline){
+      return false;
+    }
+
+    return true;
+  });
+
+  $("resultCount").textContent =
+    filtered.length + " people";
+
+  if(!filtered.length){
+    list.innerHTML = `
+      <div class="state">
+        No people found.<br>
+        Try another search.
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = "";
+
+  filtered.forEach(user => {
+
+    const userId = String(user.id || user._id || "").trim();
+
+    if(!userId) return;
+
+    const name = user.displayName || user.username || "User";
+
+    const card = document.createElement("article");
+    card.className = "user-card";
+
+    card.innerHTML = `
+      <div class="avatar">
+        ${avatarHTML(user)}
+        <span class="online-dot ${user.isOnline ? "online" : ""}"></span>
+      </div>
+
+      <div class="user-info">
+        <div class="user-name">${escapeHTML(name)}</div>
+
+        <div class="username">
+          @${escapeHTML(user.username || "")}
+        </div>
+
+        <div class="user-bio">
+          ${escapeHTML(user.bio || "No bio added yet.")}
+        </div>
+
+        <div class="user-status ${user.isOnline ? "online" : ""}">
+          ${user.isOnline ? "● Online now" : "Offline"}
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="action-btn profile-btn" type="button">
+          Profile
+        </button>
+
+        <button class="action-btn message-btn" type="button">
+          Message
+        </button>
+      </div>
+    `;
+
+    card.querySelector(".profile-btn").onclick = () => {
+      location.href =
+        "profile.html?id=" + encodeURIComponent(userId);
+    };
+
+    const messageButton = card.querySelector(".message-btn");
+
+    messageButton.onclick = async () => {
+
+      messageButton.disabled = true;
+      messageButton.textContent = "Opening...";
+
+      try{
+
+        const data = await api(
+          "/api/conversations/" + encodeURIComponent(userId),
+          {method:"POST"}
+        );
+
+        const conversation = data.conversation;
+
+        const conversationId =
+          conversation && (conversation._id || conversation.id);
+
+        if(!conversationId){
+          throw new Error("Conversation ID not received");
+        }
+
+        location.href =
+          "chat.html?id=" + encodeURIComponent(conversationId);
+
+      }catch(error){
+
+        showToast(error.message);
+
+        messageButton.disabled = false;
+        messageButton.textContent = "Message";
+      }
+    };
+
+    list.appendChild(card);
+  });
+}
+
+async function loadUsers(query = ""){
+
+  const currentRequest = ++requestNumber;
+  const list = $("userList");
+
+  list.innerHTML = `
+    <div class="state">
+      <div class="loader"></div>
+      ${query ? "Searching people..." : "Loading people..."}
+    </div>
+  `;
+
+  try{
+
+    const data = await api(
+      "/api/users?search=" + encodeURIComponent(query)
+    );
+
+    if(currentRequest !== requestNumber) return;
+
+    allUsers = Array.isArray(data.users) ? data.users : [];
+
+    renderUsers();
+
+  }catch(error){
+
+    if(currentRequest !== requestNumber) return;
+
+    list.innerHTML = `
+      <div class="state">
+        Could not load people.<br><br>
+        ${escapeHTML(error.message)}
+      </div>
+    `;
+
+    $("resultCount").textContent = "Unavailable";
+  }
+}
+
+/* SEARCH */
+
+$("searchInput").addEventListener("input", function(){
+
+  clearTimeout(searchTimer);
+
+  const query = this.value.trim();
+
+  searchTimer = setTimeout(() => {
+    loadUsers(query);
+  }, 350);
+
+});
+
+/* FILTERS */
+
+document.querySelectorAll(".filter-btn").forEach(button => {
+
+  button.addEventListener("click", () => {
+
+    document.querySelectorAll(".filter-btn").forEach(item => {
+      item.classList.remove("active");
+    });
+
+    button.classList.add("active");
+
+    activeFilter = button.dataset.filter;
+
+    renderUsers();
+  });
+
+});
+
+/* NAVIGATION */
+
+document.querySelectorAll(".nav-btn").forEach(button => {
+
+  button.addEventListener("click", () => {
+
+    const page = button.dataset.page;
+
+    const routes = {
+      home:"dashboard.html",
+      chat:"home.html",
+      explore:"explore.html",
+      group:"dashboard.html",
+      profile:"profile.html"
+    };
+
+    if(routes[page]){
+      location.href = routes[page];
+    }
+
+  });
+
+});
+
+/* BACK */
+
+$("backBtn").addEventListener("click", () => {
+  location.href = "dashboard.html";
+});
+
+/* START */
+
+loadUsers();
+
+</script>
+
+</body>
+</html>
