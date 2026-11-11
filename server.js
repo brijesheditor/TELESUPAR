@@ -2467,35 +2467,40 @@ app.get("/api/notifications", auth, async (req, res) => {
   ])
 );
 
-    const result = items.map(n => ({
-      id: n._id.toString(),
-      type: n.type,
-      read: !!n.read,
-      createdAt: n.createdAt,
-      actor: n.actorId
-        ? actorMap.get(n.actorId.toString()) || null
-        : null,
-      post: n.postId
-        ? postMap.get(n.postId.toString()) || null
-        : null,
-      story: n.storyId
-        ? storyMap.get(n.storyId.toString()) || null
-        : null
-    }));
+    
+const result = items.map(n => ({
+  id: n._id.toString(),
+  type: n.type,
+  read: !!n.read,
+  createdAt: n.createdAt,
 
-    commentId: n.commentId
-  ? n.commentId.toString()
-  : null,
+  actor: n.actorId
+    ? actorMap.get(n.actorId.toString()) || null
+    : null,
 
-replyId: n.replyId
-  ? n.replyId.toString()
-  : null,
+  post: n.postId
+    ? postMap.get(n.postId.toString()) || null
+    : null,
 
-commentText: n.commentText || "",
+  story: n.storyId
+    ? storyMap.get(n.storyId.toString()) || null
+    : null,
 
-parentCommentText: n.commentId
-  ? commentMap.get(n.commentId.toString()) || ""
-  : "",
+  commentId: n.commentId
+    ? n.commentId.toString()
+    : null,
+
+  replyId: n.replyId
+    ? n.replyId.toString()
+    : null,
+
+  commentText: n.commentText || "",
+
+  parentCommentText: n.commentId
+    ? commentMap.get(n.commentId.toString()) || ""
+    : ""
+}));
+
 
     res.json({
       success: true,
