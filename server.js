@@ -1647,6 +1647,7 @@ app.delete(
    TELESUPAR POSTS API
 ========================================= */
 
+
 // GET ALL POSTS
 app.get("/api/posts/feed", auth, async (req, res) => {
   try {
@@ -1654,6 +1655,30 @@ app.get("/api/posts/feed", auth, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(50)
       .toArray();
+
+    // GET COMMENT COUNTS FOR ALL POSTS
+    const postIds = allPosts.map(post => post._id);
+
+    const commentCounts = await comments.aggregate([
+      {
+        $match: {
+          postId: { $in: postIds }
+        }
+      },
+      {
+        $group: {
+          _id: "$postId",
+          count: { $sum: 1 }
+        }
+      }
+    ]).toArray();
+
+    const commentCountMap = new Map(
+      commentCounts.map(item => [
+        item._id.toString(),
+        item.count
+      ])
+    );
 
     const ids = [...new Set(
       allPosts.map(post => post.userId.toString())
@@ -1677,21 +1702,33 @@ app.get("/api/posts/feed", auth, async (req, res) => {
       mediaType: post.mediaType,
       createdAt: post.createdAt,
       likesCount: (post.likes || []).length,
+
+      // REAL COMMENT COUNT
+      commentsCount:
+        commentCountMap.get(post._id.toString()) || 0,
+
       likedByMe: (post.likes || []).some(
         id => id.toString() === req.user.id
       ),
+
       user: authorMap.get(post.userId.toString()) || null
     })).filter(post => post.user);
 
-    res.json({ success: true, posts: result });
+    res.json({
+      success: true,
+      posts: result
+    });
+
   } catch (error) {
     console.error("POST FEED ERROR:", error);
+
     res.status(500).json({
       success: false,
       message: "Could not load posts"
     });
   }
 });
+
 
 // CREATE POST
 app.post(
