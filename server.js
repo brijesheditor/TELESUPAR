@@ -2390,7 +2390,15 @@ app.get("/api/notifications", auth, async (req, res) => {
       )
     ];
 
-    const [actors, relatedPosts, relatedStories, unreadCount] =
+    const commentIds = [
+  ...new Set(
+    items
+      .filter(n => n.commentId)
+      .map(n => n.commentId.toString())
+  )
+];
+
+    const [actors, relatedPosts, relatedStories, relatedComments, unreadCount] =
       await Promise.all([
         users.find({
           _id: {
