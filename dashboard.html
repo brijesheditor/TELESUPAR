@@ -2946,6 +2946,15 @@ async function loadNotifications(silent = false) {
   preview = "💬";
       }
 
+      if (item.type === "post_comment_reply") {
+  message =
+    `replied to your comment on a post. ` +
+    `Your comment: "${item.parentCommentText || ""}" ` +
+    `Reply: "${item.commentText || ""}"`;
+
+  preview = "↩️";
+}
+
       const row = document.createElement("div");
 
       row.className =
@@ -2990,7 +2999,11 @@ async function loadNotifications(silent = false) {
           }
         }
 
-        if (item.type === "post_comment" && post.id) {
+        if (
+  (item.type === "post_comment" ||
+   item.type === "post_comment_reply") &&
+  post.id
+) {
   const target = $("post-" + post.id);
 
   if (target) {
