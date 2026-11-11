@@ -1894,6 +1894,111 @@ app.post(
   }
 );
 
+
+ // REPLY TO COMMENT
+app.post(
+  "/api/posts/:postId/comments/:commentId/replies",
+  auth,
+  async (req, res) => {
+    try {
+      const { postId, commentId } = req.params;
+      const userId = req.user.id;
+
+      if (!validId(postId) || !validId(commentId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid ID"
+        });
+      }
+
+      const text = String(req.body.text || "")
+        .trim()
+        .slice(0, 500);
+
+      if (!text) {
+        return res.status(400).json({
+          success: false,
+          message: "Reply cannot be empty"
+        });
+      }
+
+      const postObjectId = new ObjectId(postId);
+      const commentObjectId = new ObjectId(commentId);
+      const userObjectId = new ObjectId(userId);
+
+      const parentComment = await comments.findOne({
+        _id: commentObjectId,
+        postId: postObjectId
+      });
+
+      if (!parentComment) {
+        return res.status(404).json({
+          success: false,
+          message: "Comment not found"
+        });
+      }
+
+      // Keep replies attached to top-level comments
+      if (parentComment.parentCommentId) {
+        return res.status(400).json({
+          success: false,
+          message: "Reply to the original comment"
+        });
+      }
+
+      const reply = {
+        postId: postObjectId,
+        userId: userObjectId,
+        parentCommentId: commentObjectId,
+        text,
+        createdAt: new Date()
+      };
+
+      const saved = await comments.insertOne(reply);
+
+      // Notify original comment author
+      if (parentComment.userId.toString() !== userId) {
+        await notifications.insertOne({
+          recipientId: parentComment.userId,
+          actorId: userObjectId,
+          postId: postObjectId,
+          commentId: commentObjectId,
+          replyId: saved.insertedId,
+          commentText: text,
+          type: "post_comment_reply",
+          read: false,
+          createdAt: new Date()
+        });
+      }
+
+      const user = await users.findOne({
+        _id: userObjectId
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Reply added",
+        reply: {
+          id: saved.insertedId.toString(),
+          parentCommentId: commentObjectId.toString(),
+          text,
+          createdAt: reply.createdAt,
+          user: publicProfileUser(user)
+        }
+      });
+
+    } catch (error) {
+      console.error("CREATE REPLY ERROR:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Could not add reply"
+      });
+    }
+  }
+);
+
+
 // 2. GET COMMENTS
 app.get(
   "/api/posts/:postId/comments",
