@@ -1998,8 +1998,7 @@ app.post(
   }
 );
 
-
-// 2. GET COMMENTS
+ // GET COMMENTS WITH REPLIES
 app.get(
   "/api/posts/:postId/comments",
   auth,
@@ -2027,16 +2026,32 @@ app.get(
         });
       }
 
+      // Fetch original comments
       const allComments = await comments.find({
-        postId: postObjectId
+        postId: postObjectId,
+        parentCommentId: { $exists: false }
       })
         .sort({ createdAt: 1 })
         .limit(100)
         .toArray();
 
+      // Fetch replies for these comments
+      const parentIds = allComments.map(c => c._id);
+
+      const allReplies = parentIds.length
+        ? await comments.find({
+            postId: postObjectId,
+            parentCommentId: { $in: parentIds }
+          })
+          .sort({ createdAt: 1 })
+          .toArray()
+        : [];
+
+      // Collect all user IDs
       const userIds = [
         ...new Set(
-          allComments.map(c => c.userId.toString())
+          [...allComments, ...allReplies]
+            .map(c => c.userId.toString())
         )
       ];
 
@@ -2053,18 +2068,40 @@ app.get(
         ])
       );
 
+      // Format replies
+      const replyMap = new Map();
+
+      allReplies.forEach(reply => {
+        const parentId = reply.parentCommentId.toString();
+
+        if (!replyMap.has(parentId)) {
+          replyMap.set(parentId, []);
+        }
+
+        replyMap.get(parentId).push({
+          id: reply._id.toString(),
+          text: reply.text,
+          createdAt: reply.createdAt,
+          user: authorMap.get(reply.userId.toString()) || null,
+          isMine: reply.userId.toString() === req.user.id
+        });
+      });
+
+      // Format original comments
       const result = allComments.map(c => ({
         id: c._id.toString(),
         text: c.text,
         createdAt: c.createdAt,
         user: authorMap.get(c.userId.toString()) || null,
-        isMine: c.userId.toString() === req.user.id
+        isMine: c.userId.toString() === req.user.id,
+        replies: replyMap.get(c._id.toString()) || []
       }));
 
       res.json({
         success: true,
         comments: result,
-        count: result.length
+        count: allComments.length,
+        repliesCount: allReplies.length
       });
 
     } catch (error) {
@@ -2077,6 +2114,7 @@ app.get(
     }
   }
 );
+
 
 // 3. DELETE MY COMMENT
 app.delete(
