@@ -2483,6 +2483,20 @@ app.get("/api/notifications", auth, async (req, res) => {
         : null
     }));
 
+    commentId: n.commentId
+  ? n.commentId.toString()
+  : null,
+
+replyId: n.replyId
+  ? n.replyId.toString()
+  : null,
+
+commentText: n.commentText || "",
+
+parentCommentText: n.commentId
+  ? commentMap.get(n.commentId.toString()) || ""
+  : "",
+
     res.json({
       success: true,
       notifications: result,
