@@ -2116,6 +2116,70 @@ app.get(
 );
 
 
+ // EDIT MY COMMENT OR REPLY
+app.patch(
+  "/api/posts/:postId/comments/:commentId",
+  auth,
+  async (req, res) => {
+    try {
+      const { postId, commentId } = req.params;
+
+      if (!validId(postId) || !validId(commentId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid ID"
+        });
+      }
+
+      const text = String(req.body.text || "")
+        .trim()
+        .slice(0, 500);
+
+      if (!text) {
+        return res.status(400).json({
+          success: false,
+          message: "Comment cannot be empty"
+        });
+      }
+
+      const result = await comments.updateOne(
+        {
+          _id: new ObjectId(commentId),
+          postId: new ObjectId(postId),
+          userId: new ObjectId(req.user.id)
+        },
+        {
+          $set: {
+            text,
+            editedAt: new Date()
+          }
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Comment not found or not yours"
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Comment updated"
+      });
+
+    } catch (error) {
+      console.error("EDIT COMMENT ERROR:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Could not edit comment"
+      });
+    }
+  }
+);
+
+
 // 3. DELETE MY COMMENT
 app.delete(
   "/api/posts/:postId/comments/:commentId",
