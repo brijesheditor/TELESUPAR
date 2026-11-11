@@ -2418,6 +2418,12 @@ app.get("/api/notifications", auth, async (req, res) => {
           }
         }).toArray(),
 
+        comments.find({
+  _id: {
+    $in: commentIds.map(id => new ObjectId(id))
+  }
+}).toArray(),
+
         notifications.countDocuments({
           recipientId,
           read: false
@@ -2453,6 +2459,13 @@ app.get("/api/notifications", auth, async (req, res) => {
         }
       ])
     );
+
+    const commentMap = new Map(
+  relatedComments.map(comment => [
+    comment._id.toString(),
+    comment.text || ""
+  ])
+);
 
     const result = items.map(n => ({
       id: n._id.toString(),
