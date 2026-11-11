@@ -2262,11 +2262,18 @@ async function loadSocialPosts() {
 
 
 /* =================================
-   TALKSTACK COMMENTS SYSTEM
+   TELESUPAR ADVANCED COMMENTS
 ================================= */
 
 const commentsModal = $("commentsModal");
+const commentActionMenu = $("commentActionMenu");
+
 let activeCommentPostId = null;
+let replyTargetCommentId = null;
+let selectedComment = null;
+let activeCommentTotal = 0;
+
+const commentLookup = new Map();
 
 function commentAvatar(user) {
   if (user && user.avatar) {
@@ -2277,6 +2284,98 @@ function commentAvatar(user) {
   return safeText(name[0].toUpperCase());
 }
 
+// UPDATE REAL POST COMMENT COUNT
+function updateCommentCount(postId, count) {
+  const card = $("post-" + postId);
+
+  if (!card) return;
+
+  const countElement = card.querySelector(".comment-count");
+
+  if (countElement) {
+    countElement.textContent = count;
+  }
+}
+
+// CLEAR REPLY MODE
+function clearReplyMode() {
+  replyTargetCommentId = null;
+
+  $("replyingToBar").hidden = true;
+  $("replyingToText").textContent = "";
+
+  $("commentInput").placeholder = "Write your thoughts...";
+}
+
+// START REPLY
+function beginCommentReply(parentId, name) {
+  replyTargetCommentId = parentId;
+
+  $("replyingToBar").hidden = false;
+  $("replyingToText").textContent =
+    "Replying to " + name;
+
+  $("commentInput").placeholder = "Write your reply...";
+
+  $("commentInput").focus();
+}
+
+// CREATE COMMENT ELEMENT
+function createCommentElement(comment, parentId, isReply) {
+  const user = comment.user || {};
+
+  const userName =
+    user.displayName || user.username || "User";
+
+  const item = document.createElement("div");
+
+  item.className = isReply
+    ? "comment-item comment-reply-item"
+    : "comment-item";
+
+  commentLookup.set(comment.id, {
+    id: comment.id,
+    parentId,
+    text: comment.text,
+    isMine: comment.isMine,
+    userName
+  });
+
+  item.innerHTML = `
+    <div class="comment-avatar">
+      ${commentAvatar(user)}
+    </div>
+
+    <div class="comment-content">
+
+      <div class="comment-meta">
+        <b>${safeText(userName)}</b>
+        <small>${safeText(timeAgo(comment.createdAt))}</small>
+      </div>
+
+      <div
+        class="comment-bubble"
+        data-comment-id="${safeText(comment.id)}"
+      >${safeText(comment.text)}</div>
+
+      <div class="comment-inline-actions">
+        <button
+          type="button"
+          class="reply-inline-btn"
+          data-reply-parent="${safeText(parentId)}"
+          data-reply-name="${safeText(userName)}"
+        >
+          Reply
+        </button>
+      </div>
+
+    </div>
+  `;
+
+  return item;
+}
+
+// LOAD COMMENTS AND REPLIES
 async function loadPostComments(postId) {
   const list = $("commentsList");
 
@@ -2284,12 +2383,20 @@ async function loadPostComments(postId) {
     <div class="comments-empty">Loading comments...</div>
   `;
 
+  commentLookup.clear();
+
   try {
     const data = await socialApi(
       `/api/posts/${encodeURIComponent(postId)}/comments`
     );
 
     const comments = data.comments || [];
+
+    activeCommentTotal =
+      Number(data.count || comments.length) +
+      Number(data.repliesCount || 0);
+
+    updateCommentCount(postId, activeCommentTotal);
 
     if (!comments.length) {
       list.innerHTML = `
@@ -2304,44 +2411,35 @@ async function loadPostComments(postId) {
     list.innerHTML = "";
 
     comments.forEach(comment => {
-      const user = comment.user || {};
-      const item = document.createElement("div");
 
-      item.className = "comment-item";
+      const parentItem = createCommentElement(
+        comment,
+        comment.id,
+        false
+      );
 
-      item.innerHTML = `
-        <div class="comment-avatar">
-          ${commentAvatar(user)}
-        </div>
+      const replies = comment.replies || [];
 
-        <div class="comment-content">
-          <div class="comment-meta">
-            <b>${safeText(
-              user.displayName || user.username || "User"
-            )}</b>
+      if (replies.length) {
+        const replyContainer = document.createElement("div");
 
-            <small>${safeText(timeAgo(comment.createdAt))}</small>
-          </div>
+        replyContainer.className = "comment-replies";
 
-          <div class="comment-text">${safeText(comment.text)}</div>
+        replies.forEach(reply => {
+          const replyItem = createCommentElement(
+            reply,
+            comment.id,
+            true
+          );
 
-          ${
-            comment.isMine
-              ? `<button
-                   type="button"
-                   class="delete-comment-btn"
-                   data-delete-comment="${safeText(comment.id)}">
-                   Delete
-                 </button>`
-              : ""
-          }
-        </div>
-      `;
+          replyContainer.appendChild(replyItem);
+        });
 
-      list.appendChild(item);
+        parentItem.appendChild(replyContainer);
+      }
+
+      list.appendChild(parentItem);
     });
-
-    list.scrollTop = list.scrollHeight;
 
   } catch (error) {
     list.innerHTML = `
@@ -2358,13 +2456,17 @@ async function loadPostComments(postId) {
 // OPEN COMMENTS
 async function openPostComments(postId) {
   activeCommentPostId = postId;
+
+  clearReplyMode();
+
   commentsModal.classList.add("show");
+
   $("commentInput").value = "";
 
   await loadPostComments(postId);
 }
 
-// COMMENT ICON CLICK
+// OPEN COMMENTS ICON
 $("postsFeed").addEventListener("click", event => {
   const button = event.target.closest("[data-comments]");
 
@@ -2376,17 +2478,35 @@ $("postsFeed").addEventListener("click", event => {
 // CLOSE COMMENTS
 $("commentsClose").onclick = () => {
   commentsModal.classList.remove("show");
+  commentActionMenu.classList.remove("show");
   activeCommentPostId = null;
+  clearReplyMode();
 };
 
 commentsModal.addEventListener("click", event => {
   if (event.target === commentsModal) {
     commentsModal.classList.remove("show");
     activeCommentPostId = null;
+    clearReplyMode();
   }
 });
 
-// SEND COMMENT
+// CANCEL REPLY
+$("cancelReply").onclick = clearReplyMode;
+
+// INLINE REPLY BUTTON
+$("commentsList").addEventListener("click", event => {
+  const button = event.target.closest("[data-reply-parent]");
+
+  if (!button) return;
+
+  beginCommentReply(
+    button.dataset.replyParent,
+    button.dataset.replyName || "User"
+  );
+});
+
+// SEND COMMENT OR REPLY
 $("commentForm").addEventListener("submit", async event => {
   event.preventDefault();
 
@@ -2394,6 +2514,7 @@ $("commentForm").addEventListener("submit", async event => {
 
   const input = $("commentInput");
   const button = $("commentSend");
+
   const text = input.value.trim();
 
   if (!text) {
@@ -2406,31 +2527,37 @@ $("commentForm").addEventListener("submit", async event => {
     return;
   }
 
+  const postId = activeCommentPostId;
+  const parentId = replyTargetCommentId;
+
   button.disabled = true;
-  button.textContent = "Sending...";
+  button.textContent = parentId ? "Replying..." : "Sending...";
 
   try {
-    await socialApi(
-      `/api/posts/${encodeURIComponent(activeCommentPostId)}/comments`,
-      {
-        method: "POST",
-        body: JSON.stringify({ text })
-      }
-    );
+    let url;
+    let method = "POST";
+
+    if (parentId) {
+      url =
+        `/api/posts/${encodeURIComponent(postId)}` +
+        `/comments/${encodeURIComponent(parentId)}/replies`;
+    } else {
+      url =
+        `/api/posts/${encodeURIComponent(postId)}/comments`;
+    }
+
+    await socialApi(url, {
+      method,
+      body: JSON.stringify({ text })
+    });
 
     input.value = "";
 
-    await loadPostComments(activeCommentPostId);
+    clearReplyMode();
 
-    // Update count on the related post
-    const count = $("post-" + activeCommentPostId)
-      ?.querySelector(".comment-count");
+    await loadPostComments(postId);
 
-    if (count) {
-      count.textContent = Number(count.textContent || 0) + 1;
-    }
-
-    toast("Comment added");
+    toast(parentId ? "Reply added" : "Comment added");
 
   } catch (error) {
     toast(error.message);
@@ -2440,49 +2567,221 @@ $("commentForm").addEventListener("submit", async event => {
   }
 });
 
-// DELETE OWN COMMENT
-$("commentsList").addEventListener("click", async event => {
-  const button = event.target.closest("[data-delete-comment]");
+// LONG PRESS MENU
+let commentPressTimer = null;
+let commentPointerStart = null;
 
-  if (!button || !activeCommentPostId) return;
+function cancelCommentLongPress() {
+  if (commentPressTimer) {
+    clearTimeout(commentPressTimer);
+    commentPressTimer = null;
+  }
 
-  const commentId = button.dataset.deleteComment;
-  const postId = activeCommentPostId;
+  commentPointerStart = null;
+}
 
-  if (!confirm("Delete this comment?")) return;
+function openCommentActionMenu(comment) {
+  selectedComment = comment;
 
-  button.disabled = true;
-  button.textContent = "Deleting...";
+  $("commentEditAction").hidden = !comment.isMine;
+  $("commentDeleteAction").hidden = !comment.isMine;
 
-  try {
-    await socialApi(
-      `/api/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`,
-      {
-        method: "DELETE"
-      }
-    );
+  commentActionMenu.classList.add("show");
+}
 
-    await loadPostComments(postId);
+$("commentsList").addEventListener("pointerdown", event => {
+  const bubble = event.target.closest(".comment-bubble");
 
-    const count = $("post-" + postId)
-      ?.querySelector(".comment-count");
+  if (!bubble) return;
 
-    if (count) {
-      count.textContent = Math.max(
-        0,
-        Number(count.textContent || 0) - 1
-      );
-    }
+  const comment = commentLookup.get(
+    bubble.dataset.commentId
+  );
 
-    toast("Comment deleted");
+  if (!comment) return;
 
-  } catch (error) {
-    toast(error.message);
-    button.disabled = false;
-    button.textContent = "Delete";
+  cancelCommentLongPress();
+
+  commentPointerStart = {
+    x: event.clientX,
+    y: event.clientY
+  };
+
+  commentPressTimer = setTimeout(() => {
+    commentPressTimer = null;
+    commentPointerStart = null;
+
+    openCommentActionMenu(comment);
+  }, 550);
+});
+
+$("commentsList").addEventListener("pointermove", event => {
+  if (!commentPointerStart) return;
+
+  const dx = Math.abs(
+    event.clientX - commentPointerStart.x
+  );
+
+  const dy = Math.abs(
+    event.clientY - commentPointerStart.y
+  );
+
+  if (dx > 12 || dy > 12) {
+    cancelCommentLongPress();
   }
 });
-  
+
+$("commentsList").addEventListener("pointerup", cancelCommentLongPress);
+$("commentsList").addEventListener("pointercancel", cancelCommentLongPress);
+$("commentsList").addEventListener("pointerleave", cancelCommentLongPress);
+
+// DESKTOP RIGHT CLICK
+$("commentsList").addEventListener("contextmenu", event => {
+  const bubble = event.target.closest(".comment-bubble");
+
+  if (!bubble) return;
+
+  event.preventDefault();
+
+  const comment = commentLookup.get(
+    bubble.dataset.commentId
+  );
+
+  if (comment) {
+    openCommentActionMenu(comment);
+  }
+});
+
+// CLOSE ACTION MENU
+function closeCommentActionMenu() {
+  commentActionMenu.classList.remove("show");
+}
+
+commentActionMenu.addEventListener("click", event => {
+  if (event.target === commentActionMenu) {
+    closeCommentActionMenu();
+  }
+});
+
+// MENU ACTIONS
+commentActionMenu.addEventListener("click", async event => {
+  const button = event.target.closest("[data-comment-action]");
+
+  if (!button) return;
+
+  const action = button.dataset.commentAction;
+  const selected = selectedComment;
+
+  if (action === "cancel") {
+    closeCommentActionMenu();
+    return;
+  }
+
+  if (!selected || !activeCommentPostId) return;
+
+  closeCommentActionMenu();
+
+  const postId = activeCommentPostId;
+
+  // REPLY
+  if (action === "reply") {
+    beginCommentReply(
+      selected.parentId,
+      selected.userName
+    );
+    return;
+  }
+
+  // EDIT
+  if (action === "edit") {
+    if (!selected.isMine) return;
+
+    const newText = prompt(
+      "Edit your comment:",
+      selected.text
+    );
+
+    if (newText === null) return;
+
+    const text = newText.trim();
+
+    if (!text) {
+      toast("Comment cannot be empty");
+      return;
+    }
+
+    if (text.length > 500) {
+      toast("Maximum 500 characters allowed");
+      return;
+    }
+
+    try {
+      await socialApi(
+        `/api/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(selected.id)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ text })
+        }
+      );
+
+      await loadPostComments(postId);
+
+      toast("Comment updated");
+
+    } catch (error) {
+      toast(error.message);
+    }
+
+    return;
+  }
+
+  // SHARE
+  if (action === "share") {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "TELESUPAR Comment",
+          text: selected.text
+        });
+      } else {
+        await navigator.clipboard.writeText(selected.text);
+        toast("Comment copied");
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        toast("Could not share comment");
+      }
+    }
+
+    return;
+  }
+
+  // DELETE
+  if (action === "delete") {
+    if (!selected.isMine) return;
+
+    if (!confirm("Delete this comment?")) return;
+
+    try {
+      await socialApi(
+        `/api/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(selected.id)}`,
+        {
+          method: "DELETE"
+        }
+      );
+
+      await loadPostComments(postId);
+
+      toast("Comment deleted");
+
+    } catch (error) {
+      toast(error.message);
+    }
+  }
+});
+
+ 
+    
 // SELECT POST PHOTO / VIDEO
 $("postFile").onchange = () => {
   const file = $("postFile").files[0];
