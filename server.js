@@ -2723,6 +2723,345 @@ app.get(
     }
 );
 
+// =====================================
+// FOLLOW / UNFOLLOW SYSTEM V1
+// =====================================
+
+// FOLLOW USER
+app.post("/api/users/:userId/follow", auth, async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    const myId = new ObjectId(req.user.id);
+
+    if (!validId(targetId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID"
+      });
+    }
+
+    const followingId = new ObjectId(targetId);
+
+    if (myId.equals(followingId)) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot follow yourself"
+      });
+    }
+
+    const targetUser = await users.findOne({
+      _id: followingId
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const result = await follows.updateOne(
+      {
+        followerId: myId,
+        followingId: followingId
+      },
+      {
+        $setOnInsert: {
+          followerId: myId,
+          followingId: followingId,
+          createdAt: new Date()
+        }
+      },
+      {
+        upsert: true
+      }
+    );
+
+    // SEND NOTIFICATION ONLY FOR A NEW FOLLOW
+    if (result.upsertedCount > 0) {
+      await notifications.insertOne({
+        recipientId: followingId,
+        actorId: myId,
+        type: "new_follow",
+        read: false,
+        createdAt: new Date()
+      });
+    }
+
+    const followersCount = await follows.countDocuments({
+      followingId: followingId
+    });
+
+    const followingCount = await follows.countDocuments({
+      followerId: followingId
+    });
+
+    return res.json({
+      success: true,
+      following: true,
+      followersCount,
+      followingCount,
+      message: "User followed successfully"
+    });
+
+  } catch (error) {
+    console.error("FOLLOW ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Follow failed"
+    });
+  }
+});
+
+
+// UNFOLLOW USER
+app.delete("/api/users/:userId/follow", auth, async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    const myId = new ObjectId(req.user.id);
+
+    if (!validId(targetId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID"
+      });
+    }
+
+    const followingId = new ObjectId(targetId);
+
+    const targetUser = await users.findOne({
+      _id: followingId
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    await follows.deleteOne({
+      followerId: myId,
+      followingId: followingId
+    });
+
+    const followersCount = await follows.countDocuments({
+      followingId: followingId
+    });
+
+    const followingCount = await follows.countDocuments({
+      followerId: followingId
+    });
+
+    return res.json({
+      success: true,
+      following: false,
+      followersCount,
+      followingCount,
+      message: "User unfollowed successfully"
+    });
+
+  } catch (error) {
+    console.error("UNFOLLOW ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unfollow failed"
+    });
+  }
+});
+
+
+// FOLLOW STATUS
+app.get("/api/users/:userId/follow-status", auth, async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    const myId = new ObjectId(req.user.id);
+
+    if (!validId(targetId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID"
+      });
+    }
+
+    const followingId = new ObjectId(targetId);
+
+    const targetUser = await users.findOne({
+      _id: followingId
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const [isFollowing, followersCount, followingCount] =
+      await Promise.all([
+        follows.findOne({
+          followerId: myId,
+          followingId: followingId
+        }),
+        follows.countDocuments({
+          followingId: followingId
+        }),
+        follows.countDocuments({
+          followerId: followingId
+        })
+      ]);
+
+    return res.json({
+      success: true,
+      following: !!isFollowing,
+      followersCount,
+      followingCount
+    });
+
+  } catch (error) {
+    console.error("FOLLOW STATUS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not get follow status"
+    });
+  }
+});
+
+
+// GET FOLLOWERS
+app.get("/api/users/:userId/followers", auth, async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+
+    if (!validId(targetId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID"
+      });
+    }
+
+    const userId = new ObjectId(targetId);
+
+    const targetUser = await users.findOne({
+      _id: userId
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const records = await follows.find({
+      followingId: userId
+    })
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .toArray();
+
+    const userIds = records.map(item => item.followerId);
+
+    const followerUsers = await users.find({
+      _id: { $in: userIds }
+    }).toArray();
+
+    const userMap = new Map(
+      followerUsers.map(user => [
+        user._id.toString(),
+        publicProfileUser(user)
+      ])
+    );
+
+    const result = records
+      .map(item => userMap.get(item.followerId.toString()))
+      .filter(Boolean);
+
+    return res.json({
+      success: true,
+      count: result.length,
+      users: result
+    });
+
+  } catch (error) {
+    console.error("GET FOLLOWERS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not get followers"
+    });
+  }
+});
+
+
+// GET FOLLOWING
+app.get("/api/users/:userId/following", auth, async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+
+    if (!validId(targetId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID"
+      });
+    }
+
+    const userId = new ObjectId(targetId);
+
+    const targetUser = await users.findOne({
+      _id: userId
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const records = await follows.find({
+      followerId: userId
+    })
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .toArray();
+
+    const userIds = records.map(item => item.followingId);
+
+    const followingUsers = await users.find({
+      _id: { $in: userIds }
+    }).toArray();
+
+    const userMap = new Map(
+      followingUsers.map(user => [
+        user._id.toString(),
+        publicProfileUser(user)
+      ])
+    );
+
+    const result = records
+      .map(item => userMap.get(item.followingId.toString()))
+      .filter(Boolean);
+
+    return res.json({
+      success: true,
+      count: result.length,
+      users: result
+    });
+
+  } catch (error) {
+    console.error("GET FOLLOWING ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not get following"
+    });
+  }
+});
+
 /* =========================================
    CREATE / GET CONVERSATION
 ========================================= */
