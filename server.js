@@ -2899,23 +2899,35 @@ app.get("/api/users/:userId/follow-status", auth, async (req, res) => {
       });
     }
 
-    const [isFollowing, followersCount, followingCount] =
-      await Promise.all([
-        follows.findOne({
-          followerId: myId,
-          followingId: followingId
-        }),
-        follows.countDocuments({
-          followingId: followingId
-        }),
-        follows.countDocuments({
-          followerId: followingId
-        })
-      ]);
+    const [
+      isFollowing,
+      followsYou,
+      followersCount,
+      followingCount
+    ] = await Promise.all([
+      follows.findOne({
+        followerId: myId,
+        followingId: followingId
+      }),
+
+      follows.findOne({
+        followerId: followingId,
+        followingId: myId
+      }),
+
+      follows.countDocuments({
+        followingId: followingId
+      }),
+
+      follows.countDocuments({
+        followerId: followingId
+      })
+    ]);
 
     return res.json({
       success: true,
       following: !!isFollowing,
+      followsYou: !!followsYou,
       followersCount,
       followingCount
     });
