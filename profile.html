@@ -4,445 +4,241 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#080d19">
+<meta name="theme-color" content="#090b14">
 <title>TELESUPAR | Profile</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-
 :root{
-  --bg:#080d19;
-  --panel:#111b2c;
-  --panel2:#17243a;
-  --border:#253650;
-  --text:#f4f7ff;
-  --muted:#91a1bb;
-  --cyan:#42d9e8;
-  --blue:#547cff;
-  --violet:#9467ff;
+  --bg:#090b14;
+  --panel:#121625;
+  --panel2:#191f32;
+  --border:#292f45;
+  --text:#f5f6ff;
+  --muted:#929bb3;
+  --purple:#9270ff;
+  --cyan:#53d8e8;
+  --pink:#ec75c6;
+  --green:#36d99b;
 }
-
 body{
   background:
-    radial-gradient(ellipse at 15% 0%,#15294a 0%,transparent 38%),
-    radial-gradient(ellipse at 100% 30%,#241746 0%,transparent 35%),
+    radial-gradient(ellipse at 10% 0%,#29204c 0%,transparent 38%),
+    radial-gradient(ellipse at 100% 25%,#152b43 0%,transparent 35%),
     var(--bg);
   color:var(--text);
   font-family:system-ui,-apple-system,Arial,sans-serif;
   min-height:100vh;
-  padding:18px 14px 45px;
+  padding:16px 13px 40px;
 }
-
 button,input,textarea{font:inherit}
 button{cursor:pointer}
-button:disabled{opacity:.45;cursor:not-allowed}
-
+button:disabled{opacity:.55;cursor:not-allowed}
 .container{max-width:520px;margin:auto}
-
 .topbar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin:5px 0 22px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin:4px 0 22px;
 }
-
-.brand{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-.brand-logo{
-  width:40px;height:40px;
-  display:grid;place-items:center;
-  border-radius:14px;
-  background:linear-gradient(135deg,var(--cyan),var(--blue),var(--violet));
-  color:#07111d;
-  font-size:20px;font-weight:900;
-  box-shadow:0 5px 22px #42d9e833;
-}
-
-.brand-name{
-  font-size:18px;
-  font-weight:850;
-  letter-spacing:1.3px;
-}
-
-.brand-sub{
-  color:var(--muted);
-  font-size:10px;
-  letter-spacing:1.5px;
-}
-
+.brand{display:flex;align-items:center;gap:10px}
 .icon-btn{
-  width:42px;height:42px;
-  border:1px solid var(--border);
-  border-radius:14px;
-  background:#121d30;
-  color:white;
-  font-size:22px;
+  width:42px;height:42px;border:1px solid var(--border);
+  border-radius:14px;background:#171c2d;color:white;font-size:23px;
 }
+.brand-logo{
+  width:40px;height:40px;display:grid;place-items:center;
+  border-radius:14px;
+  background:linear-gradient(135deg,var(--cyan),var(--purple),var(--pink));
+  color:#080b14;font-size:21px;font-weight:950;
+  box-shadow:0 5px 24px #9270ff35;
+}
+.brand-name{font-size:17px;font-weight:900;letter-spacing:1.2px}
+.brand-sub{font-size:9px;color:var(--muted);letter-spacing:1.6px;margin-top:2px}
 
 .profile-card{
-  position:relative;
-  overflow:hidden;
-  border:1px solid var(--border);
-  border-radius:25px;
-  background:linear-gradient(145deg,#15243a,#101827 70%);
-  padding:23px 18px;
-  box-shadow:0 18px 50px #0004;
+  position:relative;overflow:hidden;
+  padding:22px 18px;
+  border:1px solid #34334f;border-radius:25px;
+  background:linear-gradient(145deg,#1d2340,#131827 70%);
+  box-shadow:0 20px 55px #0005;
 }
-
 .profile-card:before{
-  content:"";
-  position:absolute;
-  width:180px;height:180px;
-  right:-75px;top:-95px;
-  border-radius:50%;
-  background:#42d9e81a;
-  filter:blur(5px);
+  content:"";position:absolute;width:210px;height:210px;
+  right:-100px;top:-120px;border-radius:50%;
+  background:#9270ff25;filter:blur(10px);
 }
-
-.profile-main{
-  position:relative;
-  display:flex;
-  align-items:center;
-  gap:17px;
-}
-
+.profile-main{position:relative;display:flex;align-items:center;gap:16px}
 .avatar-wrap{
-  width:94px;height:94px;
-  flex-shrink:0;
-  padding:3px;
-  border-radius:27px;
-  background:linear-gradient(135deg,var(--cyan),var(--blue),var(--violet));
+  width:94px;height:94px;flex-shrink:0;padding:3px;
+  border-radius:29px;
+  background:linear-gradient(135deg,var(--cyan),var(--purple),var(--pink));
 }
-
 .avatar{
-  width:100%;height:100%;
-  object-fit:cover;
-  border:3px solid #111b2c;
-  border-radius:24px;
-  background:#243957;
+  width:100%;height:100%;object-fit:cover;
+  border:3px solid #171b2d;border-radius:26px;background:#252c43;
 }
-
 .identity{min-width:0}
-.identity h1{
-  font-size:21px;
-  line-height:1.3;
-  overflow-wrap:anywhere;
-}
-
-.username{
-  color:var(--cyan);
-  font-size:13px;
-  margin-top:5px;
-}
-
+.identity h1{font-size:21px;line-height:1.3;overflow-wrap:anywhere}
+.username{font-size:13px;color:var(--cyan);margin-top:5px}
 .online-label{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  margin-top:9px;
-  color:#9eb1ca;
-  font-size:11px;
+  display:inline-flex;align-items:center;gap:7px;
+  margin-top:9px;font-size:11px;color:#b5bfd2;
 }
-
 .online-dot{
-  width:7px;height:7px;
-  border-radius:50%;
-  background:#35d99a;
-  box-shadow:0 0 10px #35d99a;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 10px #36d99b90;
 }
-
 .bio{
-  color:#b5c2d8;
-  font-size:13px;
-  line-height:1.65;
-  margin-top:20px;
-  overflow-wrap:anywhere;
+  position:relative;color:#bdc5d9;font-size:13px;
+  line-height:1.7;margin-top:19px;overflow-wrap:anywhere;
 }
-
-.profile-actions{
-  display:flex;
-  gap:10px;
-  margin-top:21px;
-}
-
+.profile-actions{display:flex;gap:10px;margin-top:20px}
 .action-btn{
-  flex:1;
-  padding:12px 8px;
-  border:1px solid var(--border);
-  border-radius:13px;
-  background:#1a2940;
-  color:white;
-  font-size:13px;
-  font-weight:750;
+  flex:1;min-width:0;padding:12px 8px;
+  border:1px solid var(--border);border-radius:13px;
+  background:#20283d;color:white;font-size:13px;font-weight:750;
 }
-
 .primary-btn{
-  border:0;
-  color:#07111d;
-  background:linear-gradient(110deg,var(--cyan),#7795ff);
+  border:0;color:#080b14;
+  background:linear-gradient(110deg,var(--cyan),#9a83ff);
 }
-
 .action-btn:active{transform:scale(.98)}
-
+.following-btn{
+  background:#20283d;color:#d9dfff;border:1px solid #55517b;
+}
 .stats{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  margin:15px 0;
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:10px;margin:15px 0;
 }
-
 .stat{
-  padding:16px 5px;
-  text-align:center;
-  border:1px solid var(--border);
-  border-radius:17px;
-  background:#111b2c;
+  padding:16px 5px;text-align:center;
+  border:1px solid var(--border);border-radius:17px;
+  background:linear-gradient(145deg,#171d30,#111624);
 }
-
-.stat strong{
-  display:block;
-  font-size:20px;
-  color:white;
+.stat strong{display:block;font-size:21px;color:white}
+.stat span{display:block;color:var(--muted);font-size:11px;margin-top:5px}
+.stat.clickable{cursor:pointer}
+.stat.clickable:active{transform:scale(.97)}
+.section,.account-card{
+  margin-top:16px;padding:18px 16px;
+  border:1px solid var(--border);border-radius:21px;
+  background:linear-gradient(145deg,#171d30,#111624);
 }
-
-.stat span{
-  display:block;
-  color:var(--muted);
-  font-size:11px;
-  margin-top:4px;
-}
-
-.section{
-  margin-top:17px;
-  padding:19px 16px;
-  border:1px solid var(--border);
-  border-radius:21px;
-  background:#111b2c;
-}
-
 .section-heading{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-bottom:16px;
+  display:flex;justify-content:space-between;align-items:center;
+  gap:10px;margin-bottom:16px;
 }
-
 .section-heading h2{font-size:16px}
 .section-heading small{color:var(--muted);font-size:11px}
-
-.post-tools{
-  display:flex;
-  gap:9px;
-  margin-bottom:17px;
-}
-
-.post-create{
-  width:100%;
-  padding:12px;
-  border:1px solid #34506b;
-  border-radius:13px;
-  background:#172941;
-  color:var(--cyan);
-  font-weight:700;
-}
-
 .empty-posts{
-  text-align:center;
-  padding:26px 12px;
-  border:1px dashed #34445d;
-  border-radius:16px;
+  text-align:center;padding:27px 12px;
+  border:1px dashed #39415b;border-radius:16px;
 }
-
 .empty-icon{
-  width:54px;height:54px;
-  display:grid;place-items:center;
-  margin:0 auto 12px;
-  border-radius:18px;
-  background:#1d3047;
-  color:var(--cyan);
-  font-size:25px;
+  width:54px;height:54px;display:grid;place-items:center;
+  margin:0 auto 12px;border-radius:18px;
+  background:#252443;color:#b49cff;font-size:25px;
 }
-
 .empty-posts h3{font-size:14px}
 .empty-posts p{
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.6;
-  margin-top:7px;
+  color:var(--muted);font-size:12px;line-height:1.6;margin-top:7px;
 }
-
 .edit-card{display:none}
 .edit-card.open{display:block}
-
-.field{margin-top:16px}
+.field{margin-top:15px}
 .field label{
-  display:block;
-  color:#aabbd2;
-  font-size:12px;
-  margin-bottom:8px;
+  display:block;color:#b8c1d5;font-size:12px;margin-bottom:8px;
 }
-
 .field input,.field textarea{
-  width:100%;
-  padding:13px;
-  border:1px solid #30425d;
-  border-radius:12px;
-  background:#0a1423;
-  color:white;
-  outline:none;
+  width:100%;padding:13px;border:1px solid #343d56;
+  border-radius:12px;background:#0d1220;color:white;outline:none;
 }
-
 .field input:focus,.field textarea:focus{
-  border-color:var(--cyan);
-  box-shadow:0 0 0 3px #42d9e815;
+  border-color:var(--purple);box-shadow:0 0 0 3px #9270ff18;
 }
-
-.field textarea{
-  min-height:90px;
-  resize:vertical;
-}
-
+.field textarea{min-height:90px;resize:vertical}
 .hint{font-size:11px;color:var(--muted);margin-top:6px}
-
 .save-btn{
-  width:100%;
-  margin-top:19px;
-  padding:14px;
-  border:0;
-  border-radius:13px;
-  color:#07111d;
-  font-weight:800;
-  background:linear-gradient(110deg,var(--cyan),#8191ff);
+  width:100%;margin-top:18px;padding:14px;border:0;
+  border-radius:13px;color:#090b14;font-weight:850;
+  background:linear-gradient(110deg,var(--cyan),#a18aff);
 }
-
 .photo-change{
-  display:block;
-  width:max-content;
-  margin-top:10px;
-  color:var(--cyan);
-  font-size:12px;
+  display:block;width:max-content;margin-top:12px;
+  color:var(--cyan);font-size:12px;cursor:pointer;
+}
+#photoInput{display:none}
+.account-card h3{font-size:14px;margin-bottom:12px}
+.account-row{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:12px 0;color:#aeb8cc;font-size:12px;
+  border-bottom:1px solid #293149;
+}
+.account-row:last-of-type{border:0}
+.account-row strong{color:white;font-weight:600;overflow-wrap:anywhere}
+.logout-btn{
+  width:100%;padding:13px;margin-top:14px;
+  border:1px solid #713d55;border-radius:12px;
+  color:#ff9caf;background:#291724;font-weight:750;
+}
+.status{
+  min-height:20px;text-align:center;color:var(--cyan);
+  font-size:12px;margin:14px 0;
+}
+.footer{
+  text-align:center;color:#66718b;font-size:10px;
+  margin-top:25px;letter-spacing:.7px;
+}
+.modal{
+  display:none;position:fixed;inset:0;z-index:20;
+  background:#050711df;padding:18px;
+  align-items:center;justify-content:center;
+}
+.modal.open{display:flex}
+.modal-box{
+  width:100%;max-width:420px;max-height:80vh;overflow:auto;
+  padding:20px;border:1px solid #3a4059;border-radius:21px;
+  background:#151b2c;box-shadow:0 20px 60px #0008;
+}
+.modal-head{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:12px;margin-bottom:15px;
+}
+.modal-head h2{font-size:17px}
+.close-btn{
+  width:34px;height:34px;border:1px solid var(--border);
+  border-radius:10px;background:#20283c;color:white;font-size:19px;
+}
+.modal-box textarea{
+  width:100%;min-height:110px;padding:13px;margin-top:12px;
+  border:1px solid var(--border);border-radius:12px;
+  background:#0d1220;color:white;resize:vertical;
+}
+.modal-actions{display:flex;gap:10px;margin-top:13px}
+.modal-actions button{
+  flex:1;padding:12px;border:1px solid var(--border);
+  border-radius:11px;background:#20283c;color:white;
+}
+.user-list{display:grid;gap:10px}
+.user-item{
+  display:flex;align-items:center;gap:11px;padding:10px;
+  border:1px solid #2b344c;border-radius:13px;background:#101625;
   cursor:pointer;
 }
-
-#photoInput{display:none}
-
-.account-card{
-  margin-top:17px;
-  padding:17px;
-  border:1px solid var(--border);
-  border-radius:19px;
-  background:#111b2c;
+.user-item img{
+  width:43px;height:43px;border-radius:14px;object-fit:cover;
+  background:#252c43;
 }
-
-.account-card h3{font-size:14px;margin-bottom:13px}
-
-.account-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding:11px 0;
-  color:#aabbd2;
-  font-size:12px;
-  border-bottom:1px solid #25344a;
-}
-
-.account-row:last-child{border:0}
-.account-row strong{color:white;font-weight:600;overflow-wrap:anywhere}
-
-.logout-btn{
-  width:100%;
-  padding:13px;
-  margin-top:13px;
-  border:1px solid #703c50;
-  border-radius:12px;
-  color:#ff9aaf;
-  background:#291722;
-  font-weight:700;
-}
-
-.status{
-  min-height:18px;
-  text-align:center;
-  color:var(--cyan);
-  font-size:12px;
-  margin:13px 0;
-}
-
-.footer{
-  text-align:center;
-  color:#64748b;
-  font-size:11px;
-  margin-top:25px;
-  letter-spacing:.5px;
-}
-
-.modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:10;
-  background:#020611d9;
-  padding:20px;
-  align-items:center;
-  justify-content:center;
-}
-
-.modal.open{display:flex}
-
-.modal-box{
-  width:100%;
-  max-width:420px;
-  padding:21px;
-  border:1px solid var(--border);
-  border-radius:21px;
-  background:#121d30;
-}
-
-.modal-box h2{font-size:18px}
-.modal-box p{
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.6;
-  margin-top:8px;
-}
-
-.modal-box textarea{
-  width:100%;
-  min-height:110px;
-  margin-top:16px;
-  padding:13px;
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:#091321;
-  color:white;
-  resize:vertical;
-}
-
-.modal-actions{
-  display:flex;
-  gap:10px;
-  margin-top:14px;
-}
-
-.modal-actions button{
-  flex:1;
-  padding:12px;
-  border:1px solid var(--border);
-  border-radius:11px;
-  background:#1b2b43;
-  color:white;
-}
-
+.user-info{min-width:0;flex:1}
+.user-info strong{display:block;font-size:13px;overflow-wrap:anywhere}
+.user-info small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.user-arrow{color:var(--cyan);font-size:19px}
+.list-empty{text-align:center;padding:24px 10px;color:var(--muted);font-size:13px}
 @media(max-width:360px){
-  .profile-main{gap:12px}
+  .profile-main{gap:11px}
   .avatar-wrap{width:78px;height:78px}
   .identity h1{font-size:18px}
+  .profile-card{padding:19px 14px}
+  .stats{gap:7px}
 }
 </style>
 </head>
@@ -450,165 +246,179 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <body>
 <div class="container">
 
-  <header class="topbar">
-    <div class="brand">
-      <button class="icon-btn" id="backBtn">‹</button>
-      <div class="brand-logo">T</div>
-      <div>
-        <div class="brand-name">TELESUPAR</div>
-        <div class="brand-sub">YOUR DIGITAL SPACE</div>
+<header class="topbar">
+  <div class="brand">
+    <button class="icon-btn" id="backBtn" aria-label="Go back">‹</button>
+    <div class="brand-logo">T</div>
+    <div>
+      <div class="brand-name">TELESUPAR</div>
+      <div class="brand-sub">YOUR DIGITAL SPACE</div>
+    </div>
+  </div>
+  <button class="icon-btn" id="moreBtn" title="More options">⋮</button>
+</header>
+
+<main>
+  <section class="profile-card">
+    <div class="profile-main">
+      <div class="avatar-wrap">
+        <img id="avatar" class="avatar" alt="Profile photo">
+      </div>
+      <div class="identity">
+        <h1 id="profileName">Loading...</h1>
+        <div class="username" id="profileUsername">@loading</div>
+        <div class="online-label" id="onlineLabel">
+          <span class="online-dot"></span>
+          <span>Checking status...</span>
+        </div>
       </div>
     </div>
-    <button class="icon-btn" id="moreBtn" title="More">⋮</button>
-  </header>
 
-  <main>
-    <section class="profile-card">
-      <div class="profile-main">
-        <div class="avatar-wrap">
-          <img id="avatar" class="avatar" alt="Profile photo">
-        </div>
+    <p class="bio" id="profileBio">Loading profile...</p>
 
-        <div class="identity">
-          <h1 id="profileName">Loading...</h1>
-          <div class="username" id="profileUsername">@loading</div>
-          <div class="online-label" id="onlineLabel">
-            <span class="online-dot"></span>
-            <span>Checking status...</span>
-          </div>
-        </div>
+    <div class="profile-actions">
+      <button class="action-btn primary-btn" id="followBtn" hidden>
+        Follow
+      </button>
+      <button class="action-btn" id="messageBtn" hidden>
+        Message
+      </button>
+      <button class="action-btn primary-btn" id="editBtn" hidden>
+        Edit Profile
+      </button>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat">
+      <strong id="postsCount">—</strong>
+      <span>Posts</span>
+    </div>
+    <div class="stat clickable" id="followersStat" role="button" tabindex="0">
+      <strong id="followersCount">—</strong>
+      <span>Followers</span>
+    </div>
+    <div class="stat clickable" id="followingStat" role="button" tabindex="0">
+      <strong id="followingCount">—</strong>
+      <span>Following</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <h2>Posts & Updates</h2>
+      <small id="postsLabel">Your activity</small>
+    </div>
+
+    <div id="postTools" hidden>
+      <button class="action-btn primary-btn" id="createPostBtn" style="width:100%;margin-bottom:14px">
+        ＋ Create a post
+      </button>
+    </div>
+
+    <div class="empty-posts" id="emptyPosts">
+      <div class="empty-icon">✦</div>
+      <h3>No posts yet</h3>
+      <p id="emptyPostText">
+        This space is ready for new updates and moments.
+      </p>
+    </div>
+  </section>
+
+  <section class="section edit-card" id="editCard">
+    <div class="section-heading">
+      <h2>Edit your profile</h2>
+      <small>Personal details</small>
+    </div>
+
+    <form id="profileForm">
+      <div class="field">
+        <label for="displayName">Display Name</label>
+        <input id="displayName" maxlength="40"
+          placeholder="Your name" required>
       </div>
 
-      <p class="bio" id="profileBio">Loading profile information...</p>
-
-      <div class="profile-actions">
-        <button class="action-btn primary-btn" id="followBtn" hidden>
-          Follow
-        </button>
-        <button class="action-btn" id="messageBtn" hidden>
-          Message
-        </button>
-        <button class="action-btn primary-btn" id="editBtn" hidden>
-          Edit Profile
-        </button>
-      </div>
-    </section>
-
-    <section class="stats">
-      <div class="stat">
-        <strong id="postsCount">—</strong>
-        <span>Posts</span>
-      </div>
-      <div class="stat">
-        <strong id="followersCount">—</strong>
-        <span>Followers</span>
-      </div>
-      <div class="stat">
-        <strong id="followingCount">—</strong>
-        <span>Following</span>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-heading">
-        <h2>Posts & Updates</h2>
-        <small id="postsLabel">Your activity</small>
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" readonly>
+        <p class="hint">Username cannot be changed here.</p>
       </div>
 
-      <div class="post-tools" id="postTools" hidden>
-        <button class="post-create" id="createPostBtn">
-          ＋ Create a post
-        </button>
+      <div class="field">
+        <label for="email">Email Address (Private)</label>
+        <input id="email" readonly>
+        <p class="hint">Only you can see your email address.</p>
       </div>
 
-      <div class="empty-posts" id="emptyPosts">
-        <div class="empty-icon">✦</div>
-        <h3>No posts yet</h3>
-        <p id="emptyPostText">
-          This space is ready for new updates and moments.
-        </p>
-      </div>
-    </section>
-
-    <section class="section edit-card" id="editCard">
-      <div class="section-heading">
-        <h2>Edit your profile</h2>
-        <small>Personal details</small>
+      <div class="field">
+        <label for="bio">About Me</label>
+        <textarea id="bio" maxlength="160"
+          placeholder="Write something about yourself..."></textarea>
+        <p class="hint">Maximum 160 characters.</p>
       </div>
 
-      <form id="profileForm">
-        <div class="field">
-          <label for="displayName">Display Name</label>
-          <input id="displayName" maxlength="40"
-            placeholder="Your name" required>
-        </div>
+      <label class="photo-change" for="photoInput">
+        Change profile photo
+      </label>
+      <input id="photoInput" type="file" accept="image/*">
 
-        <div class="field">
-          <label for="username">Username</label>
-          <input id="username" readonly>
-          <p class="hint">Username cannot be changed here.</p>
-        </div>
+      <button class="save-btn" id="saveBtn" type="submit">
+        Save Changes
+      </button>
+    </form>
+  </section>
 
-        <div class="field">
-          <label for="email">Email Address (Private)</label>
-          <input id="email" readonly>
-          <p class="hint">Only you can see your email address.</p>
-        </div>
+  <section class="account-card" id="accountCard">
+    <h3>Account Information</h3>
+    <div class="account-row">
+      <span>Member since</span>
+      <strong id="memberSince">—</strong>
+    </div>
+    <div class="account-row">
+      <span>Account status</span>
+      <strong id="accountStatus">—</strong>
+    </div>
+    <button class="logout-btn" id="logoutBtn">Log Out</button>
+  </section>
 
-        <div class="field">
-          <label for="bio">About Me</label>
-          <textarea id="bio" maxlength="160"
-            placeholder="Write something about yourself..."></textarea>
-          <p class="hint">Maximum 160 characters.</p>
-        </div>
+  <p class="status" id="status" role="status"></p>
+</main>
 
-        <label class="photo-change" for="photoInput">
-          Change profile photo
-        </label>
-        <input id="photoInput" type="file" accept="image/*">
+<div class="footer">
+  TELESUPAR · YOUR CONVERSATIONS, YOUR COMMUNITY
+</div>
+</div>
 
-        <button class="save-btn" id="saveBtn" type="submit">
-          Save Changes
-        </button>
-      </form>
-    </section>
-
-    <section class="account-card" id="accountCard">
-      <h3>Account Information</h3>
-      <div class="account-row">
-        <span>Member since</span>
-        <strong id="memberSince">—</strong>
-      </div>
-      <div class="account-row">
-        <span>Account status</span>
-        <strong id="accountStatus">—</strong>
-      </div>
-      <button class="logout-btn" id="logoutBtn">Log Out</button>
-    </section>
-
-    <p class="status" id="status" role="status"></p>
-  </main>
-
-  <div class="footer">
-    TELESUPAR · YOUR CONVERSATIONS, YOUR COMMUNITY
+<!-- Followers / Following Modal -->
+<div class="modal" id="usersModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="usersModalTitle">Followers</h2>
+      <button class="close-btn" id="closeUsersModal">×</button>
+    </div>
+    <div class="user-list" id="usersList">
+      <div class="list-empty">Loading...</div>
+    </div>
   </div>
 </div>
 
-<!-- Create Post Preview -->
+<!-- Create Post Draft Modal -->
 <div class="modal" id="postModal">
   <div class="modal-box">
-    <h2>Create a post</h2>
-    <p>
-      Your post composer is ready. Publishing will be connected
-      when the secure Posts API is added.
+    <div class="modal-head">
+      <h2>Create a post draft</h2>
+      <button class="close-btn" id="closePostBtn">×</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);line-height:1.6">
+      This saves a draft on this device. It does not publish a post.
     </p>
     <textarea id="postDraft" maxlength="2000"
       placeholder="What's on your mind?"></textarea>
     <div class="modal-actions">
-      <button id="closePostBtn">Cancel</button>
-      <button id="saveDraftBtn">Save draft locally</button>
+      <button id="cancelPostBtn">Cancel</button>
+      <button id="saveDraftBtn">Save Draft</button>
     </div>
-    <p id="draftStatus"></p>
+    <p id="draftStatus" style="font-size:12px;color:var(--cyan);margin-top:10px"></p>
   </div>
 </div>
 
@@ -624,6 +434,7 @@ const isPublicProfile = Boolean(viewedUserId);
 const $ = id => document.getElementById(id);
 
 let currentProfile = null;
+let profileUserId = viewedUserId || null;
 
 if (!token) {
   location.replace("login.html");
@@ -637,15 +448,25 @@ function setText(id, value) {
   $(id).textContent = value == null ? "" : String(value);
 }
 
+function getUserId(user) {
+  return user && (user.id || user._id)
+    ? String(user.id || user._id)
+    : "";
+}
+
 function avatarFallback(user) {
   const name = user.displayName || user.username || "User";
   return "https://ui-avatars.com/api/?name=" +
     encodeURIComponent(name) +
-    "&background=203b60&color=ffffff&size=200";
+    "&background=252443&color=ffffff&size=200";
 }
 
 function setAvatar(user) {
   $("avatar").src = user.avatar || avatarFallback(user);
+  $("avatar").onerror = function() {
+    this.onerror = null;
+    this.src = avatarFallback(user);
+  };
 }
 
 async function api(path, options = {}) {
@@ -658,6 +479,7 @@ async function api(path, options = {}) {
   });
 
   let data = {};
+
   try {
     data = await response.json();
   } catch (_) {
@@ -687,6 +509,7 @@ function displayProfile(user) {
   if (!user) throw new Error("Profile data not found.");
 
   currentProfile = user;
+  profileUserId = getUserId(user) || profileUserId;
 
   setText("profileName", user.displayName || "User");
   setText("profileUsername", "@" + (user.username || "unknown"));
@@ -694,11 +517,11 @@ function displayProfile(user) {
   setAvatar(user);
 
   const online = Boolean(user.isOnline);
-  $("onlineLabel").innerHTML = "";
+  $("onlineLabel").replaceChildren();
 
   const dot = document.createElement("span");
   dot.className = "online-dot";
-  dot.style.background = online ? "#35d99a" : "#8995aa";
+  dot.style.background = online ? "#36d99b" : "#8995aa";
 
   const label = document.createElement("span");
   label.textContent = online ? "Online now" : "Offline";
@@ -707,11 +530,7 @@ function displayProfile(user) {
 
   setText("memberSince", formatDate(user.createdAt));
   setText("accountStatus", "Active");
-
-  // Do not invent statistics before the real APIs exist.
   setText("postsCount", "—");
-  setText("followersCount", "—");
-  setText("followingCount", "—");
 }
 
 function setOwnProfileMode() {
@@ -720,7 +539,7 @@ function setOwnProfileMode() {
   $("accountCard").hidden = false;
   $("postsLabel").textContent = "Your activity";
   $("emptyPostText").textContent =
-    "Your posts will appear here when the Posts feature is connected.";
+    "Your posts will appear here when your posts feed is connected.";
 }
 
 function setPublicProfileMode() {
@@ -731,6 +550,30 @@ function setPublicProfileMode() {
   $("emptyPostText").textContent =
     "This user has no published posts to show yet.";
   $("editCard").classList.remove("open");
+}
+
+// LOAD FOLLOW STATUS AND COUNTS
+async function loadFollowData(userId) {
+  if (!userId) return;
+
+  const data = await api(
+    "/api/users/" + encodeURIComponent(userId) + "/follow-status"
+  );
+
+  setText("followersCount", data.followersCount);
+  setText("followingCount", data.followingCount);
+
+  if (isPublicProfile) {
+    $("followBtn").dataset.following = String(data.following);
+
+    $("followBtn").textContent =
+      data.following ? "Following" : "Follow";
+
+    $("followBtn").classList.toggle(
+      "following-btn",
+      Boolean(data.following)
+    );
+  }
 }
 
 async function loadProfile() {
@@ -757,7 +600,20 @@ async function loadProfile() {
       $("email").value = data.user.email || "";
       $("bio").value = data.user.bio || "";
 
-      localStorage.setItem("telesupar_user", JSON.stringify(data.user));
+      localStorage.setItem(
+        "telesupar_user",
+        JSON.stringify(data.user)
+      );
+    }
+
+    if (profileUserId) {
+      try {
+        await loadFollowData(profileUserId);
+      } catch (followError) {
+        console.error("Follow data error:", followError);
+        setText("followersCount", "—");
+        setText("followingCount", "—");
+      }
     }
 
     showStatus("");
@@ -774,16 +630,207 @@ async function loadProfile() {
   }
 }
 
-// Edit profile
+// FOLLOW / UNFOLLOW
+$("followBtn").addEventListener("click", async function() {
+  if (!profileUserId) return;
+
+  const button = this;
+  const wasFollowing = button.dataset.following === "true";
+
+  button.disabled = true;
+  button.textContent = "Please wait...";
+
+  try {
+    const data = await api(
+      "/api/users/" + encodeURIComponent(profileUserId) + "/follow",
+      {
+        method: wasFollowing ? "DELETE" : "POST"
+      }
+    );
+
+    button.dataset.following = String(data.following);
+    button.textContent = data.following ? "Following" : "Follow";
+
+    button.classList.toggle(
+      "following-btn",
+      Boolean(data.following)
+    );
+
+    setText("followersCount", data.followersCount);
+    setText("followingCount", data.followingCount);
+
+    showStatus(
+      data.following
+        ? "Following successfully!"
+        : "Unfollowed successfully!"
+    );
+
+  } catch (error) {
+    button.textContent = wasFollowing ? "Following" : "Follow";
+    showStatus(error.message);
+
+  } finally {
+    button.disabled = false;
+  }
+});
+
+// MESSAGE BUTTON
+$("messageBtn").addEventListener("click", async function() {
+  if (!profileUserId) return;
+
+  const button = this;
+  button.disabled = true;
+  button.textContent = "Opening...";
+
+  try {
+    const data = await api(
+      "/api/conversations/" + encodeURIComponent(profileUserId),
+      { method: "POST" }
+    );
+
+    const conversationId =
+      data.conversation &&
+      (data.conversation._id || data.conversation.id)
+        ? (data.conversation._id || data.conversation.id)
+        : data.id;
+
+    if (!conversationId) {
+      throw new Error("Conversation ID not received");
+    }
+
+    location.href =
+      "chat.html?id=" + encodeURIComponent(conversationId);
+
+  } catch (error) {
+    showStatus(error.message);
+    button.disabled = false;
+    button.textContent = "Message";
+  }
+});
+
+// FOLLOWERS / FOLLOWING LIST
+async function openUserList(type) {
+  if (!profileUserId) return;
+
+  const isFollowers = type === "followers";
+
+  $("usersModalTitle").textContent =
+    isFollowers ? "Followers" : "Following";
+
+  $("usersModal").classList.add("open");
+  $("usersList").replaceChildren();
+
+  const loading = document.createElement("div");
+  loading.className = "list-empty";
+  loading.textContent = "Loading...";
+  $("usersList").appendChild(loading);
+
+  try {
+    const data = await api(
+      "/api/users/" + encodeURIComponent(profileUserId) + "/" + type
+    );
+
+    $("usersList").replaceChildren();
+
+    const users = Array.isArray(data.users) ? data.users : [];
+
+    if (!users.length) {
+      const empty = document.createElement("div");
+      empty.className = "list-empty";
+      empty.textContent = isFollowers
+        ? "No followers yet."
+        : "Not following anyone yet.";
+      $("usersList").appendChild(empty);
+      return;
+    }
+
+    users.forEach(user => {
+      const item = document.createElement("div");
+      item.className = "user-item";
+
+      const img = document.createElement("img");
+      img.src = user.avatar || avatarFallback(user);
+      img.alt = "User photo";
+      img.onerror = function() {
+        this.onerror = null;
+        this.src = avatarFallback(user);
+      };
+
+      const info = document.createElement("div");
+      info.className = "user-info";
+
+      const name = document.createElement("strong");
+      name.textContent = user.displayName || "User";
+
+      const username = document.createElement("small");
+      username.textContent = "@" + (user.username || "unknown");
+
+      info.append(name, username);
+
+      const arrow = document.createElement("span");
+      arrow.className = "user-arrow";
+      arrow.textContent = "›";
+
+      item.append(img, info, arrow);
+
+      item.addEventListener("click", function() {
+        const id = getUserId(user);
+        if (id) {
+          location.href = "profile.html?id=" + encodeURIComponent(id);
+        }
+      });
+
+      $("usersList").appendChild(item);
+    });
+
+  } catch (error) {
+    $("usersList").replaceChildren();
+
+    const message = document.createElement("div");
+    message.className = "list-empty";
+    message.textContent = error.message;
+
+    $("usersList").appendChild(message);
+  }
+}
+
+$("followersStat").addEventListener("click", function() {
+  openUserList("followers");
+});
+
+$("followingStat").addEventListener("click", function() {
+  openUserList("following");
+});
+
+$("followersStat").addEventListener("keydown", function(event) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    openUserList("followers");
+  }
+});
+
+$("followingStat").addEventListener("keydown", function(event) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    openUserList("following");
+  }
+});
+
+$("closeUsersModal").addEventListener("click", function() {
+  $("usersModal").classList.remove("open");
+});
+
+// EDIT PROFILE
 $("editBtn").addEventListener("click", function() {
   $("editCard").classList.toggle("open");
+
   $("editCard").scrollIntoView({
     behavior: "smooth",
     block: "start"
   });
 });
 
-// Save profile
+// SAVE PROFILE
 $("profileForm").addEventListener("submit", async function(event) {
   event.preventDefault();
 
@@ -808,19 +855,25 @@ $("profileForm").addEventListener("submit", async function(event) {
     });
 
     displayProfile(data.user);
-    localStorage.setItem("telesupar_user", JSON.stringify(data.user));
+
+    localStorage.setItem(
+      "telesupar_user",
+      JSON.stringify(data.user)
+    );
+
     $("editCard").classList.remove("open");
     showStatus("Profile updated successfully.");
 
   } catch (error) {
     showStatus(error.message);
+
   } finally {
     $("saveBtn").disabled = false;
     $("saveBtn").textContent = "Save Changes";
   }
 });
 
-// Upload profile photo
+// UPLOAD PROFILE PHOTO
 $("photoInput").addEventListener("change", async function() {
   if (isPublicProfile) return;
 
@@ -851,8 +904,12 @@ $("photoInput").addEventListener("change", async function() {
     });
 
     displayProfile(data.user);
-    localStorage.setItem("telesupar_user", JSON.stringify(data.user));
-    $("avatar").scrollIntoView({behavior:"smooth",block:"center"});
+
+    localStorage.setItem(
+      "telesupar_user",
+      JSON.stringify(data.user)
+    );
+
     showStatus("Profile photo updated.");
 
   } catch (error) {
@@ -862,24 +919,17 @@ $("photoInput").addEventListener("change", async function() {
   this.value = "";
 });
 
-// Follow is shown in the interface, but waits for secure backend API.
-$("followBtn").addEventListener("click", function() {
-  showStatus("Follow feature will be activated with the secure Follow API.");
-});
-
-// Message button - conversation API integration comes next.
-$("messageBtn").addEventListener("click", function() {
-  showStatus("Message connection will be activated in the next integration step.");
-});
-
-// Create post composer
+// CREATE POST DRAFT
 $("createPostBtn").addEventListener("click", function() {
   $("postModal").classList.add("open");
 });
 
-$("closePostBtn").addEventListener("click", function() {
+function closePostModal() {
   $("postModal").classList.remove("open");
-});
+}
+
+$("closePostBtn").addEventListener("click", closePostModal);
+$("cancelPostBtn").addEventListener("click", closePostModal);
 
 $("saveDraftBtn").addEventListener("click", function() {
   const draft = $("postDraft").value.trim();
@@ -889,11 +939,11 @@ $("saveDraftBtn").addEventListener("click", function() {
     return;
   }
 
-  // Local draft only; not published or sent to the server.
   localStorage.setItem("telesupar_post_draft", draft);
   $("draftStatus").textContent = "Draft saved on this device.";
 });
 
+// LOGOUT
 function logout() {
   localStorage.removeItem("telesupar_token");
   localStorage.removeItem("telesupar_user");
@@ -906,6 +956,7 @@ $("logoutBtn").addEventListener("click", function() {
   }
 });
 
+// BACK BUTTON
 $("backBtn").addEventListener("click", function() {
   if (history.length > 1) {
     history.back();
@@ -914,17 +965,32 @@ $("backBtn").addEventListener("click", function() {
   }
 });
 
+// MORE BUTTON
 $("moreBtn").addEventListener("click", function() {
   if (!isPublicProfile) {
     $("editCard").classList.add("open");
-    $("editCard").scrollIntoView({behavior:"smooth"});
+    $("editCard").scrollIntoView({
+      behavior: "smooth"
+    });
   } else {
-    showStatus("More profile options will be added with the privacy controls.");
+    showStatus("More profile options will be added later.");
+  }
+});
+
+// CLOSE MODALS WHEN BACKDROP IS TAPPED
+$("usersModal").addEventListener("click", function(event) {
+  if (event.target === this) {
+    this.classList.remove("open");
+  }
+});
+
+$("postModal").addEventListener("click", function(event) {
+  if (event.target === this) {
+    closePostModal();
   }
 });
 
 loadProfile();
 </script>
-
 </body>
 </html>
