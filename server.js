@@ -133,6 +133,7 @@ let stories;
 let posts;
 let notifications;
 let comments;
+let follows;
 
 const client =
     new MongoClient(
@@ -189,6 +190,8 @@ async function connectDatabase() {
   notifications = db.collection("notifications");
 
   comments = db.collection("comments");
+
+  follows = db.collection("follows");
 
 await notifications.createIndex({
   recipientId: 1,
@@ -259,6 +262,27 @@ await posts.createIndex({ createdAt: -1 });
         userId: 1,
         expiresAt: 1
     });
+
+  // FOLLOWS INDEXES
+await follows.createIndex(
+  {
+    followerId: 1,
+    followingId: 1
+  },
+  {
+    unique: true
+  }
+);
+
+await follows.createIndex({
+  followingId: 1,
+  createdAt: -1
+});
+
+await follows.createIndex({
+  followerId: 1,
+  createdAt: -1
+});
 
     console.log(
         "MongoDB connected successfully"
