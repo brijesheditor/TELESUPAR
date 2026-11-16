@@ -1675,6 +1675,7 @@ app.delete(
 // GET ALL POSTS
 app.get("/api/posts/feed", auth, async (req, res) => {
   try {
+    const myId = req.user.id;
     const allPosts = await posts.find({})
       .sort({ createdAt: -1 })
       .limit(50)
@@ -1719,24 +1720,33 @@ app.get("/api/posts/feed", auth, async (req, res) => {
       ])
     );
 
-    const result = allPosts.map(post => ({
-      id: post._id.toString(),
-      caption: post.caption || "",
-      mediaUrl: post.mediaUrl,
-      mediaType: post.mediaType,
-      createdAt: post.createdAt,
-      likesCount: (post.likes || []).length,
+    // Fetch follow status for current user with these authors
+    const authorObjectIds = ids.map(id => new ObjectId(id));
+    const myFollows = await follows.find({
+      followerId: new ObjectId(myId),
+      followingId: { $in: authorObjectIds }
+    }).toArray();
 
-      // REAL COMMENT COUNT
-      commentsCount:
-        commentCountMap.get(post._id.toString()) || 0,
+    const followingSet = new Set(
+      myFollows.map(f => f.followingId.toString())
+    );
 
-      likedByMe: (post.likes || []).some(
-        id => id.toString() === req.user.id
-      ),
-
-      user: authorMap.get(post.userId.toString()) || null
-    })).filter(post => post.user);
+    const result = allPosts.map(post => {
+      const authorId = post.userId.toString();
+      return {
+        id: post._id.toString(),
+        caption: post.caption || "",
+        mediaUrl: post.mediaUrl,
+        mediaType: post.mediaType,
+        createdAt: post.createdAt,
+        likesCount: (post.likes || []).length,
+        commentsCount: commentCountMap.get(post._id.toString()) || 0,
+        likedByMe: (post.likes || []).some(id => id.toString() === myId),
+        isFollowing: authorId === myId ? true : followingSet.has(authorId),
+        isMyPost: authorId === myId,
+        user: authorMap.get(authorId) || null
+      };
+    }).filter(post => post.user);
 
     res.json({
       success: true,
@@ -1745,13 +1755,13 @@ app.get("/api/posts/feed", auth, async (req, res) => {
 
   } catch (error) {
     console.error("POST FEED ERROR:", error);
-
     res.status(500).json({
       success: false,
       message: "Could not load posts"
     });
   }
 });
+
 
 
 // CREATE POST
