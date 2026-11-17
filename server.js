@@ -2613,29 +2613,36 @@ app.get(
                 }
             };
 
-            if (search) {
+            
+if (search) {
+    const safeSearch = search.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+    );
 
-                query.$or = [
-
-                    {
-                        username: {
-                            $regex:
-                                search,
-                            $options:
-                                "i"
-                        }
-                    },
-
-                    {
-                        displayName: {
-                            $regex:
-                                search,
-                            $options:
-                                "i"
-                        }
-                    }
-                ];
+    query.$or = [
+        {
+            username: {
+                $regex: safeSearch,
+                $options: "i"
             }
+        },
+        {
+            displayName: {
+                $regex: safeSearch,
+                $options: "i"
+            }
+        }
+    ];
+
+    // EXACT USER ID SEARCH
+    if (ObjectId.isValid(search)) {
+        query.$or.unshift({
+            _id: new ObjectId(search)
+        });
+    }
+}
+
 
             const list =
                 await users
