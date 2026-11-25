@@ -134,6 +134,7 @@ let posts;
 let notifications;
 let comments;
 let follows;
+let groups;
 
 const client =
     new MongoClient(
@@ -192,6 +193,10 @@ async function connectDatabase() {
   comments = db.collection("comments");
 
   follows = db.collection("follows");
+
+  groups = db.collection("groups");
+await groups.createIndex({ updatedAt: -1 });
+  
 
 await notifications.createIndex({
   recipientId: 1,
