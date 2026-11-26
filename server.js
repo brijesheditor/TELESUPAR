@@ -3546,18 +3546,19 @@ app.get(
 
                             seenAt:
                                 message.seenAt ||
-                                null
+                                null,
 
                             editedAt:
-                               message.editedAt ||
-                               null,
+                                message.editedAt ||
+                                null,
 
                             deletedAt:
-                               message.deletedAt ||
-                               null,
+                                message.deletedAt ||
+                                null,
 
                             reactions:
-                               message.reactions || []
+                                message.reactions ||
+                                []
                       
                         };
                     }
