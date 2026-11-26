@@ -4758,6 +4758,101 @@ function isRoomAdmin(room, userId) {
   return adminsList.includes(uid);
 }
 
+
+const OFFICIAL_CHANNEL_KEY = "TELESUPAR_OFFICIAL";
+
+async function ensureOfficialChannel() {
+  const username = String(
+    process.env.TELESUPAR_CHANNEL_OWNER_USERNAME || ""
+  ).trim().replace(/^@/, "");
+
+  if (!username) {
+    throw new Error("Official channel owner is not configured");
+  }
+
+  const escaped = username.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const owner = await users.findOne({
+    username: {
+      $regex: `^@?${escaped}$`,
+      $options: "i"
+    }
+  });
+
+  if (!owner) {
+    throw new Error(`Owner @${username} was not found in users collection`);
+  }
+
+  const ownerId = owner._id.toString();
+
+  let official = await groups.findOne({
+    $or: [
+      { systemKey: OFFICIAL_CHANNEL_KEY },
+      { isOfficial: true }
+    ]
+  });
+
+  const now = new Date();
+
+  if (!official) {
+    const doc = {
+      systemKey: OFFICIAL_CHANNEL_KEY,
+      isOfficial: true,
+      name: "TELESUPAR OFFICIAL",
+      type: "channel",
+      description: "Official TELESUPAR Channel",
+      ownerId,
+      admins: [ownerId],
+      members: [ownerId],
+      allowMemberMessages: false,
+      posts: [],
+      messages: [],
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const result = await groups.insertOne(doc);
+    doc._id = result.insertedId;
+    official = doc;
+  } else {
+    await groups.updateOne(
+      { _id: official._id },
+      {
+        $set: {
+          systemKey: OFFICIAL_CHANNEL_KEY,
+          isOfficial: true,
+          name: "TELESUPAR OFFICIAL",
+          type: "channel",
+          ownerId,
+          allowMemberMessages: false,
+          updatedAt: now
+        },
+        $addToSet: {
+          admins: ownerId,
+          members: ownerId
+        }
+      }
+    );
+
+    official = await groups.findOne({ _id: official._id });
+  }
+
+  return official;
+}
+
+function hasJoinedOfficialChannel(userId, official) {
+  const uid = String(userId || "");
+
+  return (
+    String(official?.ownerId || "") === uid ||
+    (Array.isArray(official?.admins) &&
+      official.admins.map(String).includes(uid)) ||
+    (Array.isArray(official?.members) &&
+      official.members.map(String).includes(uid))
+  );
+}
+
+
 function serializeRoom(room, myId) {
   const uid = String(myId || "");
   const roomId = room._id.toString();
@@ -4814,6 +4909,8 @@ function serializeRoom(room, myId) {
     id: roomId,
     type: room.type === "channel" ? "channel" : "group",
     name: room.name || "Untitled",
+    isOfficial: room.isOfficial === true ||
+    room.systemKey === OFFICIAL_CHANNEL_KEY,
     ownerId,
     admins: adminsList,
     isOwner,
