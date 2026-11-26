@@ -3528,14 +3528,17 @@ app.get(
                                 message.senderId.toString(),
 
                             text:
-                                message.text ||
-                                "",
+                                message.deletedAt
+                                ? ""
+                                : (message.text || ""),
                           storyReply:
-    message.storyReply || null,
+                                message.storyReply ||
+                                null,
                           
                           attachment:
-                               message.attachment ||
-                               null,
+                                message.deletedAt
+                                ? null
+                                : (message.attachment || null),
 
                             createdAt:
                                 message.createdAt,
