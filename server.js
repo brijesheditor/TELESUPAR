@@ -4094,6 +4094,368 @@ if (storyReplyInput) {
 );
 
 
+
+/* =========================================
+   TELESUPAR - CHAT MESSAGE ACTION APIs
+   EDIT / DELETE / REACTION
+========================================= */
+
+// EDIT MESSAGE
+app.patch(
+  "/api/conversations/:conversationId/messages/:messageId",
+  auth,
+  async function (req, res) {
+    try {
+      const { conversationId, messageId } = req.params;
+      const myId = req.user.id;
+      const text = String(req.body.text || "").trim();
+
+      if (!validId(conversationId) || !validId(messageId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid conversation or message ID"
+        });
+      }
+
+      if (!text || text.length > 4000) {
+        return res.status(400).json({
+          success: false,
+          message: "Message must contain 1-4000 characters"
+        });
+      }
+
+      const conversation = await conversations.findOne({
+        _id: new ObjectId(conversationId),
+        members: new ObjectId(myId)
+      });
+
+      if (!conversation) {
+        return res.status(404).json({
+          success: false,
+          message: "Conversation not found"
+        });
+      }
+
+      const message = await messages.findOne({
+        _id: new ObjectId(messageId),
+        conversationId: new ObjectId(conversationId),
+        senderId: new ObjectId(myId),
+        deletedAt: { $exists: false }
+      });
+
+      if (!message) {
+        return res.status(404).json({
+          success: false,
+          message: "Message not found or you cannot edit it"
+        });
+      }
+
+      if (message.attachment) {
+        return res.status(400).json({
+          success: false,
+          message: "Attachment messages cannot be edited"
+        });
+      }
+
+      const now = new Date();
+
+      await messages.updateOne(
+        {
+          _id: new ObjectId(messageId),
+          conversationId: new ObjectId(conversationId),
+          senderId: new ObjectId(myId),
+          deletedAt: { $exists: false }
+        },
+        {
+          $set: {
+            text,
+            editedAt: now
+          }
+        }
+      );
+
+      // Update chat preview only if this was the latest preview.
+      await conversations.updateOne(
+        {
+          _id: new ObjectId(conversationId),
+          lastMessage: message.text
+        },
+        {
+          $set: {
+            lastMessage: text,
+            updatedAt: now
+          }
+        }
+      );
+
+      const output = {
+        messageId,
+        conversationId,
+        text,
+        editedAt: now
+      };
+
+      io.to("conversation:" + conversationId).emit(
+        "messageEdited",
+        output
+      );
+
+      return res.json({
+        success: true,
+        message: output
+      });
+
+    } catch (error) {
+      console.error("EDIT MESSAGE ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not edit message"
+      });
+    }
+  }
+);
+
+
+// DELETE MESSAGE
+app.delete(
+  "/api/conversations/:conversationId/messages/:messageId",
+  auth,
+  async function (req, res) {
+    try {
+      const { conversationId, messageId } = req.params;
+      const myId = req.user.id;
+
+      if (!validId(conversationId) || !validId(messageId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid conversation or message ID"
+        });
+      }
+
+      const conversation = await conversations.findOne({
+        _id: new ObjectId(conversationId),
+        members: new ObjectId(myId)
+      });
+
+      if (!conversation) {
+        return res.status(404).json({
+          success: false,
+          message: "Conversation not found"
+        });
+      }
+
+      const message = await messages.findOne({
+        _id: new ObjectId(messageId),
+        conversationId: new ObjectId(conversationId),
+        senderId: new ObjectId(myId),
+        deletedAt: { $exists: false }
+      });
+
+      if (!message) {
+        return res.status(404).json({
+          success: false,
+          message: "Message not found or you cannot delete it"
+        });
+      }
+
+      const now = new Date();
+
+      // Soft delete: keep the record, but hide its original content.
+      await messages.updateOne(
+        {
+          _id: new ObjectId(messageId),
+          conversationId: new ObjectId(conversationId),
+          senderId: new ObjectId(myId),
+          deletedAt: { $exists: false }
+        },
+        {
+          $set: {
+            text: "",
+            attachment: null,
+            storyReply: null,
+            deletedAt: now,
+            reactions: []
+          }
+        }
+      );
+
+      await conversations.updateOne(
+        {
+          _id: new ObjectId(conversationId),
+          lastMessage: message.text
+        },
+        {
+          $set: {
+            lastMessage: "Message deleted",
+            updatedAt: now
+          }
+        }
+      );
+
+      const output = {
+        messageId,
+        conversationId,
+        deletedAt: now
+      };
+
+      io.to("conversation:" + conversationId).emit(
+        "messageDeleted",
+        output
+      );
+
+      return res.json({
+        success: true,
+        message: output
+      });
+
+    } catch (error) {
+      console.error("DELETE MESSAGE ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not delete message"
+      });
+    }
+  }
+);
+
+
+// REACT TO MESSAGE
+app.post(
+  "/api/conversations/:conversationId/messages/:messageId/reactions",
+  auth,
+  async function (req, res) {
+    try {
+      const { conversationId, messageId } = req.params;
+      const myId = req.user.id;
+
+      const allowedReactions = [
+        "❤️",
+        "😂",
+        "😮",
+        "😢",
+        "❤️‍🩹",
+        "💯",
+        "👍",
+        "🔥"
+      ];
+
+      const emoji = String(req.body.emoji || "");
+
+      if (!validId(conversationId) || !validId(messageId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid conversation or message ID"
+        });
+      }
+
+      if (!allowedReactions.includes(emoji)) {
+        return res.status(400).json({
+          success: false,
+          message: "Reaction is not allowed"
+        });
+      }
+
+      const conversation = await conversations.findOne({
+        _id: new ObjectId(conversationId),
+        members: new ObjectId(myId)
+      });
+
+      if (!conversation) {
+        return res.status(404).json({
+          success: false,
+          message: "Conversation not found"
+        });
+      }
+
+      const message = await messages.findOne({
+        _id: new ObjectId(messageId),
+        conversationId: new ObjectId(conversationId),
+        deletedAt: { $exists: false }
+      });
+
+      if (!message) {
+        return res.status(404).json({
+          success: false,
+          message: "Message not found"
+        });
+      }
+
+      const reactions = Array.isArray(message.reactions)
+        ? message.reactions.map(item => ({
+            userId: String(item.userId),
+            emoji: String(item.emoji)
+          }))
+        : [];
+
+      const existingIndex = reactions.findIndex(
+        item => item.userId === myId
+      );
+
+      let action;
+
+      if (existingIndex !== -1) {
+        if (reactions[existingIndex].emoji === emoji) {
+          // Tap the same emoji again to remove your reaction.
+          reactions.splice(existingIndex, 1);
+          action = "removed";
+        } else {
+          // Change your existing reaction.
+          reactions[existingIndex].emoji = emoji;
+          action = "updated";
+        }
+      } else {
+        reactions.push({
+          userId: myId,
+          emoji
+        });
+        action = "added";
+      }
+
+      await messages.updateOne(
+        {
+          _id: new ObjectId(messageId),
+          conversationId: new ObjectId(conversationId),
+          deletedAt: { $exists: false }
+        },
+        {
+          $set: {
+            reactions
+          }
+        }
+      );
+
+      const output = {
+        messageId,
+        conversationId,
+        reactions,
+        action
+      };
+
+      io.to("conversation:" + conversationId).emit(
+        "messageReactionUpdated",
+        output
+      );
+
+      return res.json({
+        success: true,
+        message: output
+      });
+
+    } catch (error) {
+      console.error("MESSAGE REACTION ERROR:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not update reaction"
+      });
+    }
+  }
+);
+
+
+
 /* =========================================
    TELESUPAR PHOTO / FILE UPLOAD
 ========================================= */
