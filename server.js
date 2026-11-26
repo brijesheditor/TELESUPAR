@@ -4746,20 +4746,30 @@ app.get(
 );
 
 
+
 /* =========================================
-   TELEGRAM-STYLE CHANNELS & GROUPS API
+   TELESUPAR CHANNELS API
+   Official Channel + Secure Join/Create
 ========================================= */
+
+const OFFICIAL_CHANNEL_KEY = "TELESUPAR_OFFICIAL";
+
+/* ---------- ADMIN CHECK ---------- */
 
 function isRoomAdmin(room, userId) {
   const uid = String(userId || "");
+
   if (!uid) return false;
   if (String(room.ownerId || "") === uid) return true;
-  const adminsList = Array.isArray(room.admins) ? room.admins.map(String) : [];
-  return adminsList.includes(uid);
+
+  const admins = Array.isArray(room.admins)
+    ? room.admins.map(String)
+    : [];
+
+  return admins.includes(uid);
 }
 
-
-const OFFICIAL_CHANNEL_KEY = "TELESUPAR_OFFICIAL";
+/* ---------- OFFICIAL CHANNEL ---------- */
 
 async function ensureOfficialChannel() {
   const username = String(
@@ -4780,7 +4790,9 @@ async function ensureOfficialChannel() {
   });
 
   if (!owner) {
-    throw new Error(`Owner @${username} was not found in users collection`);
+    throw new Error(
+      `Official owner @${username} was not found in database`
+    );
   }
 
   const ownerId = owner._id.toString();
@@ -4800,18 +4812,20 @@ async function ensureOfficialChannel() {
       isOfficial: true,
       name: "TELESUPAR OFFICIAL",
       type: "channel",
-      description: "Official TELESUPAR Channel",
+      description: "Official TELESUPAR announcements and updates",
+      logo: "",
+      isPrivate: false,
       ownerId,
       admins: [ownerId],
       members: [ownerId],
       allowMemberMessages: false,
       posts: [],
-      messages: [],
       createdAt: now,
       updatedAt: now
     };
 
     const result = await groups.insertOne(doc);
+
     doc._id = result.insertedId;
     official = doc;
   } else {
@@ -4834,11 +4848,15 @@ async function ensureOfficialChannel() {
       }
     );
 
-    official = await groups.findOne({ _id: official._id });
+    official = await groups.findOne({
+      _id: official._id
+    });
   }
 
   return official;
 }
+
+/* ---------- MEMBERSHIP ---------- */
 
 function hasJoinedOfficialChannel(userId, official) {
   const uid = String(userId || "");
@@ -4852,85 +4870,113 @@ function hasJoinedOfficialChannel(userId, official) {
   );
 }
 
+function isChannelMember(room, userId) {
+  const uid = String(userId || "");
+
+  return (
+    isRoomAdmin(room, uid) ||
+    (Array.isArray(room.members) &&
+      room.members.map(String).includes(uid))
+  );
+}
+
+async function canAccessChannel(room, userId) {
+  const isOfficial =
+    room.isOfficial === true ||
+    room.systemKey === OFFICIAL_CHANNEL_KEY;
+
+  if (isOfficial) return true;
+
+  const official = await ensureOfficialChannel();
+
+  return hasJoinedOfficialChannel(userId, official);
+}
+
+/* ---------- SERIALIZE CHANNEL ---------- */
 
 function serializeRoom(room, myId) {
   const uid = String(myId || "");
-  const roomId = room._id.toString();
   const ownerId = String(room.ownerId || "");
-  const adminsList = Array.isArray(room.admins) ? room.admins.map(String) : [ownerId].filter(Boolean);
-  const membersList = Array.isArray(room.members) ? room.members.map(String) : [];
+
+  const admins = Array.isArray(room.admins)
+    ? room.admins.map(String)
+    : [ownerId].filter(Boolean);
+
+  const members = Array.isArray(room.members)
+    ? room.members.map(String)
+    : [];
 
   const isOwner = ownerId === uid;
   const isAdmin = isRoomAdmin(room, uid);
-  const isMember = membersList.includes(uid) || isAdmin;
-  const allowMemberMessages = room.allowMemberMessages !== false;
+  const isMember = members.includes(uid) || isAdmin;
 
-  const canPost = room.type === "channel"
-    ? isAdmin
-    : (isAdmin || (isMember && allowMemberMessages));
+  const isOfficial =
+    room.isOfficial === true ||
+    room.systemKey === OFFICIAL_CHANNEL_KEY;
 
-  const postsList = Array.isArray(room.posts)
-    ? room.posts.map(p => {
-        const likesArr = Array.isArray(p.likesUsers) ? p.likesUsers.map(String) : [];
-        const fireArr = Array.isArray(p.fireUsers) ? p.fireUsers.map(String) : [];
+  const canViewPosts =
+    isOfficial || isMember;
+
+  const posts = canViewPosts && Array.isArray(room.posts)
+    ? room.posts.map(post => {
+        const likesUsers = Array.isArray(post.likesUsers)
+          ? post.likesUsers.map(String)
+          : [];
+
+        const fireUsers = Array.isArray(post.fireUsers)
+          ? post.fireUsers.map(String)
+          : [];
+
         return {
-          id: String(p.id),
-          text: p.text || "",
-          authorName: p.authorName || "Admin",
-          views: Number(p.views) || 0,
-          likes: likesArr.length,
-          fire: fireArr.length,
-          likedByMe: likesArr.includes(uid),
-          firedByMe: fireArr.includes(uid),
-          time: p.time || ""
+          ...post,
+          id: String(post.id),
+          text: post.text || "",
+          authorName: post.authorName || "Admin",
+          views: Number(post.views) || 0,
+          likes: likesUsers.length,
+          fire: fireUsers.length,
+          likedByMe: likesUsers.includes(uid),
+          firedByMe: fireUsers.includes(uid),
+          reactions: post.reactions || {},
+          myReaction: post.myReaction || "",
+          time: post.time || ""
         };
       })
     : [];
 
-  const messagesList = Array.isArray(room.messages)
-    ? room.messages.map(m => ({
-        id: String(m.id),
-        sender: m.sender || "Member",
-        senderId: String(m.senderId || ""),
-        isAdminSender: isRoomAdmin(room, m.senderId),
-        text: m.text || "",
-        own: String(m.senderId || "") === uid,
-        time: m.time || ""
-      }))
-    : [];
-
-  const countBase = Math.max(membersList.length, 1);
-  const membersLabel =
-    room.type === "channel"
-      ? `${countBase} ${countBase === 1 ? "subscriber" : "subscribers"}`
-      : `${countBase} ${countBase === 1 ? "member" : "members"}`;
-
   return {
-    id: roomId,
-    type: room.type === "channel" ? "channel" : "group",
-    name: room.name || "Untitled",
-    isOfficial: room.isOfficial === true ||
-    room.systemKey === OFFICIAL_CHANNEL_KEY,
+    id: room._id.toString(),
+    type: "channel",
+    name: room.name || "Untitled Channel",
+    description: room.description || "",
+    logo: room.logo || "",
+    isPrivate: Boolean(room.isPrivate),
+    isOfficial,
+    systemKey: isOfficial ? OFFICIAL_CHANNEL_KEY : "",
     ownerId,
-    admins: adminsList,
+    admins,
+    members,
+    memberCount: members.length,
     isOwner,
     isAdmin,
     isMember,
-    allowMemberMessages,
-    canPost,
-    members: membersLabel,
-    posts: postsList,
-    messages: messagesList,
+    canPost: isAdmin,
+    posts,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt
   };
 }
 
+/* ---------- GET CHANNELS ---------- */
+
 app.get("/api/groups", auth, async function (req, res) {
   try {
-    const myId = req.user.id;
+    const myId = String(req.user.id);
+
+    await ensureOfficialChannel();
+
     const list = await groups
-      .find({})
+      .find({ type: "channel" })
       .sort({ updatedAt: -1, createdAt: -1 })
       .limit(100)
       .toArray();
@@ -4939,337 +4985,375 @@ app.get("/api/groups", auth, async function (req, res) {
       success: true,
       groups: list.map(room => serializeRoom(room, myId))
     });
+
   } catch (error) {
-    console.error("GET GROUPS ERROR:", error);
-    return res.status(500).json({
+    console.error("GET CHANNELS ERROR:", error);
+
+    return res.status(503).json({
       success: false,
-      message: "Could not load channels and groups"
+      message: "TELESUPAR OFFICIAL channel unavailable. Check owner account configuration."
     });
   }
 });
 
+/* ---------- CREATE CHANNEL ---------- */
+
 app.post("/api/groups", auth, async function (req, res) {
   try {
-    const myId = req.user.id;
-    const myObjId = new ObjectId(myId);
-    const name = String(req.body.name || "").trim().slice(0, 80);
-    const type = req.body.type === "channel" ? "channel" : "group";
-    const allowMemberMessages = type === "group" ? (req.body.allowMemberMessages !== false) : false;
+    const myId = String(req.user.id);
+
+    const name = String(req.body.name || "")
+      .trim()
+      .slice(0, 80);
+
+    const description = String(req.body.description || "")
+      .trim()
+      .slice(0, 500);
 
     if (!name) {
       return res.status(400).json({
         success: false,
-        message: "Name is required"
+        message: "Channel name is required"
       });
     }
 
-    const actor = await users.findOne({ _id: myObjId });
-    const senderName = actor?.displayName || actor?.username || req.user.username || "Admin";
+    const official = await ensureOfficialChannel();
+
+    if (!hasJoinedOfficialChannel(myId, official)) {
+      return res.status(403).json({
+        success: false,
+        message: "Join TELESUPAR OFFICIAL before creating another channel"
+      });
+    }
+
     const now = new Date();
-    const timeLabel = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     const doc = {
       name,
-      type,
+      description,
+      type: "channel",
+      isOfficial: false,
       ownerId: myId,
       admins: [myId],
       members: [myId],
-      allowMemberMessages,
-      posts:
-        type === "channel"
-          ? [
-              {
-                id: "p_" + Date.now(),
-                text: `Channel "${name}" is live.`,
-                authorName: senderName,
-                views: 1,
-                likesUsers: [],
-                fireUsers: [],
-                time: timeLabel
-              }
-            ]
-          : [],
-      messages:
-        type === "group"
-          ? [
-              {
-                id: "m_" + Date.now(),
-                sender: senderName,
-                senderId: myId,
-                text: `Welcome to ${name}!`,
-                time: timeLabel
-              }
-            ]
-          : [],
+      logo: String(req.body.logo || "").slice(0, 2000),
+      isPrivate: Boolean(req.body.isPrivate),
+      allowMemberMessages: false,
+      posts: [],
       createdAt: now,
       updatedAt: now
     };
 
-    const inserted = await groups.insertOne(doc);
-    doc._id = inserted.insertedId;
+    const result = await groups.insertOne(doc);
+
+    doc._id = result.insertedId;
 
     return res.status(201).json({
       success: true,
       group: serializeRoom(doc, myId)
     });
+
   } catch (error) {
-    console.error("CREATE GROUP ERROR:", error);
+    console.error("CREATE CHANNEL ERROR:", error);
+
     return res.status(500).json({
       success: false,
-      message: "Could not create channel or group"
+      message: "Could not create channel"
     });
   }
 });
 
+/* ---------- JOIN CHANNEL ---------- */
+
 app.post("/api/groups/:groupId/join", auth, async function (req, res) {
   try {
-    const { groupId } = req.params;
-    const myId = req.user.id;
+    const groupId = req.params.groupId;
+    const myId = String(req.user.id);
+
     if (!validId(groupId)) {
-      return res.status(400).json({ success: false, message: "Invalid ID" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid channel ID"
+      });
+    }
+
+    const target = await groups.findOne({
+      _id: new ObjectId(groupId),
+      type: "channel"
+    });
+
+    if (!target) {
+      return res.status(404).json({
+        success: false,
+        message: "Channel not found"
+      });
+    }
+
+    const isOfficial =
+      target.isOfficial === true ||
+      target.systemKey === OFFICIAL_CHANNEL_KEY;
+
+    if (!isOfficial) {
+      const official = await ensureOfficialChannel();
+
+      if (!hasJoinedOfficialChannel(myId, official)) {
+        return res.status(403).json({
+          success: false,
+          message: "Join TELESUPAR OFFICIAL before joining another channel"
+        });
+      }
     }
 
     await groups.updateOne(
       { _id: new ObjectId(groupId) },
-      { $addToSet: { members: myId } }
+      {
+        $addToSet: { members: myId },
+        $set: { updatedAt: new Date() }
+      }
     );
 
-    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
-    if (!updated) {
-      return res.status(404).json({ success: false, message: "Not found" });
-    }
+    const updated = await groups.findOne({
+      _id: new ObjectId(groupId)
+    });
 
     return res.json({
       success: true,
       group: serializeRoom(updated, myId)
     });
+
   } catch (error) {
-    console.error("JOIN GROUP ERROR:", error);
-    return res.status(500).json({ success: false, message: "Could not join" });
-  }
-});
+    console.error("JOIN CHANNEL ERROR:", error);
 
-app.patch("/api/groups/:groupId/settings", auth, async function (req, res) {
-  try {
-    const { groupId } = req.params;
-    const myId = String(req.user.id);
-
-    if (!validId(groupId)) {
-      return res.status(400).json({ success: false, message: "Invalid ID" });
-    }
-
-    const room = await groups.findOne({ _id: new ObjectId(groupId) });
-    if (!room) {
-      return res.status(404).json({ success: false, message: "Not found" });
-    }
-
-    if (String(room.ownerId) !== myId && !isRoomAdmin(room, myId)) {
-      return res.status(403).json({
-        success: false,
-        message: "Only owner or admin can change permissions"
-      });
-    }
-
-    const updateSet = { updatedAt: new Date() };
-    if (typeof req.body.allowMemberMessages === "boolean") {
-      updateSet.allowMemberMessages = req.body.allowMemberMessages;
-    }
-
-    const updateOps = { $set: updateSet };
-    if (req.body.addAdminId && validId(req.body.addAdminId)) {
-      updateOps.$addToSet = {
-        admins: String(req.body.addAdminId),
-        members: String(req.body.addAdminId)
-      };
-    }
-
-    await groups.updateOne({ _id: new ObjectId(groupId) }, updateOps);
-
-    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
-    return res.json({
-      success: true,
-      group: serializeRoom(updated, myId)
+    return res.status(500).json({
+      success: false,
+      message: "Could not join channel"
     });
-  } catch (error) {
-    console.error("GROUP SETTINGS ERROR:", error);
-    return res.status(500).json({ success: false, message: "Could not update settings" });
   }
 });
+
+/* ---------- PUBLISH CHANNEL POST ---------- */
 
 app.post("/api/groups/:groupId/posts", auth, async function (req, res) {
   try {
-    const { groupId } = req.params;
-    const myId = req.user.id;
-    const text = String(req.body.text || "").trim().slice(0, 2000);
+    const groupId = req.params.groupId;
+    const myId = String(req.user.id);
 
     if (!validId(groupId)) {
-      return res.status(400).json({ success: false, message: "Invalid ID" });
-    }
-    if (!text) {
-      return res.status(400).json({ success: false, message: "Post text cannot be empty" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid channel ID"
+      });
     }
 
-    const room = await groups.findOne({ _id: new ObjectId(groupId) });
+    const room = await groups.findOne({
+      _id: new ObjectId(groupId),
+      type: "channel"
+    });
+
     if (!room) {
-      return res.status(404).json({ success: false, message: "Channel not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Channel not found"
+      });
+    }
+
+    if (!await canAccessChannel(room, myId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Join TELESUPAR OFFICIAL first"
+      });
     }
 
     if (!isRoomAdmin(room, myId)) {
       return res.status(403).json({
         success: false,
-        message: "Only channel owner or admins can broadcast posts"
+        message: "Only channel owner or admins can publish"
       });
     }
 
-    const actor = await users.findOne({ _id: new ObjectId(myId) });
-    const authorName = actor?.displayName || actor?.username || req.user.username || "Admin";
+    const text = String(req.body.text || "")
+      .trim()
+      .slice(0, 2000);
+
+    const image = String(req.body.image || "").slice(0, 5000);
+    const video = String(req.body.video || "").slice(0, 5000);
+
+    if (!text && !image && !video) {
+      return res.status(400).json({
+        success: false,
+        message: "Post cannot be empty"
+      });
+    }
+
+    const actor = await users.findOne({
+      _id: new ObjectId(myId)
+    });
+
     const now = new Date();
 
-    const newPost = {
-      id: "p_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+    const post = {
+      id: "p_" + Date.now() + "_" +
+        Math.random().toString(36).slice(2, 7),
       text,
-      authorName,
-      views: 1,
+      image,
+      video,
+      authorName:
+        actor?.displayName ||
+        actor?.username ||
+        req.user.username ||
+        "Admin",
+      authorId: myId,
+      views: 0,
       likesUsers: [],
       fireUsers: [],
-      time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      reactions: {},
+      silent: Boolean(req.body.silent),
+      time: now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      })
     };
 
     await groups.updateOne(
       { _id: new ObjectId(groupId) },
       {
-        $push: { posts: newPost },
+        $push: { posts: post },
         $set: { updatedAt: now }
       }
     );
 
-    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
+    const updated = await groups.findOne({
+      _id: new ObjectId(groupId)
+    });
+
     return res.status(201).json({
       success: true,
       group: serializeRoom(updated, myId)
     });
+
   } catch (error) {
     console.error("CHANNEL POST ERROR:", error);
+
     return res.status(500).json({
       success: false,
-      message: "Could not publish broadcast"
+      message: "Could not publish channel post"
     });
   }
 });
 
-app.post("/api/groups/:groupId/posts/:postId/react", auth, async function (req, res) {
-  try {
-    const { groupId, postId } = req.params;
-    const myId = String(req.user.id);
-    const reaction = req.body.reaction === "fire" ? "fireUsers" : "likesUsers";
+/* ---------- POST REACTIONS ---------- */
 
-    if (!validId(groupId)) {
-      return res.status(400).json({ success: false, message: "Invalid ID" });
-    }
+app.post(
+  "/api/groups/:groupId/posts/:postId/react",
+  auth,
+  async function (req, res) {
+    try {
+      const { groupId, postId } = req.params;
+      const myId = String(req.user.id);
 
-    const room = await groups.findOne({ _id: new ObjectId(groupId) });
-    if (!room || !Array.isArray(room.posts)) {
-      return res.status(404).json({ success: false, message: "Post not found" });
-    }
+      if (!validId(groupId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid channel ID"
+        });
+      }
 
-    const updatedPosts = room.posts.map(p => {
-      if (String(p.id) !== String(postId)) return p;
-      const arr = Array.isArray(p[reaction]) ? p[reaction].map(String) : [];
-      const exists = arr.includes(myId);
-      const nextArr = exists ? arr.filter(id => id !== myId) : [...arr, myId];
-      return { ...p, [reaction]: nextArr };
-    });
+      const room = await groups.findOne({
+        _id: new ObjectId(groupId),
+        type: "channel"
+      });
 
-    await groups.updateOne(
-      { _id: new ObjectId(groupId) },
-      { $set: { posts: updatedPosts, updatedAt: new Date() } }
-    );
+      if (!room) {
+        return res.status(404).json({
+          success: false,
+          message: "Channel not found"
+        });
+      }
 
-    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
-    return res.json({
-      success: true,
-      group: serializeRoom(updated, myId)
-    });
-  } catch (error) {
-    console.error("GROUP REACT ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Could not update reaction"
-    });
-  }
-});
+      if (!await canAccessChannel(room, myId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Join TELESUPAR OFFICIAL first"
+        });
+      }
 
-app.post("/api/groups/:groupId/messages", auth, async function (req, res) {
-  try {
-    const { groupId } = req.params;
-    const myId = String(req.user.id);
-    const text = String(req.body.text || "").trim().slice(0, 2000);
+      if (!isChannelMember(room, myId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Join this channel first"
+        });
+      }
 
-    if (!validId(groupId)) {
-      return res.status(400).json({ success: false, message: "Invalid ID" });
-    }
-    if (!text) {
-      return res.status(400).json({ success: false, message: "Message cannot be empty" });
-    }
+      const reaction =
+        req.body.reaction === "fire"
+          ? "fireUsers"
+          : "likesUsers";
 
-    const room = await groups.findOne({ _id: new ObjectId(groupId) });
-    if (!room) {
-      return res.status(404).json({ success: false, message: "Group not found" });
-    }
+      const posts = Array.isArray(room.posts)
+        ? room.posts
+        : [];
 
-    const admin = isRoomAdmin(room, myId);
-    const membersList = Array.isArray(room.members) ? room.members.map(String) : [];
-    const isMember = membersList.includes(myId) || admin;
-    const allowMemberMessages = room.allowMemberMessages !== false;
+      let found = false;
 
-    if (!admin && (!isMember || !allowMemberMessages)) {
-      return res.status(403).json({
+      const updatedPosts = posts.map(post => {
+        if (String(post.id) !== String(postId)) {
+          return post;
+        }
+
+        found = true;
+
+        const usersList = Array.isArray(post[reaction])
+          ? post[reaction].map(String)
+          : [];
+
+        const exists = usersList.includes(myId);
+
+        const nextUsers = exists
+          ? usersList.filter(id => id !== myId)
+          : [...usersList, myId];
+
+        return {
+          ...post,
+          [reaction]: nextUsers
+        };
+      });
+
+      if (!found) {
+        return res.status(404).json({
+          success: false,
+          message: "Post not found"
+        });
+      }
+
+      await groups.updateOne(
+        { _id: new ObjectId(groupId) },
+        {
+          $set: {
+            posts: updatedPosts,
+            updatedAt: new Date()
+          }
+        }
+      );
+
+      const updated = await groups.findOne({
+        _id: new ObjectId(groupId)
+      });
+
+      return res.json({
+        success: true,
+        group: serializeRoom(updated, myId)
+      });
+
+    } catch (error) {
+      console.error("CHANNEL REACTION ERROR:", error);
+
+      return res.status(500).json({
         success: false,
-        message: !isMember
-          ? "Join this group first to send messages"
-          : "Only admins can send messages in this group right now"
+        message: "Could not update reaction"
       });
     }
-
-    const actor = await users.findOne({ _id: new ObjectId(myId) });
-    const sender =
-      String(req.body.sender || "").trim() ||
-      actor?.displayName ||
-      actor?.username ||
-      req.user.username ||
-      "Member";
-
-    const now = new Date();
-    const msg = {
-      id: "m_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-      sender,
-      senderId: myId,
-      text,
-      time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    };
-
-    await groups.updateOne(
-      { _id: new ObjectId(groupId) },
-      {
-        $push: { messages: msg },
-        $addToSet: { members: myId },
-        $set: { updatedAt: now }
-      }
-    );
-
-    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
-    return res.status(201).json({
-      success: true,
-      group: serializeRoom(updated, myId)
-    });
-  } catch (error) {
-    console.error("GROUP MESSAGE ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Could not send group message"
-    });
   }
-});
+);
 
 
 
