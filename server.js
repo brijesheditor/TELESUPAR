@@ -827,7 +827,7 @@ app.post(
 );
 
 /* =========================================
-   LOGIN
+   LOGIN WITH 5-HOUR SECURITY LOCK
 ========================================= */
 
 app.post(
@@ -836,96 +836,213 @@ app.post(
 
         try {
 
-            const email =
-                String(
-                    req.body.email ||
-                    ""
-                )
-                    .trim()
-                    .toLowerCase();
+            const email = String(
+                req.body.email || ""
+            )
+                .trim()
+                .toLowerCase();
 
-            const password =
-                String(
-                    req.body.password ||
-                    ""
-                );
+            const password = String(
+                req.body.password || ""
+            );
 
-            if (
-                !email ||
-                !password
-            ) {
-
+            if (!email || !password) {
                 return res.status(400).json({
                     success: false,
-                    message:
-                        "Email and password are required"
+                    message: "Email and password are required"
                 });
             }
 
-            const user =
-                await users.findOne({
-                    email
-                });
+            const user = await users.findOne({
+                email
+            });
 
             if (!user) {
-
                 return res.status(401).json({
                     success: false,
-                    message:
-                        "Invalid email or password"
+                    message: "Invalid email or password"
                 });
             }
 
-            const match =
-                await bcrypt.compare(
-                    password,
-                    user.password
+            const now = new Date();
+
+            // Check whether login is currently locked
+            if (
+                user.loginLockedUntil &&
+                new Date(user.loginLockedUntil) > now
+            ) {
+
+                const remainingMs =
+                    new Date(user.loginLockedUntil).getTime() -
+                    now.getTime();
+
+                const remainingMinutes =
+                    Math.ceil(remainingMs / 60000);
+
+                return res.status(423).json({
+                    success: false,
+                    locked: true,
+                    message:
+                        "Too many incorrect attempts. Try again after 5 hours.",
+                    remainingMinutes
+                });
+            }
+
+            // Reset expired lock before checking password
+            if (
+                user.loginLockedUntil &&
+                new Date(user.loginLockedUntil) <= now
+            ) {
+
+                await users.updateOne(
+                    { _id: user._id },
+                    {
+                        $set: {
+                            failedLoginAttempts: 0
+                        },
+                        $unset: {
+                            loginLockedUntil: ""
+                        }
+                    }
                 );
 
+                user.failedLoginAttempts = 0;
+                user.loginLockedUntil = null;
+            }
+
+            const match = await bcrypt.compare(
+                password,
+                user.password
+            );
+
+            // Wrong password
             if (!match) {
+
+                const lockUntil = new Date(
+                    Date.now() + 5 * 60 * 60 * 1000
+                );
+
+                // Atomic increment to avoid lost updates
+                const nextCount = {
+                    $add: [
+                        {
+                            $ifNull: [
+                                "$failedLoginAttempts",
+                                0
+                            ]
+                        },
+                        1
+                    ]
+                };
+
+                await users.updateOne(
+                    { _id: user._id },
+                    [
+                        {
+                            $set: {
+                                failedLoginAttempts: nextCount,
+
+                                loginLockedUntil: {
+                                    $cond: [
+                                        {
+                                            $gte: [
+                                                nextCount,
+                                                3
+                                            ]
+                                        },
+                                        lockUntil,
+                                        {
+                                            $ifNull: [
+                                                "$loginLockedUntil",
+                                                null
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                );
+
+                const updatedUser =
+                    await users.findOne({
+                        _id: user._id
+                    });
+
+                if (
+                    updatedUser.loginLockedUntil &&
+                    new Date(updatedUser.loginLockedUntil) > new Date()
+                ) {
+
+                    return res.status(423).json({
+                        success: false,
+                        locked: true,
+                        message:
+                            "3 incorrect attempts. Login locked for 5 hours.",
+                        remainingMinutes: 300
+                    });
+                }
+
+                const attemptsLeft =
+                    Math.max(
+                        0,
+                        3 - (
+                            updatedUser.failedLoginAttempts || 0
+                        )
+                    );
 
                 return res.status(401).json({
                     success: false,
+                    locked: false,
                     message:
-                        "Invalid email or password"
+                        "Invalid email or password. " +
+                        attemptsLeft +
+                        " attempt(s) remaining."
                 });
             }
 
-            const token =
-                makeToken(user);
+            // Correct password: reset failed attempts
+            await users.updateOne(
+                { _id: user._id },
+                {
+                    $set: {
+                        failedLoginAttempts: 0
+                    },
+                    $unset: {
+                        loginLockedUntil: ""
+                    }
+                }
+            );
 
-            res.json({
+            const token = makeToken(user);
+
+            return res.json({
 
                 success: true,
 
-                message:
-                    "Login successful",
+                message: "Login successful",
 
                 token,
 
-                user:
-                    publicUser(user)
+                user: publicUser(user)
+
             });
 
         } catch (error) {
 
             console.error(
-                "LOGIN ERROR:",
+                "LOGIN SECURITY ERROR:",
                 error
             );
 
-            res.status(500).json({
-
+            return res.status(500).json({
                 success: false,
-
-                message:
-                    "Login failed"
+                message: "Login failed. Please try again."
             });
         }
 
     }
 );
-
 /* =========================================
    MY PROFILE
 ========================================= */
