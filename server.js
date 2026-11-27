@@ -4978,6 +4978,115 @@ function serializeRoom(room, myId) {
   };
 }
 
+
+/* ---------- CHANNEL MEMBER PROFILES ---------- */
+
+async function getChannelMemberProfiles(room) {
+  const ids = [
+    ...new Set([
+      ...(Array.isArray(room.members) ? room.members : []),
+      ...(Array.isArray(room.admins) ? room.admins : []),
+      room.ownerId
+    ].filter(Boolean).map(String))
+  ];
+
+  const validIds = ids.filter(id => validId(id));
+
+  if (!validIds.length) return [];
+
+  const objectIds = validIds.map(id => new ObjectId(id));
+
+  const userDocs = await users.find(
+    { _id: { $in: objectIds } },
+    {
+      projection: {
+        username: 1,
+        displayName: 1,
+        name: 1,
+        avatar: 1,
+        profilePic: 1,
+        photo: 1
+      }
+    }
+  ).toArray();
+
+  const userMap = new Map(
+    userDocs.map(user => [String(user._id), user])
+  );
+
+  return ids.map(id => {
+    const user = userMap.get(id);
+    if (!user) return null;
+
+    const isOwner = String(room.ownerId || "") === id;
+    const isAdmin = isOwner ||
+      (Array.isArray(room.admins) &&
+       room.admins.map(String).includes(id));
+
+    return {
+      id,
+      username: user.username || "",
+      name: user.displayName || user.name || user.username || "User",
+      displayName: user.displayName || user.name || user.username || "User",
+      avatar: user.avatar || user.profilePic || user.photo || "",
+      role: isOwner ? "Creator" : (isAdmin ? "Admin" : "Member")
+    };
+  }).filter(Boolean);
+}
+
+/* ---------- GET CHANNEL SUBSCRIBERS ---------- */
+
+app.get("/api/groups/:groupId/members", auth, async function (req, res) {
+  try {
+    const { groupId } = req.params;
+    const myId = String(req.user.id);
+
+    if (!validId(groupId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid channel ID"
+      });
+    }
+
+    const room = await groups.findOne({
+      _id: new ObjectId(groupId),
+      type: "channel"
+    });
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Channel not found"
+      });
+    }
+
+    if (!isRoomAdmin(room, myId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Only channel admins can view subscribers"
+      });
+    }
+
+    const members = await getChannelMemberProfiles(room);
+
+    return res.json({
+      success: true,
+      members,
+      admins: members.filter(member =>
+        member.role === "Admin" || member.role === "Creator"
+      )
+    });
+
+  } catch (error) {
+    console.error("CHANNEL MEMBERS ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Could not load channel subscribers"
+    });
+  }
+});
+
+
 /* ---------- GET CHANNELS ---------- */
 
 app.get("/api/groups", auth, async function (req, res) {
@@ -5141,6 +5250,84 @@ app.post("/api/groups/:groupId/join", auth, async function (req, res) {
     });
   }
 });
+
+
+/* ---------- LEAVE CHANNEL ---------- */
+
+app.delete("/api/groups/:groupId/leave", auth, async function (req, res) {
+  try {
+    const { groupId } = req.params;
+    const myId = String(req.user.id);
+
+    if (!validId(groupId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid channel ID"
+      });
+    }
+
+    const room = await groups.findOne({
+      _id: new ObjectId(groupId),
+      type: "channel"
+    });
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Channel not found"
+      });
+    }
+
+    const isOfficial =
+      room.isOfficial === true ||
+      room.systemKey === OFFICIAL_CHANNEL_KEY;
+
+    if (isOfficial && String(room.ownerId) === myId) {
+      return res.status(403).json({
+        success: false,
+        message: "Official channel owner cannot leave"
+      });
+    }
+
+    if (String(room.ownerId || "") === myId) {
+      return res.status(403).json({
+        success: false,
+        message: "Channel owner must transfer ownership or delete the channel"
+      });
+    }
+
+    await groups.updateOne(
+      { _id: new ObjectId(groupId) },
+      {
+        $pull: {
+          members: myId,
+          admins: myId
+        },
+        $set: {
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    const updated = await groups.findOne({
+      _id: new ObjectId(groupId)
+    });
+
+    return res.json({
+      success: true,
+      group: serializeRoom(updated, myId),
+      message: "You left the channel"
+    });
+
+  } catch (error) {
+    console.error("LEAVE CHANNEL ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Could not leave channel"
+    });
+  }
+});
+
 
 /* ---------- PUBLISH CHANNEL POST ---------- */
 
