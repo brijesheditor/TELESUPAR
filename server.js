@@ -1839,6 +1839,149 @@ app.post(
 );
 
 
+
+/* =========================================
+   EDIT MY POST
+   Caption only — media remains unchanged
+========================================= */
+
+app.patch("/api/posts/:postId", auth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const myId = new ObjectId(req.user.id);
+
+    if (!validId(postId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post ID"
+      });
+    }
+
+    const postObjectId = new ObjectId(postId);
+
+    const post = await posts.findOne({
+      _id: postObjectId
+    });
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      });
+    }
+
+    if (String(post.userId) !== String(myId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only edit your own post"
+      });
+    }
+
+    const caption = String(req.body.caption ?? "")
+      .trim()
+      .slice(0, 2200);
+
+    if (!post.mediaUrl && !caption) {
+      return res.status(400).json({
+        success: false,
+        message: "Text post cannot be empty"
+      });
+    }
+
+    await posts.updateOne(
+      {
+        _id: postObjectId,
+        userId: myId
+      },
+      {
+        $set: {
+          caption,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    return res.json({
+      success: true,
+      message: "Post updated successfully",
+      caption
+    });
+
+  } catch (error) {
+    console.error("EDIT POST ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not update post"
+    });
+  }
+});
+
+
+/* =========================================
+   DELETE MY POST
+   Also deletes its comments
+========================================= */
+
+app.delete("/api/posts/:postId", auth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const myId = new ObjectId(req.user.id);
+
+    if (!validId(postId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post ID"
+      });
+    }
+
+    const postObjectId = new ObjectId(postId);
+
+    const post = await posts.findOne({
+      _id: postObjectId
+    });
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      });
+    }
+
+    if (String(post.userId) !== String(myId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only delete your own post"
+      });
+    }
+
+    await posts.deleteOne({
+      _id: postObjectId,
+      userId: myId
+    });
+
+    await comments.deleteMany({
+      postId: postObjectId
+    });
+
+    return res.json({
+      success: true,
+      message: "Post deleted successfully",
+      postId
+    });
+
+  } catch (error) {
+    console.error("DELETE POST ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not delete post"
+    });
+  }
+});
+
+
+
 /* =====================================
    COMMENTS SYSTEM
 ===================================== */
