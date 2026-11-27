@@ -4746,7 +4746,6 @@ app.get(
 );
 
 
-
 /* =========================================
    TELESUPAR CHANNELS API
    Official Channel + Secure Join/Create
@@ -4928,10 +4927,13 @@ function serializeRoom(room, myId) {
           : [];
 
         return {
-          ...post,
           id: String(post.id),
           text: post.text || "",
+          image: post.image || "",
+          video: post.video || "",
+          mediaType: post.mediaType || "",
           authorName: post.authorName || "Admin",
+          authorId: String(post.authorId || ""),
           views: Number(post.views) || 0,
           likes: likesUsers.length,
           fire: fireUsers.length,
@@ -4939,7 +4941,16 @@ function serializeRoom(room, myId) {
           firedByMe: fireUsers.includes(uid),
           reactions: post.reactions || {},
           myReaction: post.myReaction || "",
-          time: post.time || ""
+          silent: Boolean(post.silent),
+          poll: post.poll ? {
+            question: post.poll.question || "",
+            options: Array.isArray(post.poll.options) ? post.poll.options : [],
+            myVote: (Array.isArray(post.poll.voters)
+              ? (post.poll.voters.find(v => String(v.userId) === uid)?.optionIndex ?? "")
+              : (post.poll.myVote ?? ""))
+          } : null,
+          time: post.time || "",
+          createdAt: post.createdAt || null
         };
       })
     : [];
@@ -5133,111 +5144,319 @@ app.post("/api/groups/:groupId/join", auth, async function (req, res) {
 
 /* ---------- PUBLISH CHANNEL POST ---------- */
 
-app.post("/api/groups/:groupId/posts", auth, async function (req, res) {
+app.post(
+  "/api/groups/:groupId/posts",
+  auth,
+  upload.single("file"),
+  async function (req, res) {
+    try {
+      const groupId = req.params.groupId;
+      const myId = String(req.user.id);
+
+      if (!validId(groupId)) {
+        return res.status(400).json({ success: false, message: "Invalid channel ID" });
+      }
+
+      const room = await groups.findOne({
+        _id: new ObjectId(groupId),
+        type: "channel"
+      });
+
+      if (!room) {
+        return res.status(404).json({ success: false, message: "Channel not found" });
+      }
+
+      if (!await canAccessChannel(room, myId)) {
+        return res.status(403).json({ success: false, message: "Join TELESUPAR OFFICIAL first" });
+      }
+
+      if (!isRoomAdmin(room, myId)) {
+        return res.status(403).json({ success: false, message: "Only channel owner or admins can publish" });
+      }
+
+      const text = String(req.body?.text || "").trim().slice(0, 2000);
+      let image = "";
+      let video = "";
+      let mediaType = "";
+
+      if (req.file) {
+        if (!req.file.mimetype.startsWith("image/") && !req.file.mimetype.startsWith("video/")) {
+          return res.status(400).json({ success: false, message: "Only image or video can be posted in a channel" });
+        }
+        if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+          return res.status(503).json({ success: false, message: "Media storage is not configured on server" });
+        }
+        const uploaded = await uploadToCloudinary(req.file);
+        if (req.file.mimetype.startsWith("image/")) {
+          image = uploaded.secure_url;
+          mediaType = "image";
+        } else if (req.file.mimetype.startsWith("video/")) {
+          video = uploaded.secure_url;
+          mediaType = "video";
+        } else {
+          return res.status(400).json({ success: false, message: "Only image or video can be posted in a channel" });
+        }
+      }
+
+      let poll = null;
+      if (req.body?.poll) {
+        try {
+          poll = typeof req.body.poll === "string" ? JSON.parse(req.body.poll) : req.body.poll;
+        } catch (_) {
+          return res.status(400).json({ success: false, message: "Invalid poll data" });
+        }
+      }
+
+      if (poll) {
+        const question = String(poll.question || "").trim().slice(0, 240);
+        const labels = Array.isArray(poll.options)
+          ? poll.options.map(option => String(typeof option === "string" ? option : option.label || "").trim()).filter(Boolean).slice(0, 8)
+          : [];
+        if (!question || labels.length < 2) {
+          return res.status(400).json({ success: false, message: "Poll needs a question and at least two options" });
+        }
+        poll = {
+          question,
+          options: labels.map(label => ({ label, votes: 0 })),
+          voters: []
+        };
+      }
+
+      if (!text && !image && !video && !poll) {
+        return res.status(400).json({ success: false, message: "Post cannot be empty" });
+      }
+
+      const actor = await users.findOne({ _id: new ObjectId(myId) });
+      const now = new Date();
+      const post = {
+        id: "p_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        text,
+        image,
+        video,
+        mediaType,
+        poll,
+        authorName: actor?.displayName || actor?.username || req.user.username || "Admin",
+        authorId: myId,
+        views: 0,
+        viewers: [],
+        likesUsers: [],
+        fireUsers: [],
+        reactions: {},
+        silent: String(req.body?.silent || "false") === "true",
+        time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        createdAt: now
+      };
+
+      await groups.updateOne(
+        { _id: new ObjectId(groupId) },
+        { $push: { posts: post }, $set: { updatedAt: now } }
+      );
+
+      const updated = await groups.findOne({ _id: new ObjectId(groupId) });
+      return res.status(201).json({ success: true, group: serializeRoom(updated, myId) });
+    } catch (error) {
+      console.error("CHANNEL POST ERROR:", error);
+      return res.status(500).json({ success: false, message: "Could not publish channel post" });
+    }
+  }
+);
+
+/* ---------- RECORD UNIQUE POST VIEW ---------- */
+app.post("/api/groups/:groupId/posts/:postId/view", auth, async function (req, res) {
   try {
-    const groupId = req.params.groupId;
+    const { groupId, postId } = req.params;
     const myId = String(req.user.id);
+    if (!validId(groupId)) return res.status(400).json({ success: false, message: "Invalid channel ID" });
 
-    if (!validId(groupId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid channel ID"
-      });
+    const room = await groups.findOne({ _id: new ObjectId(groupId), type: "channel" });
+    if (!room) return res.status(404).json({ success: false, message: "Channel not found" });
+    if (!await canAccessChannel(room, myId)) return res.status(403).json({ success: false, message: "Join TELESUPAR OFFICIAL first" });
+    if (!isChannelMember(room, myId)) return res.status(403).json({ success: false, message: "Join this channel first" });
+
+    const post = (room.posts || []).find(item => String(item.id) === String(postId));
+    if (!post) return res.status(404).json({ success: false, message: "Post not found" });
+
+    if (String(post.authorId || "") !== myId) {
+      // Older posts did not store unique viewers; reset their unverified legacy count once.
+      if (!Array.isArray(post.viewers)) {
+        await groups.updateOne(
+          { _id: new ObjectId(groupId), posts: { $elemMatch: { id: String(postId), viewers: { $exists: false } } } },
+          { $set: { "posts.$.viewers": [], "posts.$.views": 0 } }
+        );
+      }
+      await groups.updateOne(
+        {
+          _id: new ObjectId(groupId),
+          posts: { $elemMatch: { id: String(postId), viewers: { $ne: myId } } }
+        },
+        {
+          $addToSet: { "posts.$.viewers": myId },
+          $inc: { "posts.$.views": 1 }
+        }
+      );
     }
 
-    const room = await groups.findOne({
-      _id: new ObjectId(groupId),
-      type: "channel"
-    });
+    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
+    return res.json({ success: true, group: serializeRoom(updated, myId) });
+  } catch (error) {
+    console.error("CHANNEL VIEW ERROR:", error);
+    return res.status(500).json({ success: false, message: "Could not record post view" });
+  }
+});
 
-    if (!room) {
-      return res.status(404).json({
-        success: false,
-        message: "Channel not found"
-      });
+/* ---------- PERSIST POLL VOTE ---------- */
+app.post("/api/groups/:groupId/posts/:postId/vote", auth, async function (req, res) {
+  try {
+    const { groupId, postId } = req.params;
+    const myId = String(req.user.id);
+    const optionIndex = Number(req.body?.optionIndex);
+    if (!validId(groupId) || !Number.isInteger(optionIndex) || optionIndex < 0) {
+      return res.status(400).json({ success: false, message: "Invalid poll vote" });
     }
 
-    if (!await canAccessChannel(room, myId)) {
-      return res.status(403).json({
-        success: false,
-        message: "Join TELESUPAR OFFICIAL first"
-      });
+    const room = await groups.findOne({ _id: new ObjectId(groupId), type: "channel" });
+    if (!room) return res.status(404).json({ success: false, message: "Channel not found" });
+    if (!await canAccessChannel(room, myId) || !isChannelMember(room, myId)) {
+      return res.status(403).json({ success: false, message: "Join this channel first" });
     }
 
-    if (!isRoomAdmin(room, myId)) {
-      return res.status(403).json({
-        success: false,
-        message: "Only channel owner or admins can publish"
-      });
+    const postIndex = (room.posts || []).findIndex(item => String(item.id) === String(postId));
+    if (postIndex < 0 || !room.posts[postIndex].poll) {
+      return res.status(404).json({ success: false, message: "Poll not found" });
     }
 
-    const text = String(req.body.text || "")
-      .trim()
-      .slice(0, 2000);
-
-    const image = String(req.body.image || "").slice(0, 5000);
-    const video = String(req.body.video || "").slice(0, 5000);
-
-    if (!text && !image && !video) {
-      return res.status(400).json({
-        success: false,
-        message: "Post cannot be empty"
-      });
+    const posts = room.posts;
+    const poll = posts[postIndex].poll;
+    if (!Array.isArray(poll.options) || optionIndex >= poll.options.length) {
+      return res.status(400).json({ success: false, message: "Poll option not found" });
     }
 
-    const actor = await users.findOne({
-      _id: new ObjectId(myId)
-    });
+    const voters = Array.isArray(poll.voters) ? poll.voters : [];
+    const oldVote = voters.find(vote => String(vote.userId) === myId);
+    if (oldVote && Number(oldVote.optionIndex) === optionIndex) {
+      poll.voters = voters.filter(vote => String(vote.userId) !== myId);
+    } else {
+      poll.voters = voters.filter(vote => String(vote.userId) !== myId);
+      poll.voters.push({ userId: myId, optionIndex });
+    }
 
-    const now = new Date();
+    poll.options = poll.options.map((option, idx) => ({
+      ...option,
+      votes: poll.voters.filter(vote => Number(vote.optionIndex) === idx).length
+    }));
 
-    const post = {
-      id: "p_" + Date.now() + "_" +
-        Math.random().toString(36).slice(2, 7),
-      text,
-      image,
-      video,
-      authorName:
-        actor?.displayName ||
-        actor?.username ||
-        req.user.username ||
-        "Admin",
-      authorId: myId,
-      views: 0,
-      likesUsers: [],
-      fireUsers: [],
-      reactions: {},
-      silent: Boolean(req.body.silent),
-      time: now.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-      })
-    };
+    posts[postIndex] = { ...posts[postIndex], poll };
+    await groups.updateOne(
+      { _id: new ObjectId(groupId) },
+      { $set: { posts, updatedAt: new Date() } }
+    );
+
+    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
+    return res.json({ success: true, group: serializeRoom(updated, myId) });
+  } catch (error) {
+    console.error("CHANNEL POLL VOTE ERROR:", error);
+    return res.status(500).json({ success: false, message: "Could not save poll vote" });
+  }
+});
+
+/* ---------- DELETE CHANNEL POST ---------- */
+app.delete("/api/groups/:groupId/posts/:postId", auth, async function (req, res) {
+  try {
+    const { groupId, postId } = req.params;
+    const myId = String(req.user.id);
+    if (!validId(groupId)) return res.status(400).json({ success: false, message: "Invalid channel ID" });
+
+    const room = await groups.findOne({ _id: new ObjectId(groupId), type: "channel" });
+    if (!room) return res.status(404).json({ success: false, message: "Channel not found" });
+    if (!isRoomAdmin(room, myId)) return res.status(403).json({ success: false, message: "Only channel owner/admin can delete broadcasts" });
+    if (!(room.posts || []).some(post => String(post.id) === String(postId))) {
+      return res.status(404).json({ success: false, message: "Broadcast not found" });
+    }
 
     await groups.updateOne(
       { _id: new ObjectId(groupId) },
-      {
-        $push: { posts: post },
-        $set: { updatedAt: now }
-      }
+      { $pull: { posts: { id: String(postId) } }, $set: { updatedAt: new Date() } }
     );
-
-    const updated = await groups.findOne({
-      _id: new ObjectId(groupId)
-    });
-
-    return res.status(201).json({
-      success: true,
-      group: serializeRoom(updated, myId)
-    });
-
+    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
+    return res.json({ success: true, group: serializeRoom(updated, myId) });
   } catch (error) {
-    console.error("CHANNEL POST ERROR:", error);
+    console.error("DELETE CHANNEL POST ERROR:", error);
+    return res.status(500).json({ success: false, message: "Could not delete broadcast" });
+  }
+});
 
-    return res.status(500).json({
-      success: false,
-      message: "Could not publish channel post"
-    });
+/* ---------- UPLOAD CHANNEL LOGO ---------- */
+app.post("/api/groups/:groupId/logo", auth, upload.single("file"), async function (req, res) {
+  try {
+    const { groupId } = req.params;
+    const myId = String(req.user.id);
+    if (!validId(groupId)) return res.status(400).json({ success: false, message: "Invalid channel ID" });
+    if (!req.file || !req.file.mimetype.startsWith("image/")) {
+      return res.status(400).json({ success: false, message: "Please select an image" });
+    }
+    const room = await groups.findOne({ _id: new ObjectId(groupId), type: "channel" });
+    if (!room) return res.status(404).json({ success: false, message: "Channel not found" });
+    if (!isRoomAdmin(room, myId)) return res.status(403).json({ success: false, message: "Only channel owner/admin can change logo" });
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return res.status(503).json({ success: false, message: "Media storage is not configured on server" });
+    }
+    const uploaded = await uploadToCloudinary(req.file);
+    await groups.updateOne({ _id: new ObjectId(groupId) }, { $set: { logo: uploaded.secure_url, updatedAt: new Date() } });
+    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
+    return res.json({ success: true, group: serializeRoom(updated, myId) });
+  } catch (error) {
+    console.error("CHANNEL LOGO UPLOAD ERROR:", error);
+    return res.status(500).json({ success: false, message: "Could not upload channel logo" });
+  }
+});
+
+/* ---------- UPDATE CHANNEL SETTINGS ---------- */
+app.patch("/api/groups/:groupId/settings", auth, async function (req, res) {
+  try {
+    const { groupId } = req.params;
+    const myId = String(req.user.id);
+    if (!validId(groupId)) return res.status(400).json({ success: false, message: "Invalid channel ID" });
+    const room = await groups.findOne({ _id: new ObjectId(groupId), type: "channel" });
+    if (!room) return res.status(404).json({ success: false, message: "Channel not found" });
+    if (!isRoomAdmin(room, myId)) return res.status(403).json({ success: false, message: "Only channel owner/admin can edit settings" });
+
+    const set = { updatedAt: new Date() };
+    if (typeof req.body.name === "string") set.name = req.body.name.trim().slice(0, 80);
+    if (typeof req.body.description === "string") set.description = req.body.description.trim().slice(0, 500);
+    if (typeof req.body.isPrivate === "boolean") set.isPrivate = req.body.isPrivate;
+    if (typeof req.body.logo === "string" && !req.body.logo.startsWith("data:")) set.logo = req.body.logo.slice(0, 2000);
+    if (!set.name && typeof req.body.name === "string") return res.status(400).json({ success: false, message: "Channel name is required" });
+
+    await groups.updateOne({ _id: new ObjectId(groupId) }, { $set: set });
+    const updated = await groups.findOne({ _id: new ObjectId(groupId) });
+    return res.json({ success: true, group: serializeRoom(updated, myId) });
+  } catch (error) {
+    console.error("CHANNEL SETTINGS ERROR:", error);
+    return res.status(500).json({ success: false, message: "Could not update channel settings" });
+  }
+});
+
+/* ---------- DELETE CHANNEL ---------- */
+app.delete("/api/groups/:groupId", auth, async function (req, res) {
+  try {
+    const { groupId } = req.params;
+    const myId = String(req.user.id);
+    if (!validId(groupId)) return res.status(400).json({ success: false, message: "Invalid channel ID" });
+
+    const room = await groups.findOne({ _id: new ObjectId(groupId), type: "channel" });
+    if (!room) return res.status(404).json({ success: false, message: "Channel not found" });
+    if (room.isOfficial === true || room.systemKey === OFFICIAL_CHANNEL_KEY) {
+      return res.status(403).json({ success: false, message: "TELESUPAR OFFICIAL cannot be deleted" });
+    }
+    if (String(room.ownerId || "") !== myId) {
+      return res.status(403).json({ success: false, message: "Only the channel owner can delete this channel" });
+    }
+
+    await groups.deleteOne({ _id: new ObjectId(groupId) });
+    return res.json({ success: true, message: "Channel deleted" });
+  } catch (error) {
+    console.error("DELETE CHANNEL ERROR:", error);
+    return res.status(500).json({ success: false, message: "Could not delete channel" });
   }
 });
 
