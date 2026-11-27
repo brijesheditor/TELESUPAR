@@ -4940,7 +4940,13 @@ function serializeRoom(room, myId) {
           likedByMe: likesUsers.includes(uid),
           firedByMe: fireUsers.includes(uid),
           reactions: post.reactions || {},
-          myReaction: post.myReaction || "",
+          myReaction: (
+          Array.isArray(post.reactionUsers)
+          ? post.reactionUsers.find(
+          item => String(item.userId) === uid
+          )?.reaction || ""
+          : ""
+           ),
           silent: Boolean(post.silent),
           poll: post.poll ? {
             question: post.poll.question || "",
@@ -5647,7 +5653,8 @@ app.delete("/api/groups/:groupId", auth, async function (req, res) {
   }
 });
 
-/* ---------- POST REACTIONS ---------- */
+
+/* ---------- PERSIST CHANNEL REACTIONS ---------- */
 
 app.post(
   "/api/groups/:groupId/posts/:postId/react",
@@ -5656,11 +5663,14 @@ app.post(
     try {
       const { groupId, postId } = req.params;
       const myId = String(req.user.id);
+      const reaction = String(req.body?.reaction || "").trim();
 
-      if (!validId(groupId)) {
+      const allowed = ["❤️", "👍", "👎", "🔥", "🥰", "👏", "❤️‍🩹", "👀", "💯", "😁"];
+
+      if (!validId(groupId) || !allowed.includes(reaction)) {
         return res.status(400).json({
           success: false,
-          message: "Invalid channel ID"
+          message: "Invalid reaction"
         });
       }
 
@@ -5676,66 +5686,64 @@ app.post(
         });
       }
 
-      if (!await canAccessChannel(room, myId)) {
-        return res.status(403).json({
-          success: false,
-          message: "Join TELESUPAR OFFICIAL first"
-        });
-      }
-
-      if (!isChannelMember(room, myId)) {
+      if (!await canAccessChannel(room, myId) ||
+          !isChannelMember(room, myId)) {
         return res.status(403).json({
           success: false,
           message: "Join this channel first"
         });
       }
 
-      const reaction =
-        req.body.reaction === "fire"
-          ? "fireUsers"
-          : "likesUsers";
+      const posts = Array.isArray(room.posts) ? room.posts : [];
+      const postIndex = posts.findIndex(
+        post => String(post.id) === String(postId)
+      );
 
-      const posts = Array.isArray(room.posts)
-        ? room.posts
-        : [];
-
-      let found = false;
-
-      const updatedPosts = posts.map(post => {
-        if (String(post.id) !== String(postId)) {
-          return post;
-        }
-
-        found = true;
-
-        const usersList = Array.isArray(post[reaction])
-          ? post[reaction].map(String)
-          : [];
-
-        const exists = usersList.includes(myId);
-
-        const nextUsers = exists
-          ? usersList.filter(id => id !== myId)
-          : [...usersList, myId];
-
-        return {
-          ...post,
-          [reaction]: nextUsers
-        };
-      });
-
-      if (!found) {
+      if (postIndex < 0) {
         return res.status(404).json({
           success: false,
           message: "Post not found"
         });
       }
 
+      const post = { ...posts[postIndex] };
+      const reactionUsers = Array.isArray(post.reactionUsers)
+        ? post.reactionUsers
+        : [];
+
+      const previous = reactionUsers.find(
+        item => String(item.userId) === myId
+      );
+
+      let nextUsers = reactionUsers.filter(
+        item => String(item.userId) !== myId
+      );
+
+      const removing = previous && previous.reaction === reaction;
+
+      if (!removing) {
+        nextUsers.push({
+          userId: myId,
+          reaction
+        });
+      }
+
+      const counts = {};
+      nextUsers.forEach(item => {
+        counts[item.reaction] = (counts[item.reaction] || 0) + 1;
+      });
+
+      post.reactionUsers = nextUsers;
+      post.reactions = counts;
+      post.myReaction = removing ? "" : reaction;
+
+      posts[postIndex] = post;
+
       await groups.updateOne(
         { _id: new ObjectId(groupId) },
         {
           $set: {
-            posts: updatedPosts,
+            posts,
             updatedAt: new Date()
           }
         }
@@ -5752,14 +5760,14 @@ app.post(
 
     } catch (error) {
       console.error("CHANNEL REACTION ERROR:", error);
-
       return res.status(500).json({
         success: false,
-        message: "Could not update reaction"
+        message: "Could not save reaction"
       });
     }
   }
 );
+
 
 
 
